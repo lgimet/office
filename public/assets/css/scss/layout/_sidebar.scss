@@ -1,0 +1,115 @@
+/* ========================================
+   SIDEBAR
+======================================== */
+
+.sidebar {
+  width: 260px;
+  background:
+    linear-gradient(180deg,
+      color-mix(in srgb, var(--primary) 58%, black) 0%,
+      color-mix(in srgb, var(--secondary) 32%, black) 100%);
+  color: color-mix(in srgb, var(--on-primary) 82%, white);
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+
+  .sidebar-header {
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    &-logo {
+      width: 36px;
+      height: 36px;
+      object-fit: contain;
+    }
+
+    &-name {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--on-primary);
+      letter-spacing: 0.5px;
+      font-family: var(--font-family-display);
+    }
+  }
+
+  .nav-section {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: rgba(255,255,255,0.55);
+    margin: 20px 0 10px;
+  }
+
+  .nav-group {
+    margin-bottom: 12px;
+    user-select: none;
+    &-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      padding: 10px 12px;
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      color: color-mix(in srgb, var(--on-primary) 88%, white);
+
+      &:hover i:first-child {
+        opacity: 1;
+      }
+
+      i:first-child {
+        font-size: 1.1rem;
+        opacity: 0.85;
+      }
+    }
+
+    &-content {
+      height: 0;
+      overflow: hidden;
+      transition: height 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    &.open {
+      .group-arrow {
+        transform: rotate(90deg);
+      }
+
+      .toggle-icon {
+        transform: rotate(180deg);
+        transition: transform 0.25s ease;
+      }
+    }
+  }
+
+  .nav-item {
+    user-select: none;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 14px;
+    color: color-mix(in srgb, var(--on-primary) 92%, white);
+    transition: all var(--motion-fast);
+    width: 90%;
+    &:hover {
+      background: rgba(255,255,255,0.08);
+      transform: translateX(4px);   
+    }
+  }
+
+  .nav-icon svg {
+    width: 16px;
+    height: 16px;
+    fill: currentColor;
+  }
+}

@@ -1,0 +1,11 @@
+{
+    "postman.settings.dotenv-detection-notification-visibility": false,
+    "liveSassCompile.settings.formats": [
+        {
+            "format": "expanded",
+            "extensionName": ".css",
+            "savePath": "~/..",
+            "savePathReplacementPairs": null
+        }
+    ]
+}

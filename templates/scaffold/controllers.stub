@@ -1,0 +1,25 @@
+<?php
+
+namespace App\Controllers;
+
+use App\Core\Attribute\Route;
+use App\Core\Response;
+use App\Services\{{name}}Service;
+
+class {{name}}
+{
+    private {{name}}Service $service;
+
+    public function __construct()
+    {
+        $this->service = new {{name}}Service();
+    }
+
+    #[Route('/{{name}}', method: 'GET')]
+    public function index()
+    {
+        return Response::success([
+            'html' => '<div>{{name}} page</div>'
+        ]);
+    }
+}

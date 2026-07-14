@@ -1,0 +1,39 @@
+<header class="topbar">
+    <div class="topbar-left">
+        {{user.tenant_name}}
+    </div>
+   <div class="topbar-loader" id="topbar-loader"></div>
+    <div class="topbar-right">
+        <div class="user-dropdown" id="userDropdown">
+            <div class="user-badge" id="userDropdownToggle">
+            <div class="user-avatar">
+               {{user.initials}}
+            </div>
+            <div class="user-info">
+                <div class="user-name">
+                   {{user.firstname}} {{user.lastname}}
+                </div>
+                <div class="user-role">
+                    {{user.role}}
+                </div>
+            </div>
+            <div class="dropdown-arrow" id="dropdownArrow">
+                ▼
+            </div>
+        </div>
+            <div class="dropdown-menu" id="dropdownMenu">
+                <?php //if (hasPermission('access_admin_panel')): ?>
+                    <a href="/admin" class="dropdown-item">
+                        Administration
+                    </a>
+                <?php //endif; ?>
+                <form method="post" action="/Auth/logout">
+                    <input type="hidden" name="csrf" value="{{ csrf|e('html_attr') }}">
+                    <button type="submit" class="dropdown-item logout">
+                        Se déconnecter
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</header>

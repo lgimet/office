@@ -1,0 +1,23 @@
+/* ========================================
+   GLOBAL LAYOUT
+======================================== */
+
+.app {
+  display: flex;
+  height: 100vh;
+  background: transparent;
+}
+
+
+
+/* ========================================
+   MAIN AREA
+======================================== */
+
+.main-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: transparent;
+}

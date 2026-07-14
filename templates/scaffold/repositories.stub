@@ -1,0 +1,26 @@
+<?php
+
+namespace App\Repositories;
+
+use App\Core\Database;
+use PDO;
+
+class {{name}}Repository
+{
+    private PDO $pdo;
+
+    public function __construct()
+    {
+        $this->pdo = Database::getConnection();
+    }
+
+    public function findAll(): array
+    {
+        return [];
+    }
+
+    public function find(int $id): ?array
+    {
+        return null;
+    }
+}

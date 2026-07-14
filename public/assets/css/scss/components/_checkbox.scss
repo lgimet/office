@@ -1,0 +1,95 @@
+.m-checkbox-wrapper {
+  position: relative;
+}
+
+.m-checkbox-input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.m-checkbox {
+  display: inline-flex;
+  align-items: flex-start;
+  cursor: pointer;
+  gap: 12px;
+  user-select: none;
+  font-size: 14px;
+  color: var(--on-surface);
+  margin: 6px 0 0;
+  line-height: 1.35;
+}
+
+.m-checkbox-box {
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
+  margin-top: 1px;
+  border-radius: 6px;
+  border: 1.5px solid var(--outline);
+  background: var(--surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color var(--motion-fast), background var(--motion-fast), box-shadow var(--motion-fast);
+  position: relative;
+  overflow: hidden;
+}
+
+.m-checkbox-box::after {
+  content: "";
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: color-mix(in srgb, var(--primary) 18%, transparent);
+  border-radius: 50%;
+  transform: scale(0);
+  transition: transform 0.3s ease;
+}
+
+.m-checkbox-input:checked + .m-checkbox .m-checkbox-box {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+.m-checkbox-input:checked + .m-checkbox .m-checkbox-box::after {
+  transform: scale(2.5);
+  opacity: 0;
+}
+
+.m-check {
+  width: 14px;
+  height: 14px;
+  stroke: var(--on-primary);
+  stroke-width: 3;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 24;
+  stroke-dashoffset: 24;
+  transition: stroke-dashoffset 0.25s ease;
+}
+
+.m-checkbox-input:checked + .m-checkbox .m-checkbox-box .m-check {
+  stroke-dashoffset: 0;
+}
+
+.m-checkbox-input:focus-visible + .m-checkbox .m-checkbox-box {
+  border-color: var(--primary);
+  box-shadow: var(--focus-ring);
+}
+
+.m-checkbox-input:disabled + .m-checkbox .m-checkbox-box {
+  background: var(--surface-low);
+  border-color: var(--outline-variant);
+  cursor: not-allowed;
+}
+
+.m-checkbox-input:disabled + .m-checkbox .m-checkbox-label {
+  color: var(--on-surface-variant);
+}
+
+.m-checkbox-label {
+  display: inline-block;
+  padding-top: 1px;
+}

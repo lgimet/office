@@ -1,0 +1,96 @@
+<div class="m-card m-card--filled">
+    <div class="m-card__header">
+        Fiche client
+    </div>
+
+    <div class="m-card__content">
+        <form id="client_form" novalidate>
+            <div class="form-group">
+                <div class="form-field">
+                    <input id="client-company" name="company" type="text" placeholder=" " value="{{ client.company ?? '' }}" required />
+                    <label for="client-company">Nom de la societe</label>
+                </div>
+
+                <div class="form-field">
+                    <input id="client-email" name="email" type="email" placeholder=" " value="{{ client.email ?? '' }}" required />
+                    <label for="client-email">Email professionnel</label>
+                </div>
+
+                <div class="form-field">
+                    <input id="client-phone" name="phone" type="text" placeholder=" " value="{{ client.phone ?? '' }}" data-mask="phone" />
+                    <label for="client-phone">Telephone</label>
+                </div>
+
+                <div class="form-field">
+                    <textarea id="client-description" name="description" rows="4" placeholder=" ">{{ client.description ?? '' }}</textarea>
+                    <label for="client-description">Description</label>
+                </div>
+
+                <div class="form-field">
+                    <div
+                        id="client-country"
+                        class="select"
+                        data-url="/Client/options?type=countries"
+                        data-mode="list"
+                        data-placeholder=""
+                    >
+                        <input type="hidden" name="country" value="{{ client.country ?? '' }}" required />
+                    </div>
+                    <label for="client-country">Pays</label>
+                </div>
+
+                <div class="form-field">
+                    <div
+                        class="custom-multi-select"
+                        data-url="/Client/options?type=activities"
+                        data-placeholder="Selectionner des modules"
+                        data-initial='{{ modules_json|default("[]")|e("html_attr") }}'
+                    >
+                        <input type="hidden" name="modules" />
+                        <div class="cms-label" tabindex="0"></div>
+                        <div class="cms-dropdown"></div>
+                    </div>
+                    <label>Modules actifs</label>
+                </div>
+
+                <div class="form-field checkbox-field">
+                    <div class="m-checkbox-wrapper">
+                        <input id="client-notifications" class="m-checkbox-input" type="checkbox" name="notifications" {% if client and client.notifications %}checked{% endif %} />
+                        <label class="m-checkbox" for="client-notifications">
+                            <span class="m-checkbox-box">
+                                <svg class="m-check" viewBox="0 0 24 24">
+                                    <path d="M5 13l4 4L19 7"></path>
+                                </svg>
+                            </span>
+                            <span class="m-checkbox-label">Activer les notifications email</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="form-field">
+                    <div data-bank class="bank-field">
+                        <div class="bank-input-group">
+                            <input id="client-iban-visible" class="bank-iban" type="text" placeholder=" " value="{{ client.iban ?? '' }}" />
+                            <label class="bank-label" for="client-iban-visible">
+                                <span class="bank-label__rest">FR76 3000 6000 0112 3456 7890 189</span>
+                                <span class="bank-label__float">IBAN</span>
+                            </label>
+                            <input type="hidden" name="iban" value="{{ client.iban ?? '' }}" />
+                            <span class="bank-status iban-status"></span>
+                        </div>
+                        
+                        <div class="bank-input-group">
+                            <input id="client-bic-visible" class="bank-bic" type="text" placeholder=" " value="{{ client.bic ?? '' }}" />
+                            <label class="bank-label" for="client-bic-visible">
+                                <span class="bank-label__rest">AGRIFRPP</span>
+                                <span class="bank-label__float">BIC</span>
+                            </label>
+                            <input type="hidden" name="bic" value="{{ client.bic ?? '' }}" />
+                            <span class="bank-status bic-status"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+
+</div>

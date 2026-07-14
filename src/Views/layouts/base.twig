@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SaaS</title>
+    <script type="module" src="/assets/js/Core/main.js"></script>
+</head>
+<body>
+
+<script>
+    window.CSRF_TOKEN = "{{ csrf|e('js') }}";
+</script>
+
+{% block content %}{% endblock %}
+
+</body>
+</html>

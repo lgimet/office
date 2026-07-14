@@ -1,0 +1,89 @@
+# -----------------------------
+# 🔐 ENV & CONFIG
+# -----------------------------
+.env
+.env.local
+.env.*.local
+
+# -----------------------------
+# 📦 COMPOSER
+# -----------------------------
+/vendor/
+composer.lock
+
+# -----------------------------
+# 🧾 LOGS & CACHE
+# -----------------------------
+/var/logs/*
+/var/cache/*
+/var/sessions/*
+
+# garder les dossiers vides
+!/var/logs/.gitkeep
+!/var/cache/.gitkeep
+!/var/sessions/.gitkeep
+
+# -----------------------------
+# 🖥️ OS FILES
+# -----------------------------
+.DS_Store
+Thumbs.db
+
+# -----------------------------
+# 🧠 IDE / EDITOR
+# -----------------------------
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# -----------------------------
+# 🧪 TEST / DEBUG
+# -----------------------------
+/phpunit.xml
+/phpunit.xml.dist
+/.phpunit.result.cache
+
+# -----------------------------
+# 🧱 BUILD / TEMP
+# -----------------------------
+/tmp/
+/build/
+/dist/
+
+# -----------------------------
+# 🌐 NODE (si tu en ajoutes plus tard)
+# -----------------------------
+/node_modules/
+/npm-debug.log
+/yarn-error.log
+
+# -----------------------------
+# 🔐 CERTIFICATS / KEYS
+# -----------------------------
+*.pem
+*.key
+*.crt
+
+# -----------------------------
+# 📁 UPLOADS (si tu en ajoutes)
+# -----------------------------
+/public/uploads/
+/public/files/
+
+# -----------------------------
+# 🧬 DATABASE
+# -----------------------------
+*.sql
+*.sqlite
+!database/*.sql
+
+# -----------------------------
+# 🪵 DEBUG FILES
+# -----------------------------
+*.log
+*.bak
+*.swp

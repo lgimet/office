@@ -1,0 +1,34 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # no cache
+    <IfModule mod_headers.c>
+        Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
+        Header set Pragma "no-cache"
+        Header set Expires "0"
+    </IfModule>
+
+    # fichier JS
+    RewriteCond %{REQUEST_URI} \.js$
+    RewriteRule ^ index.php [QSA,L]
+
+    # 🔹 Si le fichier existe, on le sert directement
+    RewriteCond %{REQUEST_FILENAME} -f
+    RewriteRule ^ - [L]
+
+    # 🔹 Si le dossier existe, on le sert directement
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+
+    # 🔹 Sinon → redirection vers index.php
+    RewriteRule ^ index.php [QSA,L]
+</IfModule>
+
+# Empêcher listing des dossiers
+Options -Indexes
+
+# Bloquer accès aux fichiers sensibles
+<FilesMatch "\.(env|log|ini|htaccess)$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>

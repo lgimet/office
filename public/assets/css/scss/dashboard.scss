@@ -1,0 +1,34 @@
+@use "./styles/material/dark";
+@use "./styles/material/light";
+
+@use "./styles/tokens/radius";
+@use "./styles/tokens/typography";
+
+@use "./styles/tokens/theme";
+
+@use "./components/button";
+@use "./components/input";
+@use "./components/card";
+@use "./components/form";
+@use "./components/checkbox";
+@use "./components/select";
+@use "./components/multiselect";
+@use "./components/bank";
+@use "./components/validator";
+@use "./components/windows";
+
+
+@use "./base/reset";
+@use "./base/animations";
+@use "./base/root";
+@use "./base/variables";
+@use "./layout/sidebar";
+@use "./layout/main-area";
+@use "./layout/topbar";
+@use "./layout/page-content";
+
+@use "./components/tabs";
+
+.test {
+    padding: 20px;
+}

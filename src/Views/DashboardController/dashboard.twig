@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="material">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="/assets/css/dashboard.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,100..900;1,100..900&family=Roboto+Condensed:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+    <script>
+        window.CSRF_TOKEN = "{{ csrf|e('js') }}";
+    </script>
+    <script type="module" src="assets/js/Core/main.js?a=<?= rand(); ?>"></script>
+</head>
+    <body class="light">
+        <div class="app">
+            {% include "DashboardController/Partials/_sidebar.twig"%}
+             <div class="main-area">
+                {% include "DashboardController/Partials/_topbar.twig"%}
+                <div class="page-content">
+                    <div class="tabs-bar" id="tabsBar"></div>
+                    <div class="windows-container" id="windowsContainer"></div>
+                    
+                </div>
+
+            </div>
+        </div>
+        <script>
+            const toggle = document.getElementById('userDropdownToggle');
+            const menu = document.getElementById('dropdownMenu');
+            const arrow = document.getElementById('dropdownArrow');
+            
+            toggle.addEventListener('click', function(e) {
+                e.stopPropagation();
+                menu.classList.toggle('show');
+                arrow.classList.toggle('rotate');
+            });
+            
+            document.addEventListener('click', function() {
+                menu.classList.remove('show');
+                arrow.classList.remove('rotate');
+            });
+            document.querySelectorAll('.nav-group-header').forEach(header => {
+
+                header.addEventListener('click', function () {
+
+                    const group = this.parentElement;
+                    const content = group.querySelector('.nav-group-content');
+
+                    const isOpen = group.classList.contains('open');
+
+                    // Fermer tous les autres
+                    document.querySelectorAll('.nav-group').forEach(g => {
+                        if (g !== group) {
+                            closeGroup(g);
+                        }
+                    });
+
+                    if (isOpen) {
+                        closeGroup(group);
+                    } else {
+                        openGroup(group);
+                    }
+
+                });
+
+            });
+
+            function openGroup(group) {
+                const content = group.querySelector('.nav-group-content');
+
+                group.classList.add('open');
+                content.style.height = content.scrollHeight + "px";
+
+                // reset auto après animation
+                content.addEventListener('transitionend', function handler() {
+                    content.style.height = "auto";
+                    content.removeEventListener('transitionend', handler);
+                });
+            }
+
+            function closeGroup(group) {
+                const content = group.querySelector('.nav-group-content');
+
+                content.style.height = content.scrollHeight + "px";
+
+                requestAnimationFrame(() => {
+                    content.style.height = "0px";
+                });
+
+                group.classList.remove('open');
+            }
+            document.addEventListener("DOMContentLoaded", function () {
+
+                document.querySelectorAll('.nav-group.open').forEach(group => {
+                    const content = group.querySelector('.nav-group-content');
+                    content.style.height = "auto";
+                });
+
+            });
+        </script>
+    </body>
+</html>

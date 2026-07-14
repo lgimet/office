@@ -1,0 +1,20 @@
+<?php
+
+namespace App\Services;
+
+use App\Repositories\{{name}}Repository;
+
+class {{name}}Service
+{
+    private {{name}}Repository $repository;
+
+    public function __construct()
+    {
+        $this->repository = new {{name}}Repository();
+    }
+
+    public function getAll()
+    {
+        return $this->repository->findAll();
+    }
+}

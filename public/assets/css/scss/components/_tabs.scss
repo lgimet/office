@@ -1,0 +1,101 @@
+/* ========================================
+   TABS
+======================================== */
+
+.tabs-bar {
+  --tabsbar-height: 42px;
+  height: 42px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  padding: 0 12px;
+  background: color-mix(in srgb, var(--surface-high) 90%, transparent);
+  border-bottom: 1px solid var(--outline-variant);
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.tab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  font-size: 13px;
+  background: var(--surface);
+  color: var(--on-surface-variant);
+  border: 1px solid transparent;
+  border-radius: 12px 12px 0 0;
+  cursor: pointer;
+  flex: 0 0 auto;
+  transition: background var(--motion-fast), color var(--motion-fast), box-shadow var(--motion-fast);
+
+  &:hover {
+    background: var(--surface-high);
+  }
+
+  &.active {
+    background: color-mix(in srgb, var(--primary) 8%, var(--surface-high));
+    border-color: var(--outline-variant);
+    border-bottom: 2px solid var(--primary);
+    color: var(--primary);
+
+    &:hover {
+      background: color-mix(in srgb, var(--primary) 8%, var(--surface-high));
+      box-shadow: none;
+    }
+  }
+
+  &-close {
+    font-size: 12px;
+    opacity: 0.5;
+    transition: opacity 0.2s ease;
+
+    &:hover {
+      opacity: 1;
+    }
+  }
+}
+
+.tab-dirty-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--color-error);
+    display: none;
+}
+
+.tab-close {
+    border: none;
+    background: transparent;
+    color: currentColor;
+    cursor: pointer;
+    opacity: 0.6;
+}
+
+/* Etat modifié */
+
+.tab.dirty .tab-dirty-indicator {
+    display: block;
+}
+
+.tab.dirty .tab-close {
+    display: none;
+}
+
+/* Hover = montrer la croix */
+
+.tab.dirty:hover .tab-dirty-indicator {
+    display: none;
+}
+
+.tab.dirty:hover .tab-close {
+    display: block;
+}

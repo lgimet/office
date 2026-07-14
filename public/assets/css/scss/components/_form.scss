@@ -1,0 +1,131 @@
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  * {
+    box-sizing: border-box;  
+  }
+
+  .required {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    min-width: 6px;
+    min-height: 6px;
+    margin-left: 6px;
+    border-radius: 50%;
+    background: var(--error);
+    vertical-align: middle;
+    flex-shrink: 0;
+    align-self: center;
+    position: relative;
+    top: -1px;
+    font-size: 0;
+    line-height: 0;
+  }
+
+  .form-field {
+    position: relative;
+    display: flex;
+    flex-direction: column; // vertical pour éviter chevauchement
+    width: 100%;
+    min-width: 150px;
+    margin-bottom: 12px;
+
+    input,
+    select,
+    textarea,
+    .custom-multi-select {
+      width: 100%;
+      padding: 20px 14px 9px 14px;
+      border: 1px solid var(--outline);
+      border-radius: 12px;
+      font-size: 14px;
+      outline: none;
+      background: var(--surface);
+      color: var(--on-surface);
+      resize: vertical;
+      transition: border-color var(--motion-fast), box-shadow var(--motion-fast), background var(--motion-fast);
+
+      &:is(.custom-multi-select) {
+        border: none;
+        padding-left: 0;
+        padding-right: 0;
+        padding-top: 22px;
+      }
+
+      &:focus {
+        border-color: var(--primary);
+        box-shadow: var(--focus-ring);
+        background: var(--surface-high);
+      }
+
+      &:focus + label,
+      &:not(:placeholder-shown) + label {
+        top: 4px;
+        left: 10px;
+        font-size: 12px;
+        color: var(--primary);
+        background: var(--color-bg);
+        padding: 0 4px;
+      }
+
+      &:is(.custom-multi-select) + label {
+        padding: 0;
+        left: 0;
+      }
+    }
+
+    textarea {
+      padding-top: 18px;
+    }
+
+    select {
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none;
+      padding-right: 30px; // pour icône dropdown
+    }
+
+    label {
+      position: absolute;
+      left: 14px;
+      top: 15px;
+      z-index: 10;
+      color: var(--color-text-muted);
+      font-size: 14px;
+      pointer-events: none;
+      transition: all 0.2s ease;
+      background: transparent;
+    }
+
+    // Checkbox spécifique
+    &.checkbox-field {
+      flex-direction: row;
+      align-items: flex-start;
+      margin-bottom: 8px;
+
+      input[type="checkbox"] {
+        width: auto;
+        height: auto;
+        padding: 0;
+      }
+
+      label,
+      .m-checkbox-wrapper {
+        position: static;
+        font-size: 14px;
+        color: var(--on-surface);
+        margin: 0;
+        pointer-events: auto;
+        background: transparent;
+        z-index: auto;
+      }
+
+      label.m-checkbox {
+        display: flex;
+        align-items: center;
+      }
+    }
+  }
+}

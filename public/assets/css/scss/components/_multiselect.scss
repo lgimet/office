@@ -1,0 +1,81 @@
+.custom-multi-select {
+  position: relative;
+  font-size: 14px;
+  width: 100%;
+}
+
+.cms-label {
+  min-height: 48px;
+  padding: 8px 12px;
+  background: var(--surface);
+  border: 1px solid var(--outline);
+  border-radius: 14px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  cursor: pointer;
+  align-items: center;
+  color: var(--on-surface);
+  transition: border-color var(--motion-fast), box-shadow var(--motion-fast), background var(--motion-fast);
+}
+
+.cms-badge {
+  background: color-mix(in srgb, var(--primary) 14%, var(--surface-high));
+  color: var(--primary);
+  padding: 5px 9px;
+  border-radius: 999px;
+  font-size: 12px;
+}
+
+.cms-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--surface-high);
+  border: 1px solid var(--outline-variant);
+  border-radius: 16px;
+  margin-top: 6px;
+  max-height: 220px;
+  overflow-y: auto;
+  display: none;
+  box-shadow: var(--shadow-1);
+  z-index: 12;
+}
+
+.cms-dropdown.open {
+  display: block;
+}
+
+.cms-option {
+  padding: 10px 14px;
+  cursor: pointer;
+}
+
+.cms-option:hover {
+  background: color-mix(in srgb, var(--primary) 10%, var(--surface-high));
+}
+
+.cms-option.selected {
+  background: color-mix(in srgb, var(--primary) 16%, var(--surface-high));
+  font-weight: 500;
+}
+
+.cms-remove {
+  margin-left: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  opacity: 0.6;
+}
+
+.cms-remove:hover {
+  opacity: 1;
+}
+
+.cms-empty {
+  padding: 10px 14px;
+}
+
+.cms-option.active {
+  background: color-mix(in srgb, var(--primary) 16%, var(--surface-high));
+}

@@ -1,0 +1,135 @@
+.m-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  position: relative;
+  margin-bottom: 12px;
+
+  /* LABEL */
+  &__label {
+    font-size: var(--text-sm);
+    color: var(--on-surface-variant);
+    transition: color 0.2s ease;
+  }
+
+  /* INPUT */
+  &__input {
+    width: 100%;
+    min-height: 48px;
+    padding: 12px 14px;
+
+    border-radius: var(--radius-md);
+    border: 1px solid var(--outline);
+
+    background: var(--surface);
+    color: var(--on-surface);
+
+    font-size: var(--text-md);
+
+    transition: 
+      border-color 0.2s ease,
+      box-shadow 0.2s ease,
+      background 0.2s ease;
+
+    &::placeholder {
+      color: var(--on-surface-variant);
+      opacity: 0.6;
+    }
+
+    &:focus {
+      border-color: var(--primary);
+     box-shadow: var(--focus-ring);
+      outline: none;
+    }
+  }
+
+  /* HELPER TEXT */
+  &__helper {
+    font-size: var(--text-sm);
+    color: var(--on-surface-variant);
+  }
+
+  /* ERROR TEXT */
+  &__error {
+    font-size: var(--text-sm);
+    color: var(--error);
+    display: none;
+  }
+
+  /* STATES */
+
+  /* Focus state (label) */
+  &__input:focus ~ &__label {
+    color: var(--primary);
+  }
+
+  /* ERROR */
+  &.is-error {
+    .m-field__input {
+      border-color: var(--error);
+    }
+
+    .m-field__error {
+      display: block;
+    }
+  }
+
+  /* DISABLED */
+  &.is-disabled {
+    .m-field__input {
+      background: var(--surface-variant);
+      color: var(--on-surface-variant);
+      cursor: not-allowed;
+    }
+  }
+}
+.m-field--floating {
+  position: relative;
+
+  .m-field__input {
+    width: 100%;
+    min-height: 54px;
+    padding: 22px 14px 9px;
+
+    border-radius: var(--radius-md);
+    border: 1px solid var(--outline);
+
+    background: var(--surface);
+    color: var(--on-surface);
+
+    font-size: var(--text-md);
+
+    &:focus {
+      border-color: var(--primary);
+      outline: none;
+    }
+  }
+
+  .m-field__label {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+
+    transform: translateY(-50%) scale(1);
+    transform-origin: left center;
+
+    color: var(--on-surface-variant);
+    font-size: var(--text-md);
+
+    pointer-events: none;
+
+    transition:
+      transform 0.2s cubic-bezier(0.2, 0, 0, 1),
+      color 0.2s ease,
+      top 0.2s ease;
+  }
+
+  /* État actif */
+  .m-field__input:focus + .m-field__label,
+  .m-field__input:not(:placeholder-shown) + .m-field__label {
+    top: 7px;
+    transform: translateY(0) scale(0.85);
+
+    color: var(--primary);
+  }
+}

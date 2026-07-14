@@ -1,0 +1,117 @@
+.custom-select {
+  position: relative;
+  width: 100%;
+}
+
+.custom-select-input-wrapper {
+  position: relative;
+  >input {
+    cursor: pointer;
+  }
+}
+
+.custom-select input {
+  width: 100%;
+  min-height: 48px;
+  padding: 0 40px 0 14px;
+  border: 1px solid var(--outline);
+  border-radius: 14px;
+  background: var(--surface);
+  color: var(--on-surface);
+  transition: border-color var(--motion-fast), box-shadow var(--motion-fast), background var(--motion-fast);
+}
+
+.custom-select input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: var(--focus-ring);
+  background: var(--surface-high);
+}
+
+.custom-select-option {
+  padding: 10px 14px;
+  cursor: pointer;
+}
+
+.custom-select-option:hover {
+  background: color-mix(in srgb, var(--primary) 10%, var(--surface-high));
+}
+
+.custom-select-option.active {
+  background: color-mix(in srgb, var(--primary) 16%, var(--surface-high));
+  color: var(--on-surface);
+  font-weight: 600;
+}
+
+.custom-select-chevron {
+  position: absolute;
+  right: 10px;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 14px;
+  pointer-events: none;
+  color: var(--on-surface-variant);
+}
+
+.custom-select-chevron {
+  transition: transform 0.2s ease;
+}
+
+.custom-select-chevron.open {
+  transform: translateY(-50%) rotate(180deg);
+}
+
+.custom-select-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--surface-high);
+  border: 1px solid var(--outline-variant);
+  border-radius: 16px;
+  max-height: 200px;
+  overflow-y: auto;
+  display: none;
+  z-index: 1000;
+  margin-top: 6px;
+  box-shadow: var(--shadow-1);
+
+  &.active {
+    display: block;
+  }
+}
+
+.custom-select-option {
+  padding: 10px 14px;
+  cursor: pointer;
+  font-size: 14px;
+
+  &:hover {
+    background: color-mix(in srgb, var(--primary) 10%, var(--surface-high));
+  }
+}
+
+.custom-select-empty {
+  padding: 10px 14px;
+  color: var(--on-surface-variant);
+  font-size: 13px;
+}
+
+.custom-select-validator {
+  position: absolute;
+  opacity: 0;
+  height: 0;
+  width: 0;
+  pointer-events: none;
+}
+
+.custom-select.disabled input {
+  background-color: var(--surface-low);
+  cursor: not-allowed;
+  color: var(--on-surface-variant);
+}
+
+.custom-select.disabled {
+  opacity: 0.7;
+}

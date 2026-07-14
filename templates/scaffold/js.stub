@@ -1,0 +1,24 @@
+import { Core } from "../Core/Core.js"
+
+export class {{name}} extends Core {
+
+    static instance() {
+        return new {{name}}();
+    }
+
+    form() {
+        this.callAction(this.form.name, 
+                {                   
+                },
+                {
+                    callback: (e) => {
+                        if (e.success) {
+                            console.log("Créé");
+                        }
+                    }
+                }
+        );
+    }
+
+
+}

@@ -1,0 +1,104 @@
+.m-btn {
+  --btn-bg: var(--primary);
+  --btn-color: var(--on-primary);
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+
+  min-height: 42px;
+  padding: 8px 16px;
+  border-radius: var(--radius-md);
+
+  border: none;
+  background: var(--btn-bg);
+  color: var(--btn-color);
+
+  font-size: var(--text-md);
+  font-weight: 500;
+
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+
+  transition: 
+    box-shadow 0.2s ease,
+    transform 0.1s ease,
+    background 0.2s ease;
+
+  /* Hover */
+  &:hover {
+    box-shadow: 0 3px 8px rgba(0,0,0,0.18);
+  }
+
+  /* Active */
+  &:active {
+    transform: scale(0.98);
+  }
+
+  /* Focus (accessibilité) */
+  &:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+  }
+
+  /* Ripple */
+  &::after {
+    content: "";
+    position: absolute;
+    width: 120%;
+    height: 120%;
+    background: rgba(255,255,255,0.25);
+    border-radius: inherit;
+    transform: scale(0);
+    opacity: 0;
+    transition: transform 0.4s ease, opacity 0.6s ease;
+  }
+
+  &:active::after {
+    transform: scale(1);
+    opacity: 1;
+    transition: 0s;
+  }
+
+  /* Disabled */
+  &:disabled,
+  &.is-disabled {
+    background: var(--surface-variant);
+    color: var(--on-surface-variant);
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+}
+/* PRIMARY (default) */
+.m-btn--primary {
+  --btn-bg: var(--primary);
+  --btn-color: var(--on-primary);
+}
+
+/* SECONDARY */
+.m-btn--secondary {
+  --btn-bg: var(--secondary);
+  --btn-color: var(--on-secondary);
+}
+
+/* OUTLINE */
+.m-btn--outline {
+  --btn-bg: transparent;
+  --btn-color: var(--primary);
+
+  border: 1px solid var(--outline);
+}
+
+/* TEXT */
+.m-btn--text {
+  --btn-bg: transparent;
+  --btn-color: var(--primary);
+}
+
+.m-btn__icon {
+  display: flex;
+  align-items: center;
+  font-size: 18px;
+}

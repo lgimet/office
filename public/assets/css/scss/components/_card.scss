@@ -1,0 +1,74 @@
+.m-card {
+  display: flex;
+  flex-direction: column;
+
+  background: var(--surface);
+  color: var(--on-surface-variant);
+
+  border-radius: var(--radius-md);
+  border: 1px solid var(--outline-variant);
+
+  overflow: hidden;
+
+  transition: 
+    box-shadow 0.2s ease,
+    transform 0.15s ease,
+    background 0.2s ease;
+
+  /* STRUCTURE */
+
+  &__header {
+    padding: 16px;
+    font-weight: 500;
+    font-size: var(--text-lg);
+    color: var(--on-surface);
+  }
+
+  &__content {
+    padding: 16px;
+    font-size: var(--text-md);
+    font-weight: 400;
+  }
+
+  &__footer {
+    padding: 12px 16px;
+    border-top: 1px solid var(--outline-variant);
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+}
+/* Elevated (Material style) */
+.m-card--elevated {
+  border: none;
+  box-shadow: var(--shadow-1);
+
+  &:hover {
+    box-shadow: var(--shadow-2);
+  }
+}
+
+/* Outlined (default clean SaaS) */
+.m-card--outlined {
+  border: 1px solid var(--outline-variant);
+}
+
+/* Filled (subtle background) */
+.m-card--filled {
+  background: var(--surface-low);
+}
+.m-card--interactive {
+  cursor: pointer;
+
+  &:active {
+    transform: translateY(0);
+    box-shadow: var(--shadow-1);
+  }
+}
+.m-card--compact {
+  .m-card__header,
+  .m-card__content,
+  .m-card__footer {
+    padding: 8px 12px;
+  }
+}
