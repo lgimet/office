@@ -60,13 +60,12 @@
         background: var(--surface-high);
       }
 
-      &:focus + label,
-      &:not(:placeholder-shown) + label {
+      &:focus + label {
         top: 4px;
         left: 10px;
         font-size: 12px;
         color: var(--primary);
-        background: var(--color-bg);
+        //background: var(--color-bg);
         padding: 0 4px;
       }
 
@@ -99,6 +98,15 @@
       background: transparent;
     }
 
+    &.has-value > label {
+      top: 4px;
+      left: 10px;
+      font-size: 12px;
+      color: var(--primary);
+      background: var(--surface);
+      padding: 0 4px;
+    }
+
     // Checkbox spécifique
     &.checkbox-field {
       flex-direction: row;
@@ -125,6 +133,33 @@
       label.m-checkbox {
         display: flex;
         align-items: center;
+      }
+    }
+
+    &.form-field--checkbox {
+      display: flex;
+      align-items: center;
+      min-height: 48px;
+      margin-bottom: 0;
+
+      input[type="checkbox"] {
+        width: 18px;
+        min-width: 18px;
+        min-height: 18px;
+        height: 18px;
+        margin: 0;
+        padding: 0;
+        accent-color: var(--primary);
+      }
+
+      label {
+        position: static;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 0;
+        color: var(--on-surface);
+        pointer-events: auto;
       }
     }
   }

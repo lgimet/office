@@ -2,7 +2,8 @@
   "private": true,
   "scripts": {
     "sass": "sass public/assets/css/scss/dashboard.scss:public/assets/css/dashboard.css --style=compressed --no-source-map",
-    "watch": "sass --watch public/assets/css/scss/dashboard.scss:public/assets/css/dashboard.css"
+    "build": "sass public/assets/css/scss/dashboard.scss:public/assets/css/dashboard.css public/assets/css/scss/login.scss:public/assets/css/login.css --style=compressed --no-source-map",
+    "watch": "sass --watch public/assets/css/scss/dashboard.scss:public/assets/css/dashboard.css public/assets/css/scss/login.scss:public/assets/css/login.css"
   },
   "devDependencies": {
     "sass": "1.54.9"

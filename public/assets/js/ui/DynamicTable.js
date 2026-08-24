@@ -12,6 +12,10 @@ export class DynamicTable extends EventTarget {
 		this.options = {
 			actions: [],
 			searchInput: null,
+			filters: {},
+			formatters: {},
+			onError: null,
+			emptyMessage: 'Aucun résultat.',
 			callbackDblClick: null,
 			callbackClick: null,
 			...options
@@ -56,13 +60,13 @@ export class DynamicTable extends EventTarget {
 	initFilters() {
 		if (this.options.searchInput) {
 			this.options.searchInput.addEventListener("input", (e) => {
-				//this.loadData()
-				if(e.target.value.length>2) {
-					this.load(true);
-				}
-				
+				this.load(true);
 			});
 		}
+		Object.values(this.options.filters).forEach((input) => {
+			const filterInput = this.getFilterInput(input);
+			if (filterInput) filterInput.addEventListener('change', () => this.load(true));
+		});
 	}
 	initEvents() {
 
@@ -87,16 +91,14 @@ export class DynamicTable extends EventTarget {
 		})
 	}
 	async load(reset = false) {
-
-		if (this.loading || this.finished) return;
-
-		this.loading = true;
-
 		if (reset) {
 			this.page = 1;
 			this.finished = false;
 			this.clearRows();
 		}
+		if (this.loading || this.finished) return;
+
+		this.loading = true;
 
 		const params = new URLSearchParams({
 			page: this.page,
@@ -107,12 +109,27 @@ export class DynamicTable extends EventTarget {
 			idsearch: this.idsearch
 		});
 		 if (this.options.searchInput) params.append("search", this.options.searchInput.value);
+		Object.entries(this.options.filters).forEach(([name, input]) => {
+			const filterInput = this.getFilterInput(input);
+			params.append(name, filterInput ? filterInput.value : '');
+		});
 
-		const response = await fetch(`${this.source}?${params}`);
-		const result = await response.json();
-
-		this.totalPages = result.data.data.pages;
-		this.render(result.data.data);
+		try {
+			const response = await fetch(`${this.source}?${params}`);
+			const result = await response.json();
+			if (!result.success) {
+				this.options.onError?.(result.error?.message || 'Le chargement des données a échoué.');
+				this.finished = true;
+				this.observer.disconnect();
+				this.render([]);
+				return;
+			}
+			const payload = result.data ?? {};
+			this.totalPages = payload.pages ?? 1;
+			this.render(payload.rows ?? payload.data ?? []);
+		} finally {
+			this.loading = false;
+		}
 
 		if (this.page >= this.totalPages) {
 			this.finished = true;
@@ -121,18 +138,31 @@ export class DynamicTable extends EventTarget {
 			this.page++;
 		}
 
-		this.loading = false;
+	}
+	getFilterInput(element) {
+		if (!element) return null;
+		return element.matches('input, select, textarea') ? element : element.querySelector('input[type="hidden"], select, input');
 	}
 	render(data) {
+		if (!data.length && this.page === 1) {
+			const empty = document.createElement('div');
+			empty.className = 'table-empty-state';
+			empty.textContent = this.options.emptyMessage;
+			this.body.insertBefore(empty, this.sentinel);
+			return;
+		}
 		data.forEach(rowData => {
 			const row = this.model.cloneNode(true);
 			row.style.display = "grid";
 			row.classList.remove("model");
 			this.applyGridTemplate(row);
 			row.dataset.id = eval(`rowData.id`);
+			row._data = rowData;
 			row.querySelectorAll(".cell").forEach((cell, index) => {
 				const col = this.columns[index];
-				cell.textContent = rowData[col] ?? "";
+				const formatter = this.options.formatters[col];
+				if (formatter) cell.innerHTML = formatter(rowData[col], rowData);
+				else cell.textContent = rowData[col] ?? "";
 			});
 			if( this.options.callbackClick) {
 				row.classList.add("select-row");
@@ -150,12 +180,17 @@ export class DynamicTable extends EventTarget {
 			if (actionsCell) {
 
 			this.options.actions.forEach(action => {
+				if (typeof action.visible === "function" && !action.visible(rowData)) {
+					return;
+				}
+
 				const btn = document.createElement("button");
 				btn.className = "btn-action";
 				btn.type="button";
-				btn.innerHTML = `<i class="bi ${this.icons[action]}"></i>`;
-				btn.title = action;
-				btn.dataset.action = action;
+				const name = typeof action === 'string' ? action : action.name;
+				btn.innerHTML = `<i class="bi ${this.icons[name] ?? action.icon ?? 'bi-three-dots'}"></i>`;
+				btn.title = typeof action === 'string' ? action : action.label;
+				btn.dataset.action = name;
 				actionsCell.appendChild(btn);
 
 			});
@@ -168,7 +203,7 @@ export class DynamicTable extends EventTarget {
 		console.log(rows);
 	}
 	clearRows() {
-		this.body.querySelectorAll(".flex-row:not(.model)")
+		this.body.querySelectorAll(".flex-row:not(.model), .table-empty-state")
 			.forEach(r => r.remove());
 	}
 	createSentinel() {

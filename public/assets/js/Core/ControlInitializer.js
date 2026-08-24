@@ -16,7 +16,8 @@ export function initControls(root, options = {}) {
             element,
             url: element.dataset.url,
             mode: element.dataset.mode,
-            placeholder: element.dataset.placeholder
+            placeholder: element.dataset.placeholder,
+            emptyLabel: element.dataset.emptyLabel
         });
     });
 
@@ -56,6 +57,13 @@ export function initControls(root, options = {}) {
             form.dataset.validatorInitialized = "true";
             FormValidator.init(form);
         }
+    });
+
+    root.querySelectorAll('.form-field input:not([type="checkbox"]):not([type="hidden"]), .form-field textarea').forEach((field) => {
+        const syncValueState = () => field.closest('.form-field')?.classList.toggle('has-value', field.value !== '');
+        syncValueState();
+        field.addEventListener('input', syncValueState);
+        field.addEventListener('change', syncValueState);
     });
 
     if (!options.tab) return null;

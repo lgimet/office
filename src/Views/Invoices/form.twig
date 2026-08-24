@@ -1,0 +1,189 @@
+<section class="invoice-editor">
+    <header class="invoice-editor__header">
+        <div>
+            <span class="invoice-editor__icon">▧</span>
+            <h2>
+                {{ invoice ? 'Modifier la facture' : 'Nouvelle facture' }}
+                <small>(brouillon)</small>
+            </h2>
+            <p>
+                {{ invoice
+                    ? 'Modifiez votre brouillon avant de le finaliser.'
+                    : 'Créez votre facture. Enregistrez-la en brouillon pour la finaliser plus tard.' }}
+            </p>
+        </div>
+    </header>
+
+    <form
+        id="invoice-form"
+        class="invoice-form"
+        data-default-tax-rate="{{ defaults.tax_rate ?? '20.00' }}"
+    >
+        <input type="hidden" name="id" value="{{ invoice.id ?? '' }}">
+
+        <section class="invoice-card">
+            <h3>♧ Client et informations</h3>
+
+            <div class="invoice-grid">
+                <div class="form-field invoice-client-field">
+                    <div
+                        id="invoice-client"
+                        class="select"
+                        data-url="/Invoices/clientOptions"
+                        data-mode="search"
+                        data-placeholder="Rechercher un client"
+                        data-selected-label="{{ invoice.client_name ?? '' }}"
+                    >
+                        <input type="hidden" name="client_id" required value="{{ invoice.client_id ?? '' }}">
+                    </div>
+                    <label for="invoice-client">Client</label>
+                </div>
+
+                <div class="form-field">
+                    <input
+                        id="invoice-issue-date"
+                        type="date"
+                        name="issue_date"
+                        value="{{ invoice.issue_date ?? today }}"
+                        required
+                    >
+                    <label for="invoice-issue-date">Date de facture</label>
+                </div>
+
+                <div class="form-field">
+                    <input
+                        id="invoice-due-date"
+                        type="date"
+                        name="due_date"
+                        value="{{ invoice.due_date ?? '' }}"
+                    >
+                    <label for="invoice-due-date">Date d’échéance</label>
+                </div>
+
+                <div class="form-field">
+                    <input id="invoice-currency" name="currency" value="{{ invoice.currency ?? defaults.currency ?? 'EUR' }}" readonly>
+                    <label for="invoice-currency">Devise</label>
+                </div>
+
+                <div class="form-field">
+                    <input
+                        id="invoice-payment-terms"
+                        name="payment_terms"
+                        value="{{ invoice.payment_terms ?? defaults.payment_terms ?? '' }}"
+                    >
+                    <label for="invoice-payment-terms">Conditions de paiement</label>
+                </div>
+
+                <div class="form-field">
+                    <input
+                        id="invoice-payment-method"
+                        name="payment_method"
+                        value="{{ invoice.payment_method ?? defaults.payment_method ?? '' }}"
+                    >
+                    <label for="invoice-payment-method">Mode de paiement attendu</label>
+                </div>
+            </div>
+        </section>
+
+        <div class="invoice-layout">
+            <section class="invoice-card">
+                <h3>☷ Lignes de facture</h3>
+
+                <div class="invoice-lines-head">
+                    <span>#</span>
+                    <span>Désignation</span>
+                    <span>Description</span>
+                    <span>Qté</span>
+                    <span>Unité</span>
+                    <span>Prix HT</span>
+                    <span>TVA</span>
+                    <span>Total HT</span>
+                    <span></span>
+                </div>
+
+                <div id="invoice-lines">
+                    {% for line in lines %}
+                        <div class="invoice-line-row">
+                            <div class="invoice-line">
+                                <span class="line-position">{{ loop.index }}</span>
+                                <input name="label" placeholder="Désignation" value="{{ line.label }}">
+                                <input name="description" placeholder="Description" value="{{ line.description ?? '' }}">
+                                <input name="quantity" type="number" min="0.001" step="0.001" value="{{ line.quantity }}">
+                                <select name="unit">
+                                    {% for unit in ['unité', 'heure', 'jour', 'forfait', 'mois'] %}
+                                        <option value="{{ unit }}" {% if line.unit == unit %}selected{% endif %}>{{ unit }}</option>
+                                    {% endfor %}
+                                </select>
+                                <input name="unit_price_excl_tax" type="number" min="0" step="0.01" value="{{ line.unit_price_excl_tax }}">
+                                <input name="tax_rate" type="number" min="0" step="0.01" value="{{ line.tax_rate }}">
+                                <strong class="line-total">{{ line.line_subtotal_excl_tax|number_format(2, ',', ' ') }} €</strong>
+                                <div class="line-actions">
+                                    <button type="button" class="invoice-discount-toggle">+ Remise</button>
+                                    <button type="button" class="invoice-line-delete" aria-label="Supprimer cette ligne">×</button>
+                                </div>
+                            </div>
+
+                            <div class="invoice-discount" {% if not line.discount_type %}hidden{% endif %}>
+                                <span class="invoice-discount__title">Remise</span>
+                                <label>
+                                    <span>Type</span>
+                                    <select name="discount_type">
+                                        <option value="" {% if not line.discount_type %}selected{% endif %}>Aucune remise</option>
+                                        <option value="percentage" {% if line.discount_type == 'percentage' %}selected{% endif %}>Pourcentage</option>
+                                        <option value="fixed" {% if line.discount_type == 'fixed' %}selected{% endif %}>Montant fixe</option>
+                                    </select>
+                                </label>
+                                <label>
+                                    <span>Valeur</span>
+                                    <div class="invoice-discount__value">
+                                        <input name="discount_value" type="number" min="0" step="0.01" value="{{ line.discount_value ?? '0.00' }}">
+                                        <span class="discount-suffix">{% if line.discount_type == 'percentage' %}%{% else %}€{% endif %}</span>
+                                    </div>
+                                </label>
+                                <label class="invoice-discount__comment">
+                                    <span>Commentaire de remise</span>
+                                    <input name="discount_note" maxlength="255" value="{{ line.discount_note ?? '' }}" placeholder="Ex. geste commercial">
+                                </label>
+                                <span class="invoice-discount__amount">
+                                    Montant déduit : <strong class="line-discount-amount">{{ line.line_discount_excl_tax|default(0)|number_format(2, ',', ' ') }} €</strong>
+                                </span>
+                                <button type="button" class="invoice-discount-remove">Retirer la remise</button>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <button id="add-invoice-line" type="button" class="m-btn m-btn--outline">
+                    ＋ Ajouter une ligne
+                </button>
+
+                <hr>
+
+                <h3>▣ Notes</h3>
+
+                <div class="invoice-grid invoice-notes">
+                    <div class="form-field">
+                        <textarea id="invoice-public-note" name="public_note" placeholder="">{{ invoice.public_note ?? '' }}</textarea>
+                        <label for="invoice-public-note">Note visible sur la facture</label>
+                    </div>
+
+                    <div class="form-field">
+                        <textarea id="invoice-internal-note" name="internal_note" placeholder="">{{ invoice.internal_note ?? '' }}</textarea>
+                        <label for="invoice-internal-note">Note interne</label>
+                    </div>
+                </div>
+            </section>
+
+            <aside class="invoice-summary">
+                <h3>Récapitulatif</h3>
+                <p id="invoice-summary-subtotal" hidden>Sous-total HT <strong id="invoice-total-subtotal">0,00 €</strong></p>
+                <p id="invoice-summary-discount" hidden>Remises <strong id="invoice-total-discount">-0,00 €</strong></p>
+                <p>Total HT <strong id="invoice-total-ht">0,00 €</strong></p>
+                <p>TVA <strong id="invoice-total-tax">0,00 €</strong></p>
+                <hr>
+                <p class="invoice-summary__total">Total TTC <strong id="invoice-total-ttc">0,00 €</strong></p>
+                <div class="invoice-summary__hint">ⓘ Les montants sont recalculés automatiquement.</div>
+            </aside>
+        </div>
+    </form>
+</section>

@@ -4,10 +4,10 @@
          <div class="brand">
 
         <!-- BRAND LOGO -->
-        <img src="/assets/images/LogoB.svg" alt="Logo O'Repas" class="brand-logo">
+        <img src="/assets/images/logo.png" alt="Logo O'Repas" class="brand-logo">
 
         <span class="brand-name">
-            Brand Name
+            DevSys
         </span>
 
     </div>
@@ -15,8 +15,9 @@
     </div>
     <!-- NAVIGATION -->
     <nav class="sidebar-nav">
+        <div class="nav-section">Navigation</div>
         {% for group in menuItems %}
-                <div class="nav-group">
+                <div class="nav-group{% if group.open ?? false %} open{% endif %}">
                     <div class="nav-group-header d-flex align-items-center justify-content-between">
                         <div class="d-flex align-items-center">
                             <i class="bi {{group.icon}}"></i>
@@ -26,9 +27,10 @@
                     </div>
                     <div class="nav-group-content">
                         {% for item in group.items %}
-                        <div class="nav-item" data-action="{{item.action}}">
+                        <button type="button" class="nav-item" data-action="{{item.action}}">
+                            {% if item.icon ?? false %}<i class="bi {{item.icon}}"></i>{% endif %}
                             <span>{{item.label}}</span>
-                        </div>  
+                        </button>
                         {% endfor %}  
                     </div>
                 </div>

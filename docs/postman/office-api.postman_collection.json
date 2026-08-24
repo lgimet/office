@@ -1,0 +1,108 @@
+{
+  "info": {
+    "_postman_id": "a6bd5d79-bd76-480f-a1bd-6e0e767f95f0",
+    "name": "Office SaaS API",
+    "description": "Collection des endpoints API internes d’Office SaaS.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "https://office.devsys.fr",
+      "type": "string"
+    },
+    {
+      "key": "api_internal_key",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Types de clients",
+      "item": [
+        {
+          "name": "Lister les types de clients actifs",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{api_internal_key}}",
+                "type": "text"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/client-types",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "client-types"
+              ]
+            },
+            "description": "Retourne les types de clients actifs. Configurez api_internal_key avec la valeur de API_INTERNAL_KEY définie dans le fichier .env."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Clients",
+      "item": [
+        {
+          "name": "Créer un client",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{api_internal_key}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"client_type_slug\": \"spotcard\",\n  \"company_name\": \"Restaurant du Centre\",\n  \"display_name\": \"Restaurant du Centre\",\n  \"contact_first_name\": \"Paul\",\n  \"contact_last_name\": \"Martin\",\n  \"email\": \"contact@restaurant.fr\",\n  \"phone\": \"04 00 00 00 00\",\n  \"address_line1\": \"10 rue des Marchands\",\n  \"address_line2\": null,\n  \"postal_code\": \"34000\",\n  \"city\": \"Montpellier\",\n  \"country\": \"France\",\n  \"siret\": \"12345678900012\",\n  \"vat_number\": \"FR12123456789\",\n  \"notes\": null\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/clients",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "clients"
+              ]
+            },
+            "description": "Crée un client actif. Le client_type_slug doit correspondre à un type de client actif."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

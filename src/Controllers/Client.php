@@ -22,7 +22,7 @@ class Client extends BaseController
         $data = $this->service->getFormData();
         $html = $this->render('form.twig', $data);
 
-        return (new Response)
+        return (new Response())
                 ->setTitle('Client')
                 ->setHtml($html);
     }
@@ -45,7 +45,7 @@ class Client extends BaseController
 
         $this->service->updateClient($data);
 
-        return (new Response)
+        return (new Response())
             ->setToast("Client mis a jour");
     }
 }

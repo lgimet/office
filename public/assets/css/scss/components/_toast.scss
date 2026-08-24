@@ -8,7 +8,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  color: var(--color-text-inverse);
+  color: var(--on-primary);
   font-weight: 500;
   box-shadow: 0 2px 8px rgba(0,0,0,0.2);
   opacity: 0;
@@ -26,10 +26,10 @@
   font-size: 18px;
 }
 
-.toast-ok { background: var(--color-success); }
-.toast-error { background: var(--color-error); }
+.toast-ok { background: var(--secondary); color: var(--on-secondary); }
+.toast-error { background: var(--error); color: var(--on-error); }
 .toast-warning { 
-  background: var(--color-warning); 
-  color: var(--color-text); 
+  background: color-mix(in srgb, var(--tertiary) 28%, var(--surface-high));
+  color: var(--on-surface);
 }
-.toast-info { background: var(--color-primary); }
+.toast-info { background: var(--primary); color: var(--on-primary); }

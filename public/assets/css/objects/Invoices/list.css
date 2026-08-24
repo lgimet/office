@@ -1,0 +1,41 @@
+.invoice-list-page {
+    display: grid;
+    gap: 16px;
+    height: 100%;
+    align-content: start;
+}
+
+.invoice-search-card {
+    display: grid;
+    grid-template-columns: minmax(280px, 420px) 220px;
+    gap: 14px;
+    width: fit-content;
+    max-width: 100%;
+    align-self: start;
+    padding: 18px;
+    border: 1px solid var(--outline-variant);
+    border-radius: var(--radius-md);
+    background: var(--surface-base);
+    box-shadow: var(--shadow-1);
+}
+
+.invoice-search-card .form-field {
+    position: relative;
+}
+.invoice-search-card input,
+.invoice-search-card select { width: 100%; min-height: 48px; padding: 20px 12px 8px; border: 1px solid var(--outline); border-radius: var(--radius-md); background: var(--surface-base); color: var(--on-surface); font: inherit; }
+.invoice-search-card label {
+    position: absolute;
+    top: 4px;
+    left: 12px;
+    color: var(--on-surface-variant);
+    font-size: var(--text-sm);
+    pointer-events: none;
+}
+
+@media (max-width: 700px) {
+    .invoice-search-card {
+        grid-template-columns: 1fr;
+        width: 100%;
+    }
+}

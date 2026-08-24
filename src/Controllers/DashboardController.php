@@ -13,25 +13,28 @@ class DashboardController extends BaseController
 {
     public $user;
     private AuthService $authService;
-    
-    public function __construct(?AuthService $authService = null){
+
+    public function __construct(?AuthService $authService = null)
+    {
         parent::__construct();
         $this->authService = $authService ?? $this->service(AuthService::class);
     }
 
-    public function index() {
+    public function index()
+    {
         $this->user = $this->authService->verify(false);
         $ds = $this->service(DashboardService::class);
         $data = $ds->getFormData();
 
-        echo $this->render('dashboard.twig',$data);
-        
+        echo $this->render('dashboard.twig', $data);
+
         //require __DIR__.'/../../views/dashboard/index.php';
     }
 
     #[Route(method: 'GET')]
     #[AuthRequired]
-    public function demoOptions($input = []) {
+    public function demoOptions($input = [])
+    {
         $type = $_GET['type'] ?? 'countries';
 
         $options = match ($type) {

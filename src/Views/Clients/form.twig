@@ -1,0 +1,125 @@
+<form id="client-form" class="crm-form" novalidate>
+    <input type="hidden" name="id" value="{{ client.id ?? '' }}">
+    <input type="hidden" name="etag" value="{{ etag ?? '' }}">
+
+    <fieldset class="form-group">
+        <legend>Identification</legend>
+
+        <div class="form-field">
+            <div id="client-category-select" class="select" data-url="/Clients/categories" data-mode="list" data-placeholder="Sélectionner une catégorie" data-default-slug="autre">
+                <input type="hidden" name="client_category_id" {% if not client.id %}required{% endif %} value="{{ client.client_category_id ?? '' }}">
+            </div>
+            <label for="client-category-select">Catégorie client *</label>
+        </div>
+
+        <div class="form-field">
+            <div id="client-legal-type-select" class="select" data-url="/Clients/legalTypes" data-mode="list" data-placeholder="Sélectionner un type juridique">
+                <input type="hidden" name="legal_type" required value="{{ client.legal_type ?? 'company' }}">
+            </div>
+            <label for="client-legal-type-select">Type juridique *</label>
+        </div>
+
+        <div class="form-field">
+            <input id="client-company-name" name="company_name" placeholder="" value="{{ client.company_name ?? '' }}">
+            <label for="client-company-name">Raison sociale</label>
+        </div>
+
+        <div class="form-field">
+            <input id="client-legal-name" name="legal_name" placeholder="" value="{{ client.legal_name ?? '' }}">
+            <label for="client-legal-name">Nom légal</label>
+        </div>
+
+        <div class="form-field">
+            <div id="client-status-select" class="select" data-url="/Clients/statuses" data-mode="list" data-placeholder="Sélectionner un statut">
+                <input type="hidden" name="status" required value="{{ client.status ?? 'active' }}">
+            </div>
+            <label for="client-status-select">Statut</label>
+        </div>
+    </fieldset>
+
+    <fieldset class="form-group">
+        <legend>Contact principal</legend>
+
+        <div class="form-field">
+            <input id="client-contact-first-name" name="contact_first_name" placeholder="" value="{{ client.contact_first_name ?? '' }}">
+            <label for="client-contact-first-name">Prénom</label>
+        </div>
+
+        <div class="form-field">
+            <input id="client-contact-last-name" name="contact_last_name" placeholder="" value="{{ client.contact_last_name ?? '' }}">
+            <label for="client-contact-last-name">Nom</label>
+        </div>
+
+        <div class="form-field">
+            <input id="client-email" type="email" name="email" placeholder="" value="{{ client.email ?? '' }}">
+            <label for="client-email">E-mail</label>
+        </div>
+
+        <div class="form-field">
+            <input id="client-phone" name="phone" placeholder="" value="{{ client.phone ?? '' }}">
+            <label for="client-phone">Téléphone</label>
+        </div>
+    </fieldset>
+
+    <fieldset class="form-group">
+        <legend>Adresse</legend>
+
+        <div class="form-field">
+            <input id="client-address-line1" name="address_line1" placeholder="" value="{{ client.address_line1 ?? '' }}">
+            <label for="client-address-line1">Adresse</label>
+        </div>
+
+        <div class="form-field">
+            <input id="client-address-line2" name="address_line2" placeholder="" value="{{ client.address_line2 ?? '' }}">
+            <label for="client-address-line2">Complément d’adresse</label>
+        </div>
+
+        <div class="form-field">
+            <input id="client-postal-code" name="postal_code" placeholder="" value="{{ client.postal_code ?? '' }}">
+            <label for="client-postal-code">Code postal</label>
+        </div>
+
+        <div class="form-field">
+            <input id="client-city" name="city" placeholder="" value="{{ client.city ?? '' }}">
+            <label for="client-city">Ville</label>
+        </div>
+
+        <div class="form-field">
+            <input id="client-country-code" name="country_code" maxlength="2" placeholder="" value="{{ client.country_code ?? 'FR' }}">
+            <label for="client-country-code">Code pays ISO</label>
+        </div>
+    </fieldset>
+
+    <fieldset class="form-group">
+        <legend>Informations administratives</legend>
+
+        <div class="form-field">
+            <input id="client-siret" name="siret" placeholder="" value="{{ client.siret ?? '' }}">
+            <label for="client-siret">SIRET</label>
+        </div>
+
+        <div class="form-field">
+            <input id="client-siren" name="siren" placeholder="" value="{{ client.siren ?? '' }}">
+            <label for="client-siren">SIREN</label>
+        </div>
+
+        <div class="form-field">
+            <input id="client-vat-number" name="vat_number" placeholder="" value="{{ client.vat_number ?? '' }}">
+            <label for="client-vat-number">Numéro de TVA intracommunautaire</label>
+        </div>
+
+        <div class="form-field">
+            <input id="client-website" type="url" name="website" placeholder="" value="{{ client.website ?? '' }}">
+            <label for="client-website">Site internet</label>
+        </div>
+    </fieldset>
+
+    <fieldset class="form-group">
+        <legend>Notes</legend>
+
+        <div class="form-field">
+            <textarea id="client-notes" name="notes" placeholder="">{{ client.notes ?? '' }}</textarea>
+            <label for="client-notes">Notes internes</label>
+        </div>
+    </fieldset>
+</form>

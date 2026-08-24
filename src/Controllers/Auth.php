@@ -2,32 +2,34 @@
 
 namespace App\Controllers;
 
-use App\Core\BaseController;
 use App\Core\Attributes\Route;
+use App\Core\BaseController;
 use App\Helpers\Response;
 use App\Services\AuthService;
+use App\Services\Oidc\OidcClient;
 
-class Auth extends BaseController {
-    
+class Auth extends BaseController
+{
     public AuthService $service;
+    private OidcClient $oidc;
 
-    public function __construct(?AuthService $service = null)
-    {
+    public function __construct(
+        ?AuthService $service = null,
+        ?OidcClient $oidc = null
+    ) {
         parent::__construct();
         $this->service = $service ?? $this->service(AuthService::class);
+        $this->oidc = $oidc ?? $this->service(OidcClient::class);
+    }
+
+    #[Route(method: 'POST')]
+    public function login(array $input): Response
+    {
+        return (new Response())->setError(410, 'La connexion par mot de passe est désactivée.');
     }
     #[Route(method: 'POST')]
-    public function login($input) {
-        $arg = $input['vars'];
-        
-        $response = new Response();
-        if( !$this->service->login($arg['email'],$arg['password']) ) {
-            return $response->setError(401, 'Adresse e-mail ou mot de passe incorrect.');
-        }
-        return $response->setRedirect('/dashboard');
-    }
-    #[Route(method: 'POST')]
-    public function logout($input = []) {
+    public function logout($input = [])
+    {
         $this->service->logout();
     }
 }

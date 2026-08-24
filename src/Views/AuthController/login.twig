@@ -4,37 +4,7 @@
 <div class="login-container">
     <h2>Connexion</h2>
 
-    <form id="login-form">
-        <div>
-            <label>Email</label>
-            <input type="email" name="email" required />
-        </div>
-
-        <div>
-            <label>Mot de passe</label>
-            <input type="password" name="password" required />
-        </div>
-        <button type="submit">Se connecter</button>
-    </form>
-
-    <div id="login-error" style="color:red;"></div>
+    <a href="/auth/oidc/login{% if return_to %}?return_to={{ return_to|url_encode }}{% endif %}">Se connecter avec DevSys</a>
 </div>
 
-<script>
-
-import("/assets/js/Object/Auth.js").then(module => {
-    const Auth = module.default;
-    document.getElementById('login-form').addEventListener('submit', function(e) {
-        e.preventDefault();
-        const form = e.target;
-
-        const email = form.email.value;
-        const password = form.password.value;
-        const a = new Auth();
-        a.login(email, password);
-    });
-
-});
-
-</script>
 {% endblock %}

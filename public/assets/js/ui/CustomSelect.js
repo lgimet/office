@@ -4,7 +4,8 @@ export class CustomSelect extends EventTarget {
     element,
     url,
     mode = "search", // "search" | "list"
-    placeholder = ""
+    placeholder = "",
+    emptyLabel = ""
   }) {
     super();
 
@@ -12,6 +13,7 @@ export class CustomSelect extends EventTarget {
     this.url = url;
     this.mode = mode;
     this.placeholder = placeholder;
+    this.emptyLabel = emptyLabel;
     this.data = [];
     this.activeIndex = -1;
 
@@ -24,7 +26,13 @@ export class CustomSelect extends EventTarget {
     if (this.mode === "list") {
       this.loadList(initialValue);
     } else if (initialValue) {
-      this.loadInitialValue(initialValue);
+      const initialLabel = this.container.dataset.selectedLabel;
+
+      if (initialLabel) {
+        this.select({ id: initialValue, label: initialLabel }, false);
+      } else {
+        this.loadInitialValue(initialValue);
+      }
     }
   }
   async loadList(initialValue = null) {
@@ -32,9 +40,15 @@ export class CustomSelect extends EventTarget {
       const response = await fetch(this.url);
       const r = await response.json();
       this.data = r.data;
+      if (this.emptyLabel) {
+        this.data.unshift({ id: "", label: this.emptyLabel });
+      }
       this.renderOptions(this.data);
       if (initialValue) {
         const found = this.data.find(item => item.id == initialValue);
+        if (found) this.select(found, false);
+      } else if (this.container.dataset.defaultSlug) {
+        const found = this.data.find(item => item.slug === this.container.dataset.defaultSlug);
         if (found) this.select(found, false);
       }
 
@@ -273,6 +287,8 @@ export class CustomSelect extends EventTarget {
 
     this.input.value = item.label;
     this.hidden.value = item.id;
+    this.hidden.dispatchEvent(new Event("change", { bubbles: true }));
+    this.container.closest('.form-field')?.classList.toggle('has-value', item.id !== '');
 
     this.close();
     if (this.validator) {

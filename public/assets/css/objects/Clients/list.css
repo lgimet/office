@@ -1,0 +1,9 @@
+.crm-page { display: grid; gap: 16px; height: 100%; }
+.crm-toolbar { display: flex; gap: 12px; align-items: center; }
+.crm-toolbar input { width: 100%; padding: 10px; border: 1px solid var(--outline); border-radius: var(--radius-md); background: var(--surface-base); color: var(--on-surface); font: inherit; }
+.crm-toolbar .select { min-width: 230px; }
+.crm-toolbar input { max-width: 360px; }
+.status-badge { display: inline-flex; padding: 4px 8px; border-radius: 999px; font-size: var(--text-sm); font-weight: 600; }
+.status-badge.is-active { background: var(--primary-container); color: var(--on-primary-container); }
+.status-badge.is-inactive { background: var(--surface-variant); color: var(--on-surface-variant); }
+@media (max-width: 700px) { .crm-toolbar { flex-direction: column; align-items: stretch; } .crm-toolbar input { max-width: none; } }

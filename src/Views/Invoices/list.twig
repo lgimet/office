@@ -1,0 +1,21 @@
+<section class="invoice-list-page">
+    <div class="invoice-search-card">
+        <div class="form-field">
+            <input id="invoices-search" type="search" placeholder="">
+            <label for="invoices-search">Rechercher une facture</label>
+        </div>
+        <div class="form-field">
+            <select id="invoices-status">
+                <option value="">Tous les statuts</option>
+                <option value="draft">Brouillon</option>
+                <option value="issued">Émise</option>
+                <option value="cancelled">Annulée</option>
+            </select>
+            <label for="invoices-status">Statut</label>
+        </div>
+    </div>
+    <div id="invoices-table" class="flex-table-container table-large" data-source="/Invoices/data" data-limit="25" data-columns="reference,client_name,issue_date,due_date,subtotal_excl_tax,tax_total,total_incl_tax,status,actions" data-widths="1fr 2fr 1fr 1fr 1fr 1fr 1fr 1fr 80px">
+        <div class="flex-table-header"><div class="cell left">Référence</div><div class="cell left">Client</div><div class="cell">Date</div><div class="cell">Échéance</div><div class="cell">Total HT</div><div class="cell">TVA</div><div class="cell">Total TTC</div><div class="cell">Statut</div><div class="cell">Actions</div></div>
+        <div class="flex-table-body"><div class="flex-row model" style="display:none"><div class="cell left"></div><div class="cell left"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell actions"></div></div></div>
+    </div>
+</section>

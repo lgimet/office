@@ -28,7 +28,8 @@ class Database
                     [
                         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-                    ]);
+                    ]
+                );
             } catch (PDOException $e) {
                 throw new DatabaseException('Connexion à la base de données impossible.', 0, $e);
             }

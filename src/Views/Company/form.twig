@@ -1,0 +1,146 @@
+<form id="company-form" class="company-form" novalidate>
+    <fieldset class="form-group">
+        <legend>Identité de la société</legend>
+
+        <div class="form-field">
+            <input id="company-legal-name" name="legal_name" required placeholder="" value="{{ company.legal_name ?? '' }}">
+            <label for="company-legal-name">Raison sociale</label>
+        </div>
+
+        <div class="form-field">
+            <input id="company-trading-name" name="trading_name" placeholder="" value="{{ company.trading_name ?? '' }}">
+            <label for="company-trading-name">Nom commercial</label>
+        </div>
+
+        <div class="form-field">
+            <input id="company-legal-form" name="legal_form" placeholder="" value="{{ company.legal_form ?? '' }}">
+            <label for="company-legal-form">Forme juridique</label>
+        </div>
+
+        <div class="form-field">
+            <input id="company-share-capital" name="share_capital" placeholder="" value="{{ company.share_capital ?? '' }}">
+            <label for="company-share-capital">Capital social</label>
+        </div>
+    </fieldset>
+
+    <fieldset class="form-group">
+        <legend>Coordonnées</legend>
+
+        <div class="form-field company-form__wide">
+            <input id="company-address-line1" name="address_line1" placeholder="" value="{{ company.address_line1 ?? '' }}">
+            <label for="company-address-line1">Adresse</label>
+        </div>
+
+        <div class="form-field company-form__wide">
+            <input id="company-address-line2" name="address_line2" placeholder="" value="{{ company.address_line2 ?? '' }}">
+            <label for="company-address-line2">Complément d’adresse</label>
+        </div>
+
+        <div class="form-field">
+            <input id="company-postal-code" name="postal_code" placeholder="" value="{{ company.postal_code ?? '' }}">
+            <label for="company-postal-code">Code postal</label>
+        </div>
+
+        <div class="form-field">
+            <input id="company-city" name="city" placeholder="" value="{{ company.city ?? '' }}">
+            <label for="company-city">Ville</label>
+        </div>
+
+        <div class="form-field">
+            <input id="company-country" name="country" placeholder="" value="{{ company.country ?? 'France' }}">
+            <label for="company-country">Pays</label>
+        </div>
+
+        <div class="form-field">
+            <input id="company-email" name="email" type="email" placeholder="" value="{{ company.email ?? '' }}">
+            <label for="company-email">E-mail</label>
+        </div>
+
+        <div class="form-field">
+            <input id="company-phone" name="phone" placeholder="" value="{{ company.phone ?? '' }}">
+            <label for="company-phone">Téléphone</label>
+        </div>
+
+        <div class="form-field">
+            <input id="company-website" name="website" placeholder="" value="{{ company.website ?? '' }}">
+            <label for="company-website">Site internet</label>
+        </div>
+    </fieldset>
+
+    <fieldset class="form-group">
+        <legend>Informations légales et fiscales</legend>
+
+        <div class="form-field">
+            <input id="company-siret" name="siret" placeholder="" value="{{ company.siret ?? '' }}">
+            <label for="company-siret">SIRET</label>
+        </div>
+
+        <div class="form-field">
+            <input id="company-siren" name="siren" placeholder="" value="{{ company.siren ?? '' }}">
+            <label for="company-siren">SIREN</label>
+        </div>
+
+        <div class="form-field">
+            <input id="company-vat-number" name="vat_number" placeholder="" value="{{ company.vat_number ?? '' }}">
+            <label for="company-vat-number">Numéro de TVA intracommunautaire</label>
+        </div>
+
+        <div class="form-field">
+            <input id="company-ape-code" name="ape_code" placeholder="" value="{{ company.ape_code ?? '' }}">
+            <label for="company-ape-code">Code APE / NAF</label>
+        </div>
+
+        <div class="form-field">
+            <input id="company-rcs-city" name="rcs_city" placeholder="" value="{{ company.rcs_city ?? '' }}">
+            <label for="company-rcs-city">Ville d’immatriculation RCS</label>
+        </div>
+    </fieldset>
+
+    <fieldset class="form-group">
+        <legend>Coordonnées bancaires</legend>
+
+        <div class="form-field">
+            <input id="company-bank-name" name="bank_name" placeholder="" value="{{ company.bank_name ?? '' }}">
+            <label for="company-bank-name">Banque</label>
+        </div>
+
+        <div class="form-field">
+            <input id="company-iban" name="iban" placeholder="" value="{{ company.iban ?? '' }}">
+            <label for="company-iban">IBAN</label>
+        </div>
+
+        <div class="form-field">
+            <input id="company-bic" name="bic" placeholder="" value="{{ company.bic ?? '' }}">
+            <label for="company-bic">BIC</label>
+        </div>
+    </fieldset>
+
+    <fieldset class="form-group">
+        <legend>Valeurs par défaut de facturation</legend>
+
+        <div class="form-field">
+            <input id="company-currency" name="default_currency" maxlength="3" placeholder="" value="{{ company.default_currency ?? 'EUR' }}">
+            <label for="company-currency">Devise</label>
+        </div>
+
+        <div class="form-field">
+            <input id="company-tax-rate" name="default_tax_rate" type="number" min="0" max="100" step="0.01" placeholder="" value="{{ company.default_tax_rate ?? '20.00' }}">
+            <label for="company-tax-rate">Taux de TVA par défaut (%)</label>
+        </div>
+
+        <div class="form-field">
+            <input id="company-payment-terms" name="default_payment_terms" placeholder="" value="{{ company.default_payment_terms ?? '' }}">
+            <label for="company-payment-terms">Conditions de paiement</label>
+        </div>
+
+        <div class="form-field">
+            <input id="company-payment-method" name="default_payment_method" placeholder="" value="{{ company.default_payment_method ?? '' }}">
+            <label for="company-payment-method">Mode de paiement attendu</label>
+        </div>
+
+        <div class="form-field company-form__wide">
+            <textarea id="company-invoice-footer" name="invoice_footer" placeholder="">{{ company.invoice_footer ?? '' }}</textarea>
+            <label for="company-invoice-footer">Mention de bas de facture</label>
+        </div>
+    </fieldset>
+</form>

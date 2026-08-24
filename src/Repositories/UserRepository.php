@@ -10,7 +10,7 @@ class UserRepository extends BaseRepository
     public function __construct()
     {
         parent::__construct();
-    }    
+    }
 
     public function findByEmail(string $email): array|false
     {
@@ -35,7 +35,7 @@ class UserRepository extends BaseRepository
     public function clearRefreshTokenHash(int $userId): void
     {
         $stmt = $this->pdo->prepare('DELETE FROM user_tokens WHERE user_id = ?');
-        $stmt->execute([$userId]    );
+        $stmt->execute([$userId]);
     }
 
     public function hasValidRefreshTokenHash(int $userId, string $tokenHash): bool
