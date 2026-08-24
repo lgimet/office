@@ -1,24 +1,13 @@
 import { Core } from "./Core.js";
 import { initControls } from "./ControlInitializer.js";
-import Client from "../Object/Client.js";
 
 
 const version = Date.now();
 
 document.addEventListener("DOMContentLoaded", () => {
     initControls(document);
-    console.log("Client");
-    
-    Client.instance().form();
 });
 
-/*
-import("../objects/Menu.js").then(module => {
-    const Menu = module.default;
-    const m =new Menu();
-    m.modele.form();
-});
-*/
 document.querySelectorAll(".nav-item").forEach(element => {
     element.addEventListener('click',(e)=> {
         const route = e.currentTarget.dataset.action;
@@ -28,7 +17,7 @@ document.querySelectorAll(".nav-item").forEach(element => {
         const subobject = parts.length === 3 ? parts[1] : null;
 
         
-        import(`../objects/${object}.js`).then(module => {
+        import(`../Object/${object}.js`).then(module => {
             const Instance = new module.default();
             if( subobject ) {
                 return Instance[Core.lcfirst(subobject)]?.[action]?.();

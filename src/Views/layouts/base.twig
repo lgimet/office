@@ -1,10 +1,15 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>SaaS</title>
-    <script type="module" src="/assets/js/Core/main.js"></script>
+    <title>{{page}}</title>
+    {% if page == 'login' %}
+        <link rel="stylesheet" href="/assets/css/login.css">
+    {% endif %}
+    {% if page != 'login' %}
+        <script type="module" src="/assets/js/Core/main.js"></script>
+    {% endif %}
 </head>
-<body>
+<body class="{% if page == 'login' %}login-page light{% endif %}">
 
 <script>
     window.CSRF_TOKEN = "{{ csrf|e('js') }}";

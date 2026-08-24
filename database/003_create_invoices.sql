@@ -1,0 +1,15 @@
+CREATE TABLE IF NOT EXISTS invoices (
+ id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, client_id INT UNSIGNED NOT NULL, invoice_number VARCHAR(32) DEFAULT NULL,
+ status VARCHAR(16) NOT NULL DEFAULT 'draft', issue_date DATE DEFAULT NULL, due_date DATE DEFAULT NULL, currency CHAR(3) NOT NULL DEFAULT 'EUR',
+ client_name VARCHAR(190) NOT NULL, client_contact_name VARCHAR(190) DEFAULT NULL, client_email VARCHAR(190) DEFAULT NULL, client_phone VARCHAR(50) DEFAULT NULL,
+ client_address_line1 VARCHAR(190) DEFAULT NULL, client_address_line2 VARCHAR(190) DEFAULT NULL, client_postal_code VARCHAR(20) DEFAULT NULL, client_city VARCHAR(120) DEFAULT NULL, client_country VARCHAR(120) DEFAULT NULL, client_siret VARCHAR(32) DEFAULT NULL, client_vat_number VARCHAR(64) DEFAULT NULL,
+ subtotal_excl_tax DECIMAL(14,2) NOT NULL DEFAULT 0, discount_total_excl_tax DECIMAL(14,2) NOT NULL DEFAULT 0, tax_total DECIMAL(14,2) NOT NULL DEFAULT 0, total_incl_tax DECIMAL(14,2) NOT NULL DEFAULT 0,
+ payment_terms VARCHAR(255) DEFAULT NULL, payment_method VARCHAR(100) DEFAULT NULL, public_note TEXT DEFAULT NULL, internal_note TEXT DEFAULT NULL, issued_at DATETIME DEFAULT NULL, cancelled_at DATETIME DEFAULT NULL, created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at DATETIME DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+ UNIQUE KEY invoices_number_unique (invoice_number), KEY invoices_client_index (client_id), KEY invoices_status_index (status), KEY invoices_issue_date_index (issue_date),
+ CONSTRAINT invoices_client_foreign FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE IF NOT EXISTS invoice_lines (
+ id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, invoice_id INT UNSIGNED NOT NULL, position INT UNSIGNED NOT NULL, label VARCHAR(255) NOT NULL, description TEXT DEFAULT NULL, quantity DECIMAL(14,3) NOT NULL, unit VARCHAR(32) DEFAULT NULL, unit_price_excl_tax DECIMAL(14,2) NOT NULL, discount_type VARCHAR(16) DEFAULT NULL, discount_value DECIMAL(14,2) NOT NULL DEFAULT 0, tax_rate DECIMAL(5,2) NOT NULL DEFAULT 20, line_subtotal_excl_tax DECIMAL(14,2) NOT NULL, line_discount_excl_tax DECIMAL(14,2) NOT NULL, line_tax_total DECIMAL(14,2) NOT NULL, line_total_incl_tax DECIMAL(14,2) NOT NULL, created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at DATETIME DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+ KEY invoice_lines_invoice_index (invoice_id), CONSTRAINT invoice_lines_invoice_foreign FOREIGN KEY (invoice_id) REFERENCES invoices(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE IF NOT EXISTS invoice_number_sequences (id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, year SMALLINT UNSIGNED NOT NULL, last_number INT UNSIGNED NOT NULL DEFAULT 0, created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at DATETIME DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP, UNIQUE KEY invoice_sequences_year_unique (year)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

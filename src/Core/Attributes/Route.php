@@ -1,12 +1,18 @@
 <?php
-    namespace App\Core\Attributes;
 
-    #[\Attribute(\Attribute::TARGET_METHOD)]
-    class Route
+namespace App\Core\Attributes;
+
+#[\Attribute(\Attribute::TARGET_METHOD)]
+class Route
+{
+    public string $method;
+    public ?string $path;
+    public bool $api;
+
+    public function __construct(string $method = 'POST', ?string $path = null, bool $api = false)
     {
-        public string $method;
-
-        public function __construct(string $method = 'POST') {
-            $this->method = $method;
-        }
+        $this->method = $method;
+        $this->path = $path;
+        $this->api = $api;
     }
+}

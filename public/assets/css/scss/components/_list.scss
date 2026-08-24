@@ -11,14 +11,14 @@
   height: var(--table-height);
   overflow: hidden;
   font-size: var(--font-size);
+  //border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-md);
+  background: var(--surface-base);
+  color: var(--on-surface);
 }
 
 /* Layout général */
 $columns-layout: 50px 2fr 2fr 1fr 1fr 80px;
-
-body {
-  background-color: var(--color-surface);
-}
 
 /* =========================
    HEADER + FOOTER + ROW BASE
@@ -29,7 +29,7 @@ body {
 .flex-row {
   display: grid;
   grid-template-columns: $columns-layout;
-  align-items: center;
+  align-items: stretch;
 }
 
 /* =========================
@@ -37,8 +37,8 @@ body {
 ========================= */
 
 .flex-table-header {
-  background: var(--color-primary);
-  color: var(--color-text-inverse);
+  background: var(--primary);
+  color: var(--on-primary);
   font-weight: bold;
   position: sticky;
   top: 0;
@@ -62,7 +62,8 @@ body {
 ========================= */
 
 .flex-table-footer {
-  background: var(--color-surface);
+  background: var(--secondary-container);
+  color: var(--on-secondary-container);
   font-weight: bold;
   position: sticky;
   bottom: 0;
@@ -86,15 +87,16 @@ body {
 ========================= */
 
 .flex-row {
-  border-bottom: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--outline-variant);
+  background: var(--surface-base);
   min-height: var(--row-height);
 
   &:nth-child(even) {
-    background: var(--color-surface);
+    background: color-mix(in srgb, var(--secondary-container) 22%, var(--surface-base));
   }
 
   &:hover {
-    background: var(--color-primary-50);
+    background: color-mix(in srgb, var(--tertiary) 14%, var(--surface-base));
   }
 
   &.select-row {
@@ -102,7 +104,8 @@ body {
     cursor: pointer;
 
     &.selected {
-       background-color: var(--color-primary-100);
+       background: color-mix(in srgb, var(--primary) 20%, var(--secondary-container));
+       color: var(--on-surface);
     }
   }
 }
@@ -112,14 +115,15 @@ body {
 ========================= */
 
 .cell {
-  border-right: 1px solid var(--color-border);
+  border-right: 1px solid var(--outline-variant);
   display: flex;
+  min-height: 100%;
   align-items: center;
   justify-content: center;
   padding: var(--cell-padding-y) var(--cell-padding-x);
 
   &:first-child {
-    border-left: 1px solid var(--color-border);
+    border-left: 1px solid var(--outline-variant);
   }
 
   &.left {
@@ -149,17 +153,17 @@ body {
 
 .action-icon {
   font-size: var(--icon-size);
-  color: var(--color-text-muted);
+  color: var(--on-surface-variant);
   margin: 0 5px;
   cursor: pointer;
   transition: color 0.2s;
 
   &.edit:hover {
-    color: var(--color-primary);
+    color: var(--primary);
   }
 
   &.delete:hover {
-    color: var(--color-error);
+    color: var(--tertiary);
   }
 }
 
@@ -168,11 +172,12 @@ body {
   background: none;
   cursor: pointer;
   font-size: 16px;
-  color: var(--color-text-muted);
+  color: var(--on-surface-variant);
   transition: 0.2s;
 
   &:hover {
-    color: var(--color-primary);
+    color: var(--tertiary);
+    background: color-mix(in srgb, var(--tertiary) 12%, transparent);
     transform: scale(1.15);
   }
 }
@@ -220,6 +225,13 @@ body {
   height: 1px;
 }
 
+.table-empty-state {
+  display: grid;
+  place-items: center;
+  min-height: 140px;
+  color: var(--on-surface-variant);
+}
+
 /* =========================
    SEARCH
 ========================= */
@@ -232,15 +244,15 @@ body {
   .dt-search-input {
     padding: 8px 12px;
     border-radius: 6px;
-    border: 1px solid var(--color-border);
+    border: 1px solid var(--outline);
     min-width: 220px;
     font-size: 14px;
     transition: all 0.2s ease;
 
     &:focus {
       outline: none;
-      border-color: var(--color-primary);
-      box-shadow: 0 0 0 2px rgba(13,110,253,0.2);
+      border-color: var(--primary);
+      box-shadow: var(--focus-ring);
     }
   }
 }

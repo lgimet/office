@@ -16,6 +16,7 @@
 @use "./components/bank";
 @use "./components/validator";
 @use "./components/windows";
+@use "./components/list";
 
 
 @use "./base/reset";
@@ -26,6 +27,8 @@
 @use "./layout/main-area";
 @use "./layout/topbar";
 @use "./layout/page-content";
+@use "./components/toast";
+@use "./components/confim";
 
 @use "./components/tabs";
 

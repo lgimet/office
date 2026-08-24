@@ -25,8 +25,7 @@ class AuthService
         AuthRepository $repo,
         UserRepository $userRepository,
         JWTService $jwt
-    )
-    {
+    ) {
         $this->repo = $repo;
         $this->userRepository = $userRepository;
         $this->jwt = $jwt;
@@ -55,7 +54,25 @@ class AuthService
 
     public function isAuthenticated(): bool
     {
-        return $this->resolveAuthenticatedUser() !== null;
+        $user = $this->resolveAuthenticatedUser();
+
+        if ($user === null) {
+            return false;
+        }
+
+        // Une session antérieure peut encore porter un cookie limité à Office.
+        // Lors du passage par /login, on republie le même jeton d'accès sur le
+        // domaine partagé sans créer de session parallèle.
+        $accessToken = $_COOKIE[self::ACCESS_COOKIE] ?? null;
+        if (is_string($accessToken) && $accessToken !== '') {
+            setcookie(
+                self::ACCESS_COOKIE,
+                $accessToken,
+                $this->getCookieOptions(time() + $this->accessExpiration, true)
+            );
+        }
+
+        return true;
     }
 
     public function verify(bool $isObject = true): ?object
@@ -78,6 +95,7 @@ class AuthService
         }
 
         $this->expireCookie(self::ACCESS_COOKIE);
+        $this->expireCookie(self::ACCESS_COOKIE, true);
         $this->expireCookie(self::REFRESH_COOKIE);
 
         $_SESSION = [];
@@ -188,10 +206,14 @@ class AuthService
             $this->refreshExpiration
         );
 
+        // Supprime l'ancien cookie limité à Office avant de définir le cookie
+        // partagé. Cela évite deux cookies auth_token de portées différentes.
+        $this->expireCookie(self::ACCESS_COOKIE);
+        $this->expireCookie(self::ACCESS_COOKIE, true);
         setcookie(
             self::ACCESS_COOKIE,
             $accessToken,
-            $this->getCookieOptions(time() + $this->accessExpiration)
+            $this->getCookieOptions(time() + $this->accessExpiration, true)
         );
         setcookie(
             self::REFRESH_COOKIE,
@@ -223,24 +245,36 @@ class AuthService
         }
 
         $this->expireCookie(self::ACCESS_COOKIE);
+        $this->expireCookie(self::ACCESS_COOKIE, true);
         $this->expireCookie(self::REFRESH_COOKIE);
         unset($_SESSION['user']);
         $this->user = null;
     }
 
-    private function getCookieOptions(int $expires): array
+    private function getCookieOptions(int $expires, bool $sharedAcrossDevsysSubdomains = false): array
     {
-        return [
+        $options = [
             'expires' => $expires,
             'path' => '/',
             'secure' => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
             'httponly' => true,
             'samesite' => 'Lax',
         ];
+
+        $domain = trim((string) ($_ENV['AUTH_COOKIE_DOMAIN'] ?? ''));
+        if ($sharedAcrossDevsysSubdomains && $domain !== '') {
+            $options['domain'] = $domain;
+        }
+
+        return $options;
     }
 
-    private function expireCookie(string $name): void
+    private function expireCookie(string $name, bool $sharedAcrossDevsysSubdomains = false): void
     {
-        setcookie($name, '', $this->getCookieOptions(time() - 3600));
+        setcookie(
+            $name,
+            '',
+            $this->getCookieOptions(time() - 3600, $sharedAcrossDevsysSubdomains)
+        );
     }
 }

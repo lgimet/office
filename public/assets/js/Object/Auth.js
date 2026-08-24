@@ -1,10 +1,11 @@
 
 import { Core } from "../Core/Core.js"
 export default class Auth extends Core {
-    login(email, password) {
+    login(email, password, returnTo = '') {
         this.callAction(this.login.name, {
             email: email,
-            password: password
+            password: password,
+            return_to: returnTo
         },
         {
         callback: (e) => {

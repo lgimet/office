@@ -1,0 +1,16 @@
+.status-badge { display: inline-flex; padding: 4px 8px; border-radius: 999px; font-size: var(--text-sm); font-weight: 600; }
+.status-badge.is-active { background: var(--primary-container); color: var(--on-primary-container); }
+.status-badge.is-inactive { background: var(--surface-variant); color: var(--on-surface-variant); }
+dialog { border: 0; border-radius: var(--radius-lg); box-shadow: var(--shadow-2); padding: 24px; background: var(--surface-base); color: var(--on-surface); }
+dialog::backdrop { background: rgba(0, 0, 0, .4); }
+#client-type-form { display: grid; gap: 12px; min-width: min(420px, 85vw); }
+#client-type-form .form-field { position: relative; display: grid; gap: 6px; }
+#client-type-form .form-field > label { position: absolute; z-index: 1; top: 14px; left: 12px; padding: 0 4px; color: var(--on-surface-variant); font-size: var(--text-md); pointer-events: none; transition: all var(--motion-fast); }
+#client-type-form input,
+#client-type-form textarea { width: 100%; min-height: 48px; padding: 20px 12px 8px; border: 1px solid var(--outline); border-radius: var(--radius-md); background: var(--surface-base); color: var(--on-surface); font: inherit; }
+#client-type-form .form-field:focus-within > label,
+#client-type-form .form-field.has-value > label { top: 4px; color: var(--primary); font-size: var(--text-sm); background: var(--surface-base); }
+#client-type-form .form-field--checkbox { display: flex; align-items: center; min-height: 36px; }
+#client-type-form .form-field--checkbox input[type="checkbox"] { width: 18px; min-width: 18px; min-height: 18px; height: 18px; margin: 0; padding: 0; accent-color: var(--primary); }
+#client-type-form .form-field--checkbox label { position: static; display: flex; align-items: center; gap: 8px; padding: 0; color: var(--on-surface); pointer-events: auto; }
+#client-type-form menu { display: flex; justify-content: flex-end; gap: 8px; margin: 8px 0 0; padding: 0; }

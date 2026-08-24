@@ -5,6 +5,7 @@
     <h2>Connexion</h2>
 
     <form id="login-form">
+        <input type="hidden" name="return_to" value="{{ return_to|default('')|e('html_attr') }}" />
         <div>
             <label>Email</label>
             <input type="email" name="email" required />
@@ -31,7 +32,7 @@ import("/assets/js/Object/Auth.js").then(module => {
         const email = form.email.value;
         const password = form.password.value;
         const a = new Auth();
-        a.login(email, password);
+        a.login(email, password, form.return_to.value);
     });
 
 });

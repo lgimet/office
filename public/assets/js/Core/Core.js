@@ -230,7 +230,11 @@ export class Core extends EventTarget {
 			const btn = document.createElement('button');
 			btn.type = action.type ?? 'button';
 			btn.className = action.className ?? 'm-btn m-btn--primary';
-			btn.textContent = action.label ?? '';
+			if (action.icon) {
+				btn.innerHTML = `<i class="bi ${action.icon}"></i><span>${action.label ?? ''}</span>`;
+			} else {
+				btn.textContent = action.label ?? '';
+			}
 			if (action.disabled) {
 				btn.disabled = true;
 			}

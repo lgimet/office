@@ -90,6 +90,10 @@
   }
 
   .nav-item {
+    border: 0;
+    background: transparent;
+    font-family: inherit;
+    text-align: left;
     user-select: none;
     display: flex;
     align-items: center;

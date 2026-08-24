@@ -1,21 +1,21 @@
 <?php
 
-    namespace App\Helpers;
+namespace App\Helpers;
 
-    class FileScanner
+class FileScanner
+{
+    public static function globRecursive(string $pattern): array
     {
-        public static function globRecursive(string $pattern): array
-        {
-            $files = glob($pattern) ?: [];
+        $files = glob($pattern) ?: [];
 
-            foreach (glob(dirname($pattern) . '/*', GLOB_ONLYDIR) as $dir) {
-                $files = array_merge(
-                    $files,
-                    self::globRecursive($dir . '/' . basename($pattern))
-                );
-            }
-            return $files;
+        foreach (glob(dirname($pattern) . '/*', GLOB_ONLYDIR) as $dir) {
+            $files = array_merge(
+                $files,
+                self::globRecursive($dir . '/' . basename($pattern))
+            );
         }
+        return $files;
+    }
     public static function getClassNameFromFile(string $filePath): ?string
     {
         $content = file_get_contents($filePath);
