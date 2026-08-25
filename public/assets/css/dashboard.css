@@ -1645,6 +1645,7 @@ body {
 }
 .user-dropdown .dropdown-menu .dropdown-item.logout {
   color: var(--error);
+  cursor: pointer;
 }
 
 .logout-link {
