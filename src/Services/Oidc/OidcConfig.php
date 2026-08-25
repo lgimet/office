@@ -11,9 +11,13 @@ final class OidcConfig
         $scopes = preg_split('/\s+/', $required('OFFICE_OIDC_SCOPES')) ?: [];
         $logoutUrl = $required('OFFICE_CENTRAL_LOGOUT_URL');
         $postLogout = $required('OFFICE_POST_LOGOUT_REDIRECT_URI');
-        self::validateExactHttpsUrl($logoutUrl, 'api.devsys.fr', '/auth/logout', 'OFFICE_CENTRAL_LOGOUT_URL');
+        $issuer = $required('OFFICE_OIDC_ISSUER');
+        self::validateIssuer($issuer);
+        self::validateLogoutUrl($logoutUrl, $issuer);
         self::validateExactHttpsUrl($postLogout, 'office.devsys.fr', '/logged-out', 'OFFICE_POST_LOGOUT_REDIRECT_URI');
-        return new self($required('OFFICE_OIDC_ISSUER'),$required('OFFICE_OIDC_CLIENT_ID'),$required('OFFICE_OIDC_CLIENT_SECRET'),$required('OFFICE_OIDC_REDIRECT_URI'),$required('OFFICE_OIDC_RESOURCE'),$scopes,$positive('OFFICE_OIDC_HTTP_TIMEOUT',10),$positive('OFFICE_OIDC_CONNECT_TIMEOUT',5),$logoutUrl,$postLogout);
+        return new self($issuer,$required('OFFICE_OIDC_CLIENT_ID'),$required('OFFICE_OIDC_CLIENT_SECRET'),$required('OFFICE_OIDC_REDIRECT_URI'),$required('OFFICE_OIDC_RESOURCE'),$scopes,$positive('OFFICE_OIDC_HTTP_TIMEOUT',10),$positive('OFFICE_OIDC_CONNECT_TIMEOUT',5),$logoutUrl,$postLogout);
     }
-    private static function validateExactHttpsUrl(string $url,string $host,string $path,string $name):void { $parts=parse_url($url); if(!is_array($parts)||($parts['scheme']??null)!=='https'||($parts['host']??null)!==$host||($parts['path']??null)!==$path||isset($parts['port'],$parts['query'],$parts['fragment'],$parts['user'],$parts['pass'])) throw new \RuntimeException("La configuration OIDC $name est invalide."); }
+    private static function validateIssuer(string $issuer):void { $parts=parse_url($issuer); if(!is_array($parts)||($parts['scheme']??null)!=='https'||!in_array($parts['host']??null,['api.devsys.fr','login.devsys.fr'],true)||($parts['path']??'')!==''||isset($parts['port'])||isset($parts['query'])||isset($parts['fragment'])||isset($parts['user'])||isset($parts['pass'])) throw new \RuntimeException('La configuration OIDC OFFICE_OIDC_ISSUER est invalide.'); }
+    private static function validateLogoutUrl(string $url,string $issuer):void { $issuerParts=parse_url($issuer); $logoutParts=parse_url($url); if(!is_array($issuerParts)||!is_array($logoutParts)||($logoutParts['scheme']??null)!=='https'||($logoutParts['scheme']??null)!==($issuerParts['scheme']??null)||($logoutParts['host']??null)!==($issuerParts['host']??null)||($logoutParts['path']??null)!=='/auth/logout'||isset($logoutParts['port'])||isset($logoutParts['query'])||isset($logoutParts['fragment'])||isset($logoutParts['user'])||isset($logoutParts['pass'])) throw new \RuntimeException('La configuration OIDC OFFICE_CENTRAL_LOGOUT_URL doit partager exactement l’origine de l’issuer.'); }
+    private static function validateExactHttpsUrl(string $url,string $host,string $path,string $name):void { $parts=parse_url($url); if(!is_array($parts)||($parts['scheme']??null)!=='https'||($parts['host']??null)!==$host||($parts['path']??null)!==$path||isset($parts['port'])||isset($parts['query'])||isset($parts['fragment'])||isset($parts['user'])||isset($parts['pass'])) throw new \RuntimeException("La configuration OIDC $name est invalide."); }
 }

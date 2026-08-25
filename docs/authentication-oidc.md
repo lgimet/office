@@ -16,3 +16,5 @@ La session contient `office_identity` (identité canonique, tenant, profil, init
 `AuthService` reste la façade des contrôleurs, mais ne vérifie plus de mot de passe et n’émet plus de JWT. `ClientsApi` utilise exclusivement l’Access Token utilisateur; aucun fallback `client_credentials` n’existe.
 
 Le logout est global : le POST Office avec CSRF détruit la session locale puis redirige le navigateur vers `OFFICE_CENTRAL_LOGOUT_URL` avec le retour fixe `/logged-out`. `Office-Api` confirme/révise la session centrale avant de revenir sur la page publique `/logged-out`; cette page n’auto-login jamais.
+
+Pendant la transition 7C.3, l’issuer actif peut être `https://api.devsys.fr` ou `https://login.devsys.fr`, mais un seul est actif à la fois et le logout central doit partager exactement son origin. La cible finale est `login.devsys.fr`; la Resource Server et les appels métier restent sur `api.devsys.fr`.
