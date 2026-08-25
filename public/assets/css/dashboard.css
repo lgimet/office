@@ -1552,6 +1552,8 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  position: relative;
+  z-index: 20;
   padding: 0 30px;
   gap: 20px;
 }
@@ -1624,7 +1626,7 @@ body {
   display: none;
   animation: fadeIn 0.15s ease-in-out;
   align-self: start;
-  z-index: 100;
+  z-index: 1000;
 }
 .user-dropdown .dropdown-menu.show {
   display: block;
