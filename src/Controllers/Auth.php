@@ -6,20 +6,21 @@ use App\Core\Attributes\Route;
 use App\Core\BaseController;
 use App\Helpers\Response;
 use App\Services\AuthService;
-use App\Services\Oidc\OidcClient;
+use App\Services\Oidc\OidcConfig;
+use App\Core\Exceptions\RedirectException;
 
 class Auth extends BaseController
 {
     public AuthService $service;
-    private OidcClient $oidc;
+    private ?OidcConfig $oidcConfig;
 
     public function __construct(
         ?AuthService $service = null,
-        ?OidcClient $oidc = null
+        ?OidcConfig $oidcConfig = null
     ) {
         parent::__construct();
         $this->service = $service ?? $this->service(AuthService::class);
-        $this->oidc = $oidc ?? $this->service(OidcClient::class);
+        $this->oidcConfig = $oidcConfig;
     }
 
     #[Route(method: 'POST')]
@@ -31,5 +32,7 @@ class Auth extends BaseController
     public function logout($input = [])
     {
         $this->service->logout();
+        $config = $this->oidcConfig ?? $this->service(OidcConfig::class);
+        throw new RedirectException($config->centralLogoutUrl . '?' . http_build_query(['return_to' => $config->postLogoutRedirectUri], '', '&', PHP_QUERY_RFC3986));
     }
 }

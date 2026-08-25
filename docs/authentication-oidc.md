@@ -14,3 +14,5 @@ Le flow pending est conservé dans `$_SESSION['oidc_pending']` 600 secondes. `re
 La session contient `office_identity` (identité canonique, tenant, profil, initiales et scopes) et `office_oauth` (Access Token et expiration). L’ID Token et le refresh token ne sont pas stockés. Le cookie est host-only, HttpOnly, `SameSite=Lax` et Secure en production; le logout expire explicitement ce cookie avec les mêmes paramètres. `session.gc_maxlifetime` est aligné sur `OFFICE_SESSION_TTL`, qui doit être strictement positif. À moins de 30 secondes de l’expiration, une nouvelle authentification OIDC est requise.
 
 `AuthService` reste la façade des contrôleurs, mais ne vérifie plus de mot de passe et n’émet plus de JWT. `ClientsApi` utilise exclusivement l’Access Token utilisateur; aucun fallback `client_credentials` n’existe.
+
+Le logout est global : le POST Office avec CSRF détruit la session locale puis redirige le navigateur vers `OFFICE_CENTRAL_LOGOUT_URL` avec le retour fixe `/logged-out`. `Office-Api` confirme/révise la session centrale avant de revenir sur la page publique `/logged-out`; cette page n’auto-login jamais.

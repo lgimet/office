@@ -30,6 +30,14 @@ class AuthController extends BaseController
         $this->renderMainLogin();
     }
 
+    #[Route(method: 'GET', path: 'logged-out')]
+    public function loggedOut(): void
+    {
+        header('Cache-Control: no-store');
+        header('Pragma: no-cache');
+        echo $this->render('logged-out.twig', ['page' => 'login']);
+    }
+
     public function renderAlreadyLoggedIn()
     {
 

@@ -12,10 +12,14 @@ Le pending flow contient state, nonce, verifier, retour local et timestamp (TTL 
 
 La configuration `OidcConfig` valide fail-fast les variables OIDC requises et les timeouts positifs, sans jamais exposer le secret. `OfficeAccessTokenProvider` ne redirige que pour une session OIDC absente ou expirée; les erreurs techniques inattendues remontent normalement.
 
+## Logout global
+
+`POST /Auth/logout` conserve le CSRF Office, détruit la session locale et expire `office_session`, puis redirige le navigateur vers `OFFICE_CENTRAL_LOGOUT_URL` avec le `return_to` fixe `https://office.devsys.fr/logged-out`. Aucun appel server-to-server ni token OIDC n’est utilisé. L’allowlist correspondante doit être configurée séparément dans `Office-Api`. La route publique `GET /logged-out` est une page statique sans `AuthService::verify()`, avec cache désactivé et bouton de reconnexion vers `/`. Aucun `GET /Auth/logout` n’est ajouté.
+
 Le premier test d’intégration réel a révélé que `Office-Api` exigeait aussi `client_id` dans le formulaire du grant Authorization Code. Le champ non secret `client_id=office-web` est désormais envoyé avec `Authorization: Basic base64(client_id:client_secret)`; aucun secret n’est ajouté au body.
 
 ## Vérifications
 
-`composer validate` passe avec l’avertissement préexistant de licence manquante; `composer dump-autoload --no-interaction` passe. `composer test` passe avec PHPUnit : 46 tests et 70 assertions. La suite couvre return_to et antislashs/contrôles, authorization URL, state/nonce/PKCE, erreur fournisseur, échanges Basic avec `client_id`, réponses token invalides, refresh token non stocké, signature RS256/JWKS, claims, rotation de `kid`, session, logout, AuthService, provider de token et configuration fail-fast. Le lint PHP passe sur `src` et `tests`. Le navigateur contre un Office-Api déployé et le cross-tenant restent à exécuter dans l’environnement d’intégration. Aucun dépôt externe n’a été modifié.
+`composer validate` passe avec l’avertissement préexistant de licence manquante; `composer dump-autoload --no-interaction` passe. `composer test` passe avec PHPUnit : 49 tests et 74 assertions. La suite couvre return_to et antislashs/contrôles, authorization URL, state/nonce/PKCE, erreur fournisseur, échanges Basic avec `client_id`, réponses token invalides, refresh token non stocké, signature RS256/JWKS, claims, rotation de `kid`, session, logout global, AuthService, provider de token et configuration fail-fast. Le lint PHP passe sur `src` et `tests`. Le test navigateur réel du logout central et le cross-tenant restent à exécuter dans l’environnement d’intégration. Aucun dépôt externe n’a été modifié.
 
 La migration ne couvre ni invoices, ni company settings, ni le stockage `dedicated`; 7B ne clôt donc pas le chantier tenant-aware global.
