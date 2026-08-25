@@ -2,14 +2,14 @@
 
 namespace App\Services\Oidc;
 
-final class OidcSessionService
+class OidcSessionService
 {
     public const MARGIN = 30;
     public function identity(): ?array { return is_array($_SESSION['office_identity'] ?? null) ? $_SESSION['office_identity'] : null; }
     public function accessToken(): string
     {
         $oauth = $_SESSION['office_oauth'] ?? null;
-        if (!is_array($oauth) || !is_string($oauth['access_token'] ?? null) || (int) ($oauth['expires_at'] ?? 0) <= time() + self::MARGIN) throw new OidcValidationException('La session OIDC a expiré.');
+        if (!is_array($oauth) || !is_string($oauth['access_token'] ?? null) || (int) ($oauth['expires_at'] ?? 0) <= time() + self::MARGIN) throw new OidcSessionExpiredException('La session OIDC a expiré.');
         return $oauth['access_token'];
     }
     public function isAuthenticated(): bool { try { $this->accessToken(); return $this->identity() !== null; } catch (OidcException) { return false; } }
@@ -21,6 +21,15 @@ final class OidcSessionService
         $_SESSION['office_identity'] = ['sub' => $claims->sub, 'user_uuid' => substr($claims->sub, 5), 'tenant_uuid' => $claims->tenant_id, 'email' => (string) ($userinfo['email'] ?? ''), 'given_name' => $given, 'family_name' => $family, 'name' => $name, 'initials' => $this->initials($given, $family, $name, (string) ($userinfo['email'] ?? '')), 'scopes' => $scopes, 'authenticated_at' => time()];
     }
     public function storeAccessToken(string $token, int $expiresIn): void { $_SESSION['office_oauth'] = ['access_token' => $token, 'expires_at' => time() + $expiresIn]; }
-    public function logout(): void { $_SESSION = []; if (session_status() === PHP_SESSION_ACTIVE) { session_destroy(); } }
+    public function logout(): void
+    {
+        $params = session_get_cookie_params();
+        $name = session_name();
+        $_SESSION = [];
+        if (session_status() === PHP_SESSION_ACTIVE) session_destroy();
+        $options = ['expires'=>time()-3600,'path'=>(string)($params['path']??'/'),'secure'=>(bool)($params['secure']??false),'httponly'=>(bool)($params['httponly']??true),'samesite'=>(string)($params['samesite']??'Lax')];
+        if (isset($params['domain']) && $params['domain'] !== '') $options['domain'] = $params['domain'];
+        setcookie($name, '', $options);
+    }
     private function initials(string $given, string $family, string $name, string $email): string { $parts = preg_split('/\s+/', trim($given . ' ' . $family)) ?: []; if (count($parts) >= 2) return strtoupper(mb_substr($parts[0], 0, 1) . mb_substr($parts[count($parts)-1], 0, 1)); $fallback = trim($name ?: $email); return strtoupper(mb_substr($fallback, 0, 2)); }
 }

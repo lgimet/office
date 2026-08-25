@@ -12,10 +12,13 @@ $dotenv = Dotenv::createImmutable(__DIR__ . '/../');
 $dotenv->load();
 
 if (session_status() === PHP_SESSION_NONE) {
+    $sessionTtl = filter_var($_ENV['OFFICE_SESSION_TTL'] ?? null, FILTER_VALIDATE_INT);
+    if ($sessionTtl === false || $sessionTtl <= 0) throw new RuntimeException('OFFICE_SESSION_TTL doit être un entier positif.');
     ini_set('session.use_strict_mode', '1');
     ini_set('session.use_only_cookies', '1');
+    ini_set('session.gc_maxlifetime', (string)$sessionTtl);
     session_name((string)($_ENV['OFFICE_SESSION_COOKIE_NAME'] ?? 'office_session'));
-    session_set_cookie_params(['lifetime'=>(int)($_ENV['OFFICE_SESSION_TTL'] ?? 3600),'path'=>'/','secure'=>($_ENV['APP_ENV'] ?? 'prod') === 'prod' || (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off'),'httponly'=>true,'samesite'=>'Lax']);
+    session_set_cookie_params(['lifetime'=>$sessionTtl,'path'=>'/','secure'=>($_ENV['APP_ENV'] ?? 'prod') === 'prod' || (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off'),'httponly'=>true,'samesite'=>'Lax']);
     session_start();
 }
 Csrf::generate();

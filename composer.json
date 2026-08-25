@@ -28,7 +28,10 @@
         "firebase/php-jwt": "^7.0",
         "devsys/shared": "dev-main@dev"
     },
+    "require-dev": {
+        "phpunit/phpunit": "^10.5"
+    },
     "scripts": {
-        "test": "php tests/run.php"
+        "test": "phpunit"
     }
 }
