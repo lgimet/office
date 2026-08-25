@@ -18,7 +18,7 @@ final class OidcClient
         if (!is_array($pending) || (int) ($pending['created_at'] ?? 0) + 600 < time()) throw new OidcValidationException('Flow OIDC expiré.');
         if (!is_string($query['state'] ?? null) || !hash_equals((string)$pending['state'], $query['state'])) throw new OidcValidationException('État OIDC invalide.');
         if (isset($query['error']) || !is_string($query['code'] ?? null) || $query['code'] === '') throw new OidcProtocolException('La connexion DevSys a été refusée.');
-        $token = $this->http->postForm($this->discovery->get()['token_endpoint'], ['grant_type'=>'authorization_code','code'=>$query['code'],'redirect_uri'=>$this->redirectUri,'code_verifier'=>$pending['code_verifier']], [$this->clientId,$this->clientSecret]);
+        $token = $this->http->postForm($this->discovery->get()['token_endpoint'], ['grant_type'=>'authorization_code','client_id'=>$this->clientId,'code'=>$query['code'],'redirect_uri'=>$this->redirectUri,'code_verifier'=>$pending['code_verifier']], [$this->clientId,$this->clientSecret]);
         $body = $token['body']; if ($token['status'] !== 200 || !is_string($body['access_token'] ?? null) || ($body['token_type'] ?? '') !== 'Bearer' || !is_numeric($body['expires_in'] ?? null) || (int)$body['expires_in'] <= 0 || !is_string($body['id_token'] ?? null)) throw new OidcProtocolException('La réponse OAuth est invalide.');
         $claims = $this->validator->validate($body['id_token'], $pending['nonce']); $info = $this->http->getBearer($this->discovery->get()['userinfo_endpoint'], $body['access_token']);
         if ($info['status'] !== 200) throw new OidcProtocolException('UserInfo est indisponible.');
