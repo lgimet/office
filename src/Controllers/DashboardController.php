@@ -24,7 +24,7 @@ class DashboardController extends BaseController
     {
         $this->user = $this->authService->verify(false);
         $ds = $this->service(DashboardService::class);
-        $data = $ds->getFormData();
+        $data = $ds->getFormData($this->user);
 
         echo $this->render('dashboard.twig', $data);
 

@@ -6,9 +6,11 @@ use App\Helpers\Csrf;
 
 class DashboardService
 {
-    public function getFormData(): array
+    public function getFormData(?object $authenticatedUser = null): array
     {
-        $user = (array)$_SESSION['user'];
+        $user = $authenticatedUser !== null
+            ? (array) $authenticatedUser
+            : (is_array($_SESSION['office_identity'] ?? null) ? $_SESSION['office_identity'] : []);
 
         unset($user['iat']);
         unset($user['exp']);
