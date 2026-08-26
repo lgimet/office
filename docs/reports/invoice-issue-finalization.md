@@ -67,6 +67,12 @@ Une seconde émission de la même facture est refusée avant toute consommation
 de numéro. Deux factures différentes obtiennent des numéros distincts grâce au
 verrouillage de la ligne de séquence.
 
+La date transmise au générateur est désormais celle du payload courant préparé
+et écrit (`issue_date` finale), et non plus l’ancienne date relue lors du
+verrouillage du brouillon. Un changement de millésime avant émission produit
+donc un numéro cohérent avec la facture, tout en conservant la transaction
+unique et le verrouillage de séquence.
+
 ## Verrouillage après émission
 
 Le backend conserve les garde-fous de `updateDraft()` et `deleteDraft()` : toute

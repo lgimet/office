@@ -155,7 +155,7 @@ class InvoiceRepository extends BaseRepository
             }
 
             $this->writeDraft($id, $invoice, $lines);
-            $issueDate = new \DateTimeImmutable((string) $lockedInvoice['issue_date']);
+            $issueDate = new \DateTimeImmutable((string) $invoice[1]);
             $number = (new InvoiceNumberGenerator())->next($this->pdo, $issueDate);
             $updated = $this->query(
                 'UPDATE invoices
