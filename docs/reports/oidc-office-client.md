@@ -30,12 +30,18 @@ Les incohérences entre les claims de l’ID Token et `UserInfo` (`sub`, `tenant
 
 ## Point 7C.3 — Migration vers login.devsys.fr
 
-Office est préparé pour utiliser `https://login.devsys.fr` comme issuer OIDC et comme cible de logout central. `OidcConfig` n’autorise temporairement que `https://api.devsys.fr` ou `https://login.devsys.fr`, exige un issuer HTTPS exact sans path/query/fragment/port et impose que `OFFICE_CENTRAL_LOGOUT_URL` et `OFFICE_CENTRAL_RP_LOGOUT_URL` partagent exactement son origin avec l’issuer actif, respectivement sur `/auth/logout` et `/auth/logout/rp`. Il n’existe donc pas de dual issuer runtime ni de mélange `login`/`api`.
+Office utilise `https://login.devsys.fr` comme unique issuer OIDC et comme cible du logout central. `OidcConfig` exige cet issuer HTTPS exact sans path/query/fragment/port et impose que `OFFICE_CENTRAL_LOGOUT_URL` et `OFFICE_CENTRAL_RP_LOGOUT_URL` partagent exactement son origin, respectivement sur `/auth/logout` et `/auth/logout/rp`. `https://api.devsys.fr` reste exclusivement la Resource Server et l’API métier.
 
-`.env.example` cible désormais `login.devsys.fr`. `OFFICE_OIDC_RESOURCE` et `DEVSYS_API_BASE_URL` restent strictement sur `https://api.devsys.fr`; aucun appel métier n’est dirigé vers le login. L’ancien couple `api/api` reste accepté temporairement jusqu’au Point 7C.7. Le `.env` de production n’a pas été modifié et aucun secret n’est documenté.
+`.env.example` cible `login.devsys.fr`. `OFFICE_OIDC_RESOURCE` et `DEVSYS_API_BASE_URL` restent strictement sur `https://api.devsys.fr`; aucun appel métier n’est dirigé vers le login. La compatibilité de l’ancien issuer `api.devsys.fr` est supprimée. Le `.env` de production n’a pas été modifié et aucun secret n’est documenté.
+
+## Point 7C.7 — Suppression de l’issuer legacy api.devsys.fr
+
+La transition vers `login.devsys.fr` est terminée côté Office. `OFFICE_OIDC_ISSUER=https://login.devsys.fr` est désormais la seule configuration acceptée; `https://api.devsys.fr`, ainsi que les variantes HTTP, avec port, chemin, query, fragment ou suffixe de domaine, sont refusées. Les URLs de logout doivent rester sur l’origine `login.devsys.fr`, tandis que `OFFICE_OIDC_RESOURCE=https://api.devsys.fr` et `DEVSYS_API_BASE_URL=https://api.devsys.fr/api/v1` ne sont pas modifiés.
+
+Les tests couvrent l’issuer login valide, le rejet de l’issuer API et les formes invalides, ainsi que la validation stricte des URLs de logout. Ce correctif doit être déployé avant le filtrage des routes d’identité par host dans `Office-Api`; aucun changement n’a été effectué dans `Office-Api`, `office-mcp` ou le stockage tenant.
 
 ## Vérifications
 
-`composer validate` passe avec l’avertissement préexistant de licence manquante; `composer dump-autoload --no-interaction` passe. `composer test` passe avec PHPUnit : 75 tests et 111 assertions. La suite couvre return_to et antislashs/contrôles, authorization URL, state/nonce/PKCE, erreur fournisseur, échanges Basic avec `client_id`, réponses token invalides, refresh token non stocké, signature RS256/JWKS, claims, rotation de `kid`, session, logout global en POST automatique sans fuite de token, rejet CSRF du POST logout avant contrôleur, contexte d’erreur OIDC sûr et à TTL court, incohérences ID Token/UserInfo classées comme erreurs d’identité, AuthService, provider de token, configuration fail-fast, validation stricte du RP logout et transition issuer/logout `api` ou `login`. Le lint PHP passe sur `src` et `tests`. Le test navigateur réel du logout central et le cross-tenant restent à exécuter dans l’environnement d’intégration. Aucun dépôt externe n’a été modifié.
+`composer validate` passe avec l’avertissement préexistant de licence manquante; `composer dump-autoload --no-interaction` passe. `composer test` passe avec PHPUnit : 76 tests et 112 assertions. Le lint PHP passe sur `src` et `tests`. Aucun secret n’a été modifié et aucun dépôt externe n’a été modifié.
 
 La migration ne couvre ni invoices, ni company settings, ni le stockage `dedicated`; 7B ne clôt donc pas le chantier tenant-aware global.

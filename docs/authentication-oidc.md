@@ -19,4 +19,4 @@ Le logout est global et en un clic : le POST Office avec CSRF détruit la sessio
 
 En cas d’échec rencontré par Office pendant le callback OIDC, le contrôleur journalise l’exception côté serveur, conserve uniquement un code UX à durée de vie courte en session, puis redirige vers `/auth/error`. Cette page publique sans cache affiche un message générique ou classé, avec les actions « Réessayer » et « Retour à l’accueil ». Les erreurs rendues directement par `login.devsys.fr` restent de la responsabilité du serveur d’identité et ne sont pas dupliquées par Office.
 
-Pendant la transition 7C.3, l’issuer actif peut être `https://api.devsys.fr` ou `https://login.devsys.fr`, mais un seul est actif à la fois et le logout central doit partager exactement son origin. La cible finale est `login.devsys.fr`; la Resource Server et les appels métier restent sur `api.devsys.fr`.
+Depuis la finalisation de la migration 7C.7, l’issuer OIDC Office est exclusivement `https://login.devsys.fr`. La Resource Server et les appels métier restent sur `api.devsys.fr`; cette origine n’est pas un issuer OIDC accepté par Office.
