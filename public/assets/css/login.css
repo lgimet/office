@@ -120,6 +120,7 @@ textarea:-webkit-autofill,
 select:-webkit-autofill {
   -webkit-box-shadow: 0 0 0 1000px var(--surface) inset !important;
   -webkit-text-fill-color: var(--on-surface) !important;
+  -webkit-transition: background-color 9999s ease-in-out 0s;
   transition: background-color 9999s ease-in-out 0s;
 }
 
@@ -197,6 +198,7 @@ select:-webkit-autofill {
   font-weight: 600;
   text-align: center;
   text-decoration: none;
+  margin-bottom: 0.78rem;
 }
 .login-container .login-button:hover {
   filter: brightness(0.92);
@@ -205,6 +207,4 @@ select:-webkit-autofill {
 #login-error {
   min-height: 1.25rem;
   margin-top: 16px;
-}
-
-/*# sourceMappingURL=login.css.map */
+}/*# sourceMappingURL=login.css.map */
