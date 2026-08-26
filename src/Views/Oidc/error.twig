@@ -1,2 +1,10 @@
 {% extends "layouts/base.twig" %}
-{% block content %}<div class="login-container"><h2>Connexion impossible</h2><p>{{ message|e }}</p><a href="/auth/oidc/login">Réessayer</a></div>{% endblock %}
+{% block content %}
+<div class="login-container">
+    <img src="/assets/images/logo-vert.png" alt="DevSys" class="login-logo">
+    <h2>Connexion impossible</h2>
+    <p>{{ message|e }}</p>
+    <a href="/auth/oidc/login" class="login-button">Réessayer</a>
+    <a href="/" class="login-button">Retour à l'accueil</a>
+</div>
+{% endblock %}

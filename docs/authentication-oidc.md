@@ -17,4 +17,6 @@ La session contient `office_identity` (identité canonique, tenant, profil, init
 
 Le logout est global et en un clic : le POST Office avec CSRF détruit la session locale, puis renvoie une page sans cache qui soumet automatiquement un formulaire POST vers `OFFICE_CENTRAL_RP_LOGOUT_URL`. Le formulaire contient uniquement `return_to`, fixé à `/logged-out`; aucun token Office ou OIDC n’est injecté dans le HTML. `Office-Api` confirme/révise la session centrale avant de revenir sur la page publique `/logged-out`; cette page n’auto-login jamais.
 
+En cas d’échec rencontré par Office pendant le callback OIDC, le contrôleur journalise l’exception côté serveur, conserve uniquement un code UX à durée de vie courte en session, puis redirige vers `/auth/error`. Cette page publique sans cache affiche un message générique ou classé, avec les actions « Réessayer » et « Retour à l’accueil ». Les erreurs rendues directement par `login.devsys.fr` restent de la responsabilité du serveur d’identité et ne sont pas dupliquées par Office.
+
 Pendant la transition 7C.3, l’issuer actif peut être `https://api.devsys.fr` ou `https://login.devsys.fr`, mais un seul est actif à la fois et le logout central doit partager exactement son origin. La cible finale est `login.devsys.fr`; la Resource Server et les appels métier restent sur `api.devsys.fr`.

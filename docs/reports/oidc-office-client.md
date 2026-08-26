@@ -20,6 +20,12 @@ Le navigateur navigue ainsi de `POST /Auth/logout` vers `POST https://login.devs
 
 Le premier test d’intégration réel a révélé que `Office-Api` exigeait aussi `client_id` dans le formulaire du grant Authorization Code. Le champ non secret `client_id=office-web` est désormais envoyé avec `Authorization: Basic base64(client_id:client_secret)`; aucun secret n’est ajouté au body.
 
+## Point 7C.6 — Page `/auth/error`
+
+Le callback OIDC ne rend plus directement une vue d’erreur. Toute erreur rencontrée par Office est classée dans une liste fermée (`access_denied`, flow expiré, state invalide, fournisseur indisponible, réponse invalide, identité invalide ou erreur inattendue), journalisée côté serveur, puis associée en session à un contexte minimal contenant uniquement le code UX et `created_at`. Ce contexte expire après cinq minutes, est consommé par `GET /auth/error` et n’est jamais transporté dans l’URL.
+
+La route publique `/auth/error` est sans cache, utilise le style de connexion et propose « Réessayer » (nouveau flow OIDC) et « Retour à l’accueil ». `error_description`, les tokens, le code d’autorisation, le `code_verifier`, le nonce et les secrets ne sont ni affichés ni stockés dans le contexte. Le contrôle du state et l’invalidation du pending flow restent effectués avant l’interprétation d’une erreur fournisseur; les erreurs rendues directement par `login.devsys.fr` restent hors du périmètre Office. Aucun changement n’a été effectué dans `Office-Api` ou `office-mcp`.
+
 ## Point 7C.3 — Migration vers login.devsys.fr
 
 Office est préparé pour utiliser `https://login.devsys.fr` comme issuer OIDC et comme cible de logout central. `OidcConfig` n’autorise temporairement que `https://api.devsys.fr` ou `https://login.devsys.fr`, exige un issuer HTTPS exact sans path/query/fragment/port et impose que `OFFICE_CENTRAL_LOGOUT_URL` et `OFFICE_CENTRAL_RP_LOGOUT_URL` partagent exactement son origin avec l’issuer actif, respectivement sur `/auth/logout` et `/auth/logout/rp`. Il n’existe donc pas de dual issuer runtime ni de mélange `login`/`api`.
@@ -28,6 +34,6 @@ Office est préparé pour utiliser `https://login.devsys.fr` comme issuer OIDC e
 
 ## Vérifications
 
-`composer validate` passe avec l’avertissement préexistant de licence manquante; `composer dump-autoload --no-interaction` passe. `composer test` passe avec PHPUnit : 63 tests et 95 assertions. La suite couvre return_to et antislashs/contrôles, authorization URL, state/nonce/PKCE, erreur fournisseur, échanges Basic avec `client_id`, réponses token invalides, refresh token non stocké, signature RS256/JWKS, claims, rotation de `kid`, session, logout global en POST automatique sans fuite de token, rejet CSRF du POST logout avant contrôleur, AuthService, provider de token, configuration fail-fast, validation stricte du RP logout et transition issuer/logout `api` ou `login`. Le lint PHP passe sur `src` et `tests`. Le test navigateur réel du logout central et le cross-tenant restent à exécuter dans l’environnement d’intégration. Aucun dépôt externe n’a été modifié.
+`composer validate` passe avec l’avertissement préexistant de licence manquante; `composer dump-autoload --no-interaction` passe. `composer test` passe avec PHPUnit : 72 tests et 108 assertions. La suite couvre return_to et antislashs/contrôles, authorization URL, state/nonce/PKCE, erreur fournisseur, échanges Basic avec `client_id`, réponses token invalides, refresh token non stocké, signature RS256/JWKS, claims, rotation de `kid`, session, logout global en POST automatique sans fuite de token, rejet CSRF du POST logout avant contrôleur, contexte d’erreur OIDC sûr et à TTL court, AuthService, provider de token, configuration fail-fast, validation stricte du RP logout et transition issuer/logout `api` ou `login`. Le lint PHP passe sur `src` et `tests`. Le test navigateur réel du logout central et le cross-tenant restent à exécuter dans l’environnement d’intégration. Aucun dépôt externe n’a été modifié.
 
 La migration ne couvre ni invoices, ni company settings, ni le stockage `dedicated`; 7B ne clôt donc pas le chantier tenant-aware global.
