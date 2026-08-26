@@ -1,14 +1,14 @@
 <?php
 namespace Tests\Unit;
 use App\Controllers\Auth;
-use App\Core\Exceptions\RedirectException;
 use App\Services\AuthService;
 use App\Services\Oidc\{OidcConfig, OidcSessionService};
 use PHPUnit\Framework\TestCase;
 final class AuthLogoutTest extends TestCase
 {
-    protected function setUp():void{parent::setUp();if(session_status()===PHP_SESSION_ACTIVE)session_write_close();session_save_path(sys_get_temp_dir());session_name('logout_test');session_start();$_SESSION=['office_identity'=>['sub'=>'user:test'],'office_oauth'=>['access_token'=>'x']];}
+    protected function setUp():void{parent::setUp();if(session_status()===PHP_SESSION_ACTIVE)session_write_close();session_save_path(sys_get_temp_dir());session_name('logout_test');session_start();$_SESSION=['office_identity'=>['sub'=>'user:test'],'office_oauth'=>['access_token'=>'secret-token']];}
     protected function tearDown():void{$_SESSION=[];if(session_status()===PHP_SESSION_ACTIVE)session_write_close();parent::tearDown();}
-    public function testPostLogoutRedirectsToCentralLogoutWithFixedReturnTo():void{$config=new OidcConfig('https://issuer.test','office-web','secret','https://office.test/callback','https://api.test',['openid'],10,5,'https://api.devsys.fr/auth/logout','https://office.devsys.fr/logged-out');$controller=new Auth(new AuthService(new OidcSessionService()),$config);$this->expectException(RedirectException::class);try{$controller->logout();}catch(RedirectException $e){self::assertSame('https://api.devsys.fr/auth/logout?return_to=https%3A%2F%2Foffice.devsys.fr%2Flogged-out',$e->getLocation());throw $e;}}
-    public function testPostLogoutCanTargetLoginProvider():void{$config=new OidcConfig('https://login.devsys.fr','office-web','secret','https://office.test/callback','https://api.test',['openid'],10,5,'https://login.devsys.fr/auth/logout','https://office.devsys.fr/logged-out');$controller=new Auth(new AuthService(new OidcSessionService()),$config);$this->expectException(RedirectException::class);try{$controller->logout();}catch(RedirectException $e){self::assertStringStartsWith('https://login.devsys.fr/auth/logout?return_to=',$e->getLocation());throw $e;}}
+    public function testLogoutReturnsAutoSubmittingCentralPostFormWithoutTokens():void{$config=$this->config();$result=(new Auth(new AuthService(new OidcSessionService()),$config))->logout();self::assertStringContainsString('method="post"',$this->page($result));self::assertStringContainsString('action="https://login.devsys.fr/auth/logout/rp"',$this->page($result));self::assertStringContainsString('name="return_to"',$this->page($result));self::assertStringContainsString('https://office.devsys.fr/logged-out',$this->page($result));self::assertStringContainsString('getElementById("central-logout").submit()',$this->page($result));self::assertStringNotContainsString('secret-token',$this->page($result));self::assertArrayNotHasKey('office_identity',$_SESSION);self::assertArrayNotHasKey('office_oauth',$_SESSION);}
+    private function config():OidcConfig{return new OidcConfig('https://login.devsys.fr','office-web','secret','https://office.test/callback','https://api.test',['openid'],10,5,'https://login.devsys.fr/auth/logout','https://login.devsys.fr/auth/logout/rp','https://office.devsys.fr/logged-out');}
+    private function page(object $response):string{$ref=new \ReflectionClass($response);$prop=$ref->getProperty('page');$prop->setAccessible(true);return (string)$prop->getValue($response);}
 }

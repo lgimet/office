@@ -121,7 +121,7 @@ class Router
                 }
                 $controllerInstance = App::getContainer()->get($class);
                 $result = call_user_func([$controllerInstance,$method], $input);
-                if ($result instanceof Response && $httpMethod != 'GET') {
+                if ($result instanceof Response && $httpMethod != 'GET' && session_status() === PHP_SESSION_ACTIVE) {
                     $result->setCsrf();
                 }
                 if ($result instanceof Response) {

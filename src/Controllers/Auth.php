@@ -7,7 +7,6 @@ use App\Core\BaseController;
 use App\Helpers\Response;
 use App\Services\AuthService;
 use App\Services\Oidc\OidcConfig;
-use App\Core\Exceptions\RedirectException;
 
 class Auth extends BaseController
 {
@@ -33,6 +32,10 @@ class Auth extends BaseController
     {
         $this->service->logout();
         $config = $this->oidcConfig ?? $this->service(OidcConfig::class);
-        throw new RedirectException($config->centralLogoutUrl . '?' . http_build_query(['return_to' => $config->postLogoutRedirectUri], '', '&', PHP_QUERY_RFC3986));
+        header('Cache-Control: no-store');
+        header('Pragma: no-cache');
+        $action = htmlspecialchars($config->centralRpLogoutUrl, ENT_QUOTES, 'UTF-8');
+        $returnTo = htmlspecialchars($config->postLogoutRedirectUri, ENT_QUOTES, 'UTF-8');
+        return (new Response())->setPage('<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Déconnexion</title></head><body><p>La déconnexion est en cours…</p><form id="central-logout" method="post" action="' . $action . '"><input type="hidden" name="return_to" value="' . $returnTo . '"><noscript><p>La déconnexion doit être terminée.</p><button type="submit">Terminer la déconnexion</button></noscript></form><script>document.getElementById("central-logout").submit();</script></body></html>');
     }
 }
