@@ -15,7 +15,7 @@ class OidcSessionService
     public function isAuthenticated(): bool { try { $this->accessToken(); return $this->identity() !== null; } catch (OidcException) { return false; } }
     public function create(object $claims, array $userinfo, int $expiresIn, array $scopes): void
     {
-        if (($userinfo['sub'] ?? null) !== ($claims->sub ?? null) || ($userinfo['tenant_id'] ?? null) !== ($claims->tenant_id ?? null) || !preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i', (string)($userinfo['tenant_id'] ?? ''))) throw new OidcValidationException('Identité UserInfo incohérente.');
+        if (($userinfo['sub'] ?? null) !== ($claims->sub ?? null) || ($userinfo['tenant_id'] ?? null) !== ($claims->tenant_id ?? null) || !preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i', (string)($userinfo['tenant_id'] ?? ''))) throw new OidcIdentityException('Identité UserInfo incohérente.');
         session_regenerate_id(true);
         $given = (string) ($userinfo['given_name'] ?? ''); $family = (string) ($userinfo['family_name'] ?? ''); $name = (string) ($userinfo['name'] ?? trim($given . ' ' . $family));
         $_SESSION['office_identity'] = ['sub' => $claims->sub, 'user_uuid' => substr($claims->sub, 5), 'tenant_uuid' => $claims->tenant_id, 'email' => (string) ($userinfo['email'] ?? ''), 'given_name' => $given, 'family_name' => $family, 'name' => $name, 'initials' => $this->initials($given, $family, $name, (string) ($userinfo['email'] ?? '')), 'scopes' => $scopes, 'authenticated_at' => time()];
