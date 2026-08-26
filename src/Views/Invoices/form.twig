@@ -1,7 +1,8 @@
 <section class="invoice-editor">
     {% set default_issue_date = invoice.issue_date|default(today) %}
-    {% set default_due_date = invoice.due_date|default(default_issue_date|date_modify('+15 days')|date('Y-m-d')) %}
+    {% set default_due_date = invoice.due_date|default('') %}
     {% set default_payment_terms = invoice.payment_terms|default(defaults.payment_terms|default('Sous 15 jours')) %}
+    {% set default_payment_terms_code = invoice.payment_terms_code|default(defaults.payment_terms_code|default('')) %}
     <header class="invoice-editor__header">
         <div class="invoice-header__main">
             <div class="invoice-header__icon" aria-hidden="true">
@@ -47,6 +48,7 @@
         id="invoice-form"
         class="invoice-form"
         data-default-tax-rate="{{ defaults.tax_rate ?? '20.00' }}"
+        data-existing-invoice="{{ invoice ? '1' : '0' }}"
     >
         <input type="hidden" name="id" value="{{ invoice.id ?? '' }}">
 
@@ -102,12 +104,11 @@
                         <option value="days_30" data-label="30 jours">30 jours</option>
                         <option value="days_45" data-label="45 jours">45 jours</option>
                         <option value="days_60" data-label="60 jours">60 jours</option>
-                        <option value="days_30_then_eom" data-label="30 jours puis fin de mois">30 jours puis fin de mois</option>
-                        <option value="days_45_then_eom" data-label="45 jours puis fin de mois">45 jours puis fin de mois</option>
-                        <option value="eom_plus_30" data-label="Fin de mois + 30 jours">Fin de mois + 30 jours</option>
-                        <option value="eom_plus_45" data-label="Fin de mois + 45 jours">Fin de mois + 45 jours</option>
+                        <option value="days_30_then_eom" data-label="30 jours fin de mois">30 jours fin de mois</option>
+                        <option value="days_45_then_eom" data-label="45 jours fin de mois">45 jours fin de mois</option>
                         <option value="custom" data-label="Personnalisé">Personnalisé</option>
                     </select>
+                    <input id="invoice-payment-terms-code" type="hidden" name="payment_terms_code" value="{{ default_payment_terms_code }}">
                     <input id="invoice-payment-terms" type="hidden" name="payment_terms" value="{{ default_payment_terms }}">
                     <div class="invoice-payment-terms-custom" hidden>
                         <label id="invoice-payment-terms-custom-label" for="invoice-payment-terms-custom-input">Libellé du délai personnalisé</label>

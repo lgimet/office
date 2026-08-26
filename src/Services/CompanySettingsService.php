@@ -73,6 +73,7 @@ class CompanySettingsService
             $currency,
             number_format((float) $taxRate, 2, '.', ''),
             $this->nullable($input, 'default_payment_terms'),
+            $this->paymentTermsCode($input['default_payment_terms_code'] ?? null, $input['default_payment_terms'] ?? null),
             $this->nullable($input, 'default_payment_method'),
             $this->nullable($input, 'invoice_footer'),
         ];
@@ -83,6 +84,24 @@ class CompanySettingsService
         $value = trim((string) ($input[$field] ?? ''));
 
         return $value === '' ? null : $value;
+    }
+
+    private function paymentTermsCode(?string $code, ?string $label): string
+    {
+        $allowed = ['cash', 'receipt', 'days_15', 'days_30', 'days_45', 'days_60', 'days_30_then_eom', 'days_45_then_eom', 'custom'];
+        if (in_array($code, $allowed, true)) return $code;
+
+        return match (mb_strtolower(trim((string) $label))) {
+            'comptant' => 'cash',
+            'à réception', 'a réception', 'a reception' => 'receipt',
+            '15 jours', 'sous 15 jours' => 'days_15',
+            '30 jours', '30 jours date de facture', 'sous 30 jours' => 'days_30',
+            '45 jours' => 'days_45',
+            '60 jours' => 'days_60',
+            '30 jours fin de mois', '30 jours puis fin de mois' => 'days_30_then_eom',
+            '45 jours fin de mois', '45 jours puis fin de mois' => 'days_45_then_eom',
+            default => 'custom',
+        };
     }
 
     private function defaults(): array

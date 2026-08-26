@@ -284,12 +284,13 @@ export default class Invoices extends Core {
         const form = this.bodyRef.invoice_form;
         const preset = form.querySelector("#invoice-payment-terms-preset");
         const value = form.querySelector("#invoice-payment-terms");
+        const code = form.querySelector("#invoice-payment-terms-code");
         const customWrapper = form.querySelector(".invoice-payment-terms-custom");
         const customInput = form.querySelector("#invoice-payment-terms-custom-input");
         const issueDate = form.querySelector("#invoice-issue-date");
         const dueDate = form.querySelector("#invoice-due-date");
 
-        if (!preset || !value || !customWrapper || !customInput || !issueDate || !dueDate) return;
+        if (!preset || !value || !code || !customWrapper || !customInput || !issueDate || !dueDate) return;
 
         const normalize = (text) => String(text || "")
             .normalize("NFD")
@@ -297,8 +298,14 @@ export default class Invoices extends Core {
             .trim()
             .toLowerCase();
         const existingValue = value.value;
+        const legacyLabels = {
+            "30 jours puis fin de mois": "days_30_then_eom",
+            "45 jours puis fin de mois": "days_45_then_eom",
+        };
         const matchingOption = [...preset.options].find((option) => (
-            normalize(option.dataset.label) === normalize(existingValue)
+            option.value === code.value
+            || normalize(option.dataset.label) === normalize(existingValue)
+            || legacyLabels[normalize(existingValue)] === option.value
             || (normalize(existingValue) === "sous 15 jours" && option.value === "days_15")
         ));
 
@@ -320,8 +327,10 @@ export default class Invoices extends Core {
 
             if (!isCustom) {
                 value.value = option?.dataset.label || "";
+                code.value = preset.value;
                 if (recalculateDueDate) this.updateDueDate(preset.value, issueDate, dueDate);
             } else {
+                code.value = "custom";
                 value.value = customInput.value;
             }
         };
@@ -335,6 +344,9 @@ export default class Invoices extends Core {
         });
 
         syncState(false);
+        if (form.dataset.existingInvoice !== "1" && !dueDate.value && preset.value !== "custom") {
+            this.updateDueDate(preset.value, issueDate, dueDate);
+        }
     }
 
     updateDueDate(rule, issueDate, dueDate) {
@@ -376,14 +388,6 @@ export default class Invoices extends Core {
             case "days_45_then_eom":
                 addDays(45);
                 endOfMonth();
-                break;
-            case "eom_plus_30":
-                endOfMonth();
-                addDays(30);
-                break;
-            case "eom_plus_45":
-                endOfMonth();
-                addDays(45);
                 break;
             default:
                 return "";

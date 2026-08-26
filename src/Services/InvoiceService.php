@@ -112,6 +112,7 @@ class InvoiceService
             $calculated['totals']['discount_total_excl_tax'],
             $calculated['totals']['tax_total'],
             $calculated['totals']['total_incl_tax'],
+            $this->paymentTermsCode($input['payment_terms_code'] ?? null, $input['payment_terms'] ?? null),
             $input['payment_terms'] ?: null,
             $input['payment_method'] ?: null,
             $input['public_note'] ?: null,
@@ -167,7 +168,27 @@ class InvoiceService
             'tax_rate' => is_numeric($taxRate) ? $taxRate : '20.00',
             'currency' => preg_match('/^[A-Z]{3}$/', $currency) ? $currency : 'EUR',
             'payment_terms' => $company['default_payment_terms'] ?? null,
+            'payment_terms_code' => $company['default_payment_terms_code'] ?? null,
             'payment_method' => $company['default_payment_method'] ?? null,
         ];
+    }
+
+    private function paymentTermsCode(?string $code, ?string $label): string
+    {
+        $allowed = ['cash', 'receipt', 'days_15', 'days_30', 'days_45', 'days_60', 'days_30_then_eom', 'days_45_then_eom', 'custom'];
+        if (in_array($code, $allowed, true)) return $code;
+
+        $normalized = mb_strtolower(trim((string) $label));
+        return match ($normalized) {
+            'comptant' => 'cash',
+            'à réception', 'a réception', 'a reception' => 'receipt',
+            '15 jours', 'sous 15 jours' => 'days_15',
+            '30 jours', '30 jours date de facture', 'sous 30 jours' => 'days_30',
+            '45 jours' => 'days_45',
+            '60 jours' => 'days_60',
+            '30 jours fin de mois', '30 jours puis fin de mois' => 'days_30_then_eom',
+            '45 jours fin de mois', '45 jours puis fin de mois' => 'days_45_then_eom',
+            default => 'custom',
+        };
     }
 }

@@ -19,10 +19,10 @@ class CompanySettingsRepository extends BaseRepository
                 address_line1, address_line2, postal_code, city, country,
                 email, phone, website, siret, siren, vat_number, ape_code,
                 rcs_city, bank_name, iban, bic, default_currency,
-                default_tax_rate, default_payment_terms,
+                default_tax_rate, default_payment_terms, default_payment_terms_code,
                 default_payment_method, invoice_footer
             ) VALUES (
-                1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+                1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
             ) ON DUPLICATE KEY UPDATE
                 legal_name = VALUES(legal_name),
                 trading_name = VALUES(trading_name),
@@ -47,6 +47,7 @@ class CompanySettingsRepository extends BaseRepository
                 default_currency = VALUES(default_currency),
                 default_tax_rate = VALUES(default_tax_rate),
                 default_payment_terms = VALUES(default_payment_terms),
+                default_payment_terms_code = VALUES(default_payment_terms_code),
                 default_payment_method = VALUES(default_payment_method),
                 invoice_footer = VALUES(invoice_footer),
                 updated_at = CURRENT_TIMESTAMP',

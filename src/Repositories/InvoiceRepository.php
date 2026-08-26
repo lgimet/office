@@ -72,8 +72,8 @@ class InvoiceRepository extends BaseRepository
         $this->pdo->beginTransaction();
         try {
             $id = $this->insert(
-                'INSERT INTO invoices (client_id, status, issue_date, due_date, currency, client_name, client_contact_name, client_email, client_phone, client_address_line1, client_address_line2, client_postal_code, client_city, client_country, client_siret, client_vat_number, subtotal_excl_tax, discount_total_excl_tax, tax_total, total_incl_tax, payment_terms, payment_method, public_note, internal_note)
-                 VALUES (?, \'draft\', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                'INSERT INTO invoices (client_id, status, issue_date, due_date, currency, client_name, client_contact_name, client_email, client_phone, client_address_line1, client_address_line2, client_postal_code, client_city, client_country, client_siret, client_vat_number, subtotal_excl_tax, discount_total_excl_tax, tax_total, total_incl_tax, payment_terms_code, payment_terms, payment_method, public_note, internal_note)
+                 VALUES (?, \'draft\', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
                 $invoice
             );
             $this->insertLines((int) $id, $lines);
@@ -107,7 +107,7 @@ class InvoiceRepository extends BaseRepository
                      client_postal_code = ?, client_city = ?, client_country = ?,
                      client_siret = ?, client_vat_number = ?, subtotal_excl_tax = ?,
                      discount_total_excl_tax = ?, tax_total = ?, total_incl_tax = ?,
-                     payment_terms = ?, payment_method = ?, public_note = ?,
+                     payment_terms_code = ?, payment_terms = ?, payment_method = ?, public_note = ?,
                      internal_note = ?, updated_at = CURRENT_TIMESTAMP
                  WHERE id = ?',
                 [...$invoice, $id]

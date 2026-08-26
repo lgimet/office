@@ -38,7 +38,7 @@ Comptant, À réception, 15 jours, 30 jours, 45 jours, 60 jours, 30 jours puis f
 
 ## Calcul des délais simples
 
-Les règles comptant et à réception conservent la date de facture. Les autres délais simples ajoutent 15, 30, 45 ou 60 jours calendaires.
+Les règles comptant et à réception conservent la date de facture. Les autres délais simples ajoutent 15, 30, 45 ou 60 jours calendaires. Les règles fin de mois ajoutent d’abord le délai, puis prennent le dernier jour du mois obtenu.
 
 ## Calcul N jours puis fin de mois
 
@@ -67,6 +67,10 @@ Les dates sont parsées explicitement en année/mois/jour et reconstruites local
 ## Années bissextiles
 
 Le calcul repose sur `Date` local, qui gère notamment le 29 février des années bissextiles.
+
+## Évolution du code métier
+
+La structuration persistante `payment_terms_code` est documentée dans `invoice-payment-terms-code.md`. Les libellés `Fin de mois + N jours` et les codes `eom_plus_*` ont été retirés de l’interface.
 
 ## Responsive
 
