@@ -17,16 +17,17 @@ Les vues `Company`, `Client`, `Clients` et `Invoices` utilisaient `.form-group` 
 - `public/assets/css/scss/components/_form.scss` : nouveau socle natif Office.
 - `public/assets/css/scss/components/_select.scss`, `_multiselect.scss` et `_bank.scss` : contrôles compacts harmonisés.
 - `public/assets/css/scss/components/_invoice.scss` et `dashboard.scss` : style dédié à l’éditeur de facture dense.
+- `public/assets/css/objects/Company/form.css`, `Clients/form.css`, `Invoices/form.css`, `Invoices/list.css` et `ClientTypes/list.css` : suppression des variantes objet à labels flottants.
 - `src/Views/Client/form.twig` : labels bancaires fixes, sans label flottant spécifique.
 - `public/assets/css/dashboard.css` et `public/assets/css/login.css` : générés par le build Sass existant.
 
 ## Nouveau système de formulaires
 
-`.form-field` est conservé comme hook JavaScript mais devient une pile label → contrôle → aide/erreur. `.form-group` fournit une section légère; `.form-grid` et les classes `form-col-3`, `form-col-4`, `form-col-6`, `form-col-8`, `form-col-12` fournissent une grille responsive. Les contrôles utilisent une hauteur de 36 px, des bordures fines, un radius modéré et un focus `--focus-ring` discret.
+`.form-field` est conservé comme hook JavaScript mais devient une pile label → contrôle → aide/erreur. `.form-group` fournit une section légère; `.form-grid` et les classes `form-col-3`, `form-col-4`, `form-col-6`, `form-col-8`, `form-col-12` fournissent une grille responsive. Les contrôles utilisent les métriques LivePulse : hauteur `2.18rem`, padding horizontal `.62rem`, taille `.77rem`; labels `.72rem`/400 et aides `.67rem`/1.45. Les sections utilisent `.9rem` de padding et `.62rem` de rayon.
 
 ## Tokens utilisés
 
-La migration utilise les tokens Office existants : `--primary`, `--surface`, `--surface-base`, `--surface-low`, `--surface-high`, `--on-surface`, `--on-surface-variant`, `--outline`, `--outline-variant`, `--error`, `--focus-ring`, `--motion-fast` et les tokens de typographie. Aucun token LivePulse n’est ajouté.
+La migration utilise les tokens Office existants et ajoute uniquement des tokens génériques Office pour les contrôles : `--control-height`, `--control-padding-x`, `--control-radius` et `--section-radius`. La police principale est désormais `"Source Sans 3", "Segoe UI", ui-sans-serif, system-ui, sans-serif`, chargée dans le layout dashboard en 300/400/500/600. Aucun token LivePulse n’est ajouté.
 
 ## Compatibilité conservée
 
@@ -76,7 +77,11 @@ Les associations `label`/`for` existantes sont conservées, les labels restent v
 
 ## Nettoyage SCSS réalisé
 
-Les règles de label flottant de `_form.scss` et de BankField ont été remplacées. Les composants spécialisés Select, MultiSelect et BankField restent présents; aucun nettoyage agressif de règles dont l’usage n’a pas été confirmé n’a été effectué.
+Les règles de label flottant de `_form.scss`, `_input.scss` et des feuilles objet Company/Clients/Invoices/ClientTypes ont été supprimées. Les composants spécialisés Select, MultiSelect et BankField restent présents; leurs hooks, dropdowns, statuts et positions internes sont conservés. Les lignes de facture conservent explicitement neuf colonnes à tous les breakpoints.
+
+## Vérifications
+
+`npm run build`, `composer test` (83 tests, 134 assertions) et `git diff --check` passent. Le serveur PHP local n’a pas pu écouter sur les ports de test disponibles; les contrôles navigateur automatisés aux trois dimensions demandées et la lecture des styles calculés restent donc à effectuer sur un environnement web fonctionnel.
 
 ## Tests automatisés exécutés
 

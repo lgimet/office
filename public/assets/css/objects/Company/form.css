@@ -1,16 +1,16 @@
 .company-form {
     display: grid;
-    gap: 20px;
+    gap: .72rem;
     max-width: 1000px;
 }
 
 .company-form .form-group {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 14px;
-    padding: 18px;
+    gap: .72rem;
+    padding: .9rem;
     border: 1px solid var(--outline-variant);
-    border-radius: var(--radius-md);
+    border-radius: var(--section-radius);
 }
 
 .company-form legend {
@@ -19,33 +19,21 @@
     font-weight: 700;
 }
 
-.company-form .form-field {
-    position: relative;
-}
+.company-form .form-field { display: flex; flex-direction: column; gap: .26rem; }
 
 .company-form .company-form__wide {
     grid-column: 1 / -1;
 }
 
-.company-form .form-field label {
-    position: absolute;
-    z-index: 1;
-    top: 14px;
-    left: 12px;
-    padding: 0 4px;
-    color: var(--on-surface-variant);
-    font-size: var(--text-md);
-    pointer-events: none;
-    transition: all var(--motion-fast);
-}
+.company-form .form-field label { order: -1; display: block; padding: 0; color: var(--on-surface-variant); font-size: .72rem; font-weight: 400; line-height: 1.35; }
 
 .company-form input,
 .company-form textarea {
     width: 100%;
-    min-height: 48px;
-    padding: 20px 12px 8px;
+    min-height: var(--control-height);
+    padding: .38rem var(--control-padding-x);
     border: 1px solid var(--outline);
-    border-radius: var(--radius-md);
+    border-radius: var(--control-radius);
     background: var(--surface-base);
     color: var(--on-surface);
     font: inherit;
@@ -56,13 +44,6 @@
     resize: vertical;
 }
 
-.company-form input:focus + label,
-.company-form textarea:focus + label,
-.company-form .form-field.has-value > label {
-    top: 4px;
-    color: var(--primary);
-    font-size: var(--text-sm);
-}
 
 @media (max-width: 700px) {
     .company-form .form-group {

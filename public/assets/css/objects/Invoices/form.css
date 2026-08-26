@@ -31,9 +31,9 @@
 
 .invoice-card,
 .invoice-summary {
-    padding: 20px;
+    padding: .9rem;
     border: 1px solid var(--outline-variant);
-    border-radius: var(--radius-md);
+    border-radius: var(--section-radius);
     background: var(--surface-base);
     box-shadow: var(--shadow-1);
 }
@@ -217,26 +217,17 @@
     font-size: var(--text-sm);
 }
 
-.invoice-form .form-field {
-    position: relative;
-}
+.invoice-form .form-field { display: flex; flex-direction: column; gap: .26rem; }
 
-.invoice-form .form-field label {
-    position: absolute;
-    top: 4px;
-    left: 12px;
-    color: var(--on-surface-variant);
-    font-size: var(--text-sm);
-    pointer-events: none;
-}
+.invoice-form .form-field label { order: -1; position: static; color: var(--on-surface-variant); font-size: .72rem; font-weight: 400; line-height: 1.35; pointer-events: auto; }
 
 .invoice-form .form-field input,
 .invoice-form textarea {
     width: 100%;
-    min-height: 48px;
-    padding: 20px 12px 8px;
+    min-height: var(--control-height);
+    padding: .38rem var(--control-padding-x);
     border: 1px solid var(--outline);
-    border-radius: var(--radius-sm);
+    border-radius: var(--control-radius);
     background: var(--surface-base);
     color: var(--on-surface);
 }
@@ -245,9 +236,7 @@
     min-height: 90px;
 }
 
-.invoice-form .custom-select input {
-    padding: 20px 40px 8px 14px;
-}
+.invoice-form .custom-select input { padding: .38rem 2.1rem .38rem var(--control-padding-x); }
 
 @media (max-width: 1150px) {
     .invoice-lines-head {
