@@ -77,6 +77,11 @@ class CompanySettingsService
             throw new \InvalidArgumentException('La devise par défaut doit comporter trois lettres.');
         }
 
+        $prefix = strtoupper(trim((string) ($input['invoice_number_prefix'] ?? 'F')));
+        if (!preg_match('/^[A-Z0-9]{1,8}$/', $prefix)) {
+            throw new \InvalidArgumentException('Le préfixe des factures doit comporter de 1 à 8 caractères alphanumériques.');
+        }
+
         return [
             $legalName,
             $this->nullable($input, 'trading_name'),
@@ -100,6 +105,7 @@ class CompanySettingsService
             $this->nullable($input, 'bic'),
             $currency,
             number_format((float) $taxRate, 2, '.', ''),
+            $prefix,
             $this->nullable($input, 'default_payment_terms'),
             $this->paymentTermsCode($input['default_payment_terms_code'] ?? null, $input['default_payment_terms'] ?? null),
             $this->nullable($input, 'default_payment_method'),
@@ -139,6 +145,7 @@ class CompanySettingsService
             'country' => 'France',
             'default_currency' => 'EUR',
             'default_tax_rate' => '20.00',
+            'invoice_number_prefix' => 'F',
         ];
     }
 }

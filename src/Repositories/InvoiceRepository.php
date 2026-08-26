@@ -4,17 +4,23 @@ namespace App\Repositories;
 
 use App\Core\BaseRepository;
 use App\Services\InvoiceNumberGenerator;
+use App\Services\TenantContext;
 
 class InvoiceRepository extends BaseRepository
 {
+    public function __construct(private readonly TenantContext $tenant)
+    {
+        parent::__construct();
+    }
+
     public function paginate(string $search, string $status, int $page, int $limit): array
     {
-        $where = [];
-        $params = [];
+        $where = ['i.tenant_id = ?'];
+        $params = [$this->tenant->id()];
 
         if ($search !== '') {
             $where[] = '(i.invoice_number LIKE ? OR i.client_name LIKE ? OR i.client_email LIKE ? OR CAST(i.id AS CHAR) LIKE ?)';
-            $params = array_fill(0, 4, '%' . $search . '%');
+            array_push($params, ...array_fill(0, 4, '%' . $search . '%'));
         }
         if ($status !== '') {
             $where[] = 'i.status = ?';
@@ -35,19 +41,19 @@ class InvoiceRepository extends BaseRepository
 
     public function client(int $id): ?array
     {
-        return $this->query('SELECT * FROM clients WHERE id = ? AND is_active = 1', [$id])?->fetch() ?: null;
+        return $this->query('SELECT * FROM clients WHERE id = ? AND tenant_id = ? AND is_active = 1', [$id, $this->tenant->id()])?->fetch() ?: null;
     }
 
     public function clientOptions(string $query = ''): array
     {
         $sql = 'SELECT id, COALESCE(NULLIF(display_name, \'\'), company_name) AS label
                 FROM clients
-                WHERE is_active = 1';
-        $params = [];
+                WHERE is_active = 1 AND tenant_id = ?';
+        $params = [$this->tenant->id()];
 
         if ($query !== '') {
             $sql .= ' AND (company_name LIKE ? OR display_name LIKE ? OR email LIKE ?)';
-            $params = array_fill(0, 3, '%' . $query . '%');
+            array_push($params, ...array_fill(0, 3, '%' . $query . '%'));
         }
 
         $sql .= ' ORDER BY company_name LIMIT 25';
@@ -57,14 +63,14 @@ class InvoiceRepository extends BaseRepository
 
     public function find(int $id): ?array
     {
-        return $this->query('SELECT * FROM invoices WHERE id = ?', [$id])?->fetch() ?: null;
+        return $this->query('SELECT * FROM invoices WHERE id = ? AND tenant_id = ?', [$id, $this->tenant->id()])?->fetch() ?: null;
     }
 
     public function lines(int $invoiceId): array
     {
         return $this->query(
-            'SELECT * FROM invoice_lines WHERE invoice_id = ? ORDER BY position ASC, id ASC',
-            [$invoiceId]
+            'SELECT il.* FROM invoice_lines il INNER JOIN invoices i ON i.id = il.invoice_id AND i.tenant_id = ? WHERE il.invoice_id = ? ORDER BY il.position ASC, il.id ASC',
+            [$this->tenant->id(), $invoiceId]
         )?->fetchAll() ?: [];
     }
 
@@ -73,9 +79,9 @@ class InvoiceRepository extends BaseRepository
         $this->pdo->beginTransaction();
         try {
             $id = $this->insert(
-                'INSERT INTO invoices (client_id, status, issue_date, due_date, currency, client_name, client_contact_name, client_email, client_phone, client_address_line1, client_address_line2, client_postal_code, client_city, client_country, client_siret, client_vat_number, subtotal_excl_tax, discount_total_excl_tax, tax_total, total_incl_tax, payment_terms_code, payment_terms, payment_method, public_note, internal_note)
-                 VALUES (?, \'draft\', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                $invoice
+                'INSERT INTO invoices (tenant_id, client_id, status, issue_date, due_date, currency, client_name, client_contact_name, client_email, client_phone, client_address_line1, client_address_line2, client_postal_code, client_city, client_country, client_siret, client_vat_number, subtotal_excl_tax, discount_total_excl_tax, tax_total, total_incl_tax, payment_terms_code, payment_terms, payment_method, public_note, internal_note)
+                 VALUES (?, ?, \'draft\', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                [$this->tenant->id(), ...$invoice]
             );
             $this->insertLines((int) $id, $lines);
             $this->pdo->commit();
@@ -92,8 +98,8 @@ class InvoiceRepository extends BaseRepository
 
         try {
             $draft = $this->query(
-                'SELECT id FROM invoices WHERE id = ? AND status = \'draft\' FOR UPDATE',
-                [$id]
+                'SELECT id FROM invoices WHERE id = ? AND tenant_id = ? AND status = \'draft\' FOR UPDATE',
+                [$id, $this->tenant->id()]
             )?->fetch();
 
             if ($draft === false || $draft === null) {
@@ -114,8 +120,8 @@ class InvoiceRepository extends BaseRepository
 
         try {
             $invoice = $this->query(
-                'SELECT id, status FROM invoices WHERE id = ? FOR UPDATE',
-                [$id]
+                'SELECT id, status FROM invoices WHERE id = ? AND tenant_id = ? FOR UPDATE',
+                [$id, $this->tenant->id()]
             )?->fetch();
 
             if ($invoice === false || $invoice === null) {
@@ -127,7 +133,7 @@ class InvoiceRepository extends BaseRepository
             }
 
             $this->query('DELETE FROM invoice_lines WHERE invoice_id = ?', [$id]);
-            $this->query('DELETE FROM invoices WHERE id = ? AND status = \'draft\'', [$id]);
+            $this->query('DELETE FROM invoices WHERE id = ? AND tenant_id = ? AND status = \'draft\'', [$id, $this->tenant->id()]);
             $this->pdo->commit();
         } catch (\Throwable $exception) {
             $this->pdo->rollBack();
@@ -142,8 +148,8 @@ class InvoiceRepository extends BaseRepository
         try {
             $lockedInvoice = $this->query(
                 'SELECT id, status, invoice_number, issue_date
-                 FROM invoices WHERE id = ? FOR UPDATE',
-                [$id]
+                 FROM invoices WHERE id = ? AND tenant_id = ? FOR UPDATE',
+                [$id, $this->tenant->id()]
             )?->fetch();
 
             if ($lockedInvoice === false || $lockedInvoice === null) {
@@ -155,14 +161,14 @@ class InvoiceRepository extends BaseRepository
             }
 
             $this->writeDraft($id, $invoice, $lines);
-            $issueDate = new \DateTimeImmutable((string) $lockedInvoice['issue_date']);
-            $number = (new InvoiceNumberGenerator())->next($this->pdo, $issueDate);
+            $issueDate = new \DateTimeImmutable((string) $invoice[1]);
+            $number = (new InvoiceNumberGenerator())->next($this->pdo, $this->tenant->id(), $issueDate, $this->tenant->tenant()['invoice_number_prefix'] ?? 'F');
             $updated = $this->query(
                 'UPDATE invoices
                  SET invoice_number = ?, status = \'issued\', issued_at = CURRENT_TIMESTAMP,
                      updated_at = CURRENT_TIMESTAMP
-                 WHERE id = ? AND status = \'draft\' AND invoice_number IS NULL',
-                [$number, $id]
+                 WHERE id = ? AND tenant_id = ? AND status = \'draft\' AND invoice_number IS NULL',
+                [$number, $id, $this->tenant->id()]
             );
 
             if ($updated === null || $updated->rowCount() !== 1) {
@@ -206,8 +212,8 @@ class InvoiceRepository extends BaseRepository
                  discount_total_excl_tax = ?, tax_total = ?, total_incl_tax = ?,
                  payment_terms_code = ?, payment_terms = ?, payment_method = ?, public_note = ?,
                  internal_note = ?, updated_at = CURRENT_TIMESTAMP
-             WHERE id = ?',
-            [...$invoice, $id]
+             WHERE id = ? AND tenant_id = ?',
+            [...$invoice, $id, $this->tenant->id()]
         );
 
         $this->query('DELETE FROM invoice_lines WHERE invoice_id = ?', [$id]);

@@ -141,6 +141,9 @@ class InvoiceService
         return [
             'tax_rate' => is_numeric($taxRate) ? $taxRate : '20.00',
             'currency' => preg_match('/^[A-Z]{3}$/', $currency) ? $currency : 'EUR',
+            'invoice_number_prefix' => preg_match('/^[A-Z0-9]{1,8}$/', (string) ($company['invoice_number_prefix'] ?? 'F'))
+                ? strtoupper((string) $company['invoice_number_prefix'])
+                : 'F',
             'payment_terms' => $company['default_payment_terms'] ?? null,
             'payment_terms_code' => $company['default_payment_terms_code'] ?? null,
             'payment_method' => $company['default_payment_method'] ?? null,

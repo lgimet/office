@@ -129,6 +129,12 @@
         </div>
 
         <div class="form-field">
+            <input id="company-invoice-number-prefix" name="invoice_number_prefix" maxlength="8" pattern="[A-Za-z0-9]{1,8}" placeholder="" value="{{ company.invoice_number_prefix ?? 'F' }}">
+            <label for="company-invoice-number-prefix">Préfixe des factures</label>
+            <small>Exemple : D2026-0001</small>
+        </div>
+
+        <div class="form-field">
             <input id="company-payment-terms" name="default_payment_terms" placeholder="" value="{{ company.default_payment_terms ?? '' }}">
             <label for="company-payment-terms">Conditions de paiement</label>
         </div>

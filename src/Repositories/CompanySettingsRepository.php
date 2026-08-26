@@ -3,26 +3,33 @@
 namespace App\Repositories;
 
 use App\Core\BaseRepository;
+use App\Services\TenantContext;
 
 class CompanySettingsRepository extends BaseRepository
 {
+    public function __construct(private readonly TenantContext $tenant)
+    {
+        parent::__construct();
+    }
+
     public function find(): ?array
     {
-        return $this->query('SELECT * FROM company_settings WHERE id = 1')?->fetch() ?: null;
+        return $this->query('SELECT * FROM company_settings WHERE tenant_id = ?', [$this->tenant->id()])?->fetch() ?: null;
     }
 
     public function save(array $settings): void
     {
+        $settings = [$this->tenant->id(), ...$settings];
         $this->query(
             'INSERT INTO company_settings (
-                id, legal_name, trading_name, legal_form, share_capital,
+                tenant_id, legal_name, trading_name, legal_form, share_capital,
                 address_line1, address_line2, postal_code, city, country,
                 email, phone, website, siret, siren, vat_number, ape_code,
                 rcs_city, bank_name, iban, bic, default_currency,
-                default_tax_rate, default_payment_terms, default_payment_terms_code,
+                default_tax_rate, invoice_number_prefix, default_payment_terms, default_payment_terms_code,
                 default_payment_method, invoice_footer
             ) VALUES (
-                1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
             ) ON DUPLICATE KEY UPDATE
                 legal_name = VALUES(legal_name),
                 trading_name = VALUES(trading_name),
@@ -46,6 +53,7 @@ class CompanySettingsRepository extends BaseRepository
                 bic = VALUES(bic),
                 default_currency = VALUES(default_currency),
                 default_tax_rate = VALUES(default_tax_rate),
+                invoice_number_prefix = VALUES(invoice_number_prefix),
                 default_payment_terms = VALUES(default_payment_terms),
                 default_payment_terms_code = VALUES(default_payment_terms_code),
                 default_payment_method = VALUES(default_payment_method),

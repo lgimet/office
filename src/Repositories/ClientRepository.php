@@ -3,16 +3,22 @@
 namespace App\Repositories;
 
 use App\Core\BaseRepository;
+use App\Services\TenantContext;
 
 class ClientRepository extends BaseRepository
 {
+    public function __construct(private readonly TenantContext $tenant)
+    {
+        parent::__construct();
+    }
+
     public function paginate(string $search, ?int $typeId, int $page, int $limit): array
     {
-        $where = [];
-        $params = [];
+        $where = ['c.tenant_id = ?'];
+        $params = [$this->tenant->id()];
         if ($search !== '') {
             $where[] = '(c.company_name LIKE ? OR c.display_name LIKE ? OR c.contact_first_name LIKE ? OR c.contact_last_name LIKE ? OR c.email LIKE ? OR c.phone LIKE ? OR c.siret LIKE ? OR c.city LIKE ?)';
-            $params = array_fill(0, 8, '%' . $search . '%');
+            array_push($params, ...array_fill(0, 8, '%' . $search . '%'));
         }
         if ($typeId !== null) {
             $where[] = 'c.client_type_id = ?';
@@ -30,31 +36,31 @@ class ClientRepository extends BaseRepository
 
     public function find(int $id): ?array
     {
-        return $this->query('SELECT * FROM clients WHERE id = ?', [$id])?->fetch() ?: null;
+        return $this->query('SELECT * FROM clients WHERE id = ? AND tenant_id = ?', [$id, $this->tenant->id()])?->fetch() ?: null;
     }
     public function create(array $data): int
     {
-        return (int) $this->insert($this->writeSql(false), $this->writeParams($data));
+        return (int) $this->insert($this->writeSql(false), [$this->tenant->id(), ...$this->writeParams($data)]);
     }
     public function update(int $id, array $data): void
     {
-        $this->query($this->writeSql(true), [...$this->writeParams($data), $id]);
+        $this->query($this->writeSql(true), [...$this->writeParams($data), $id, $this->tenant->id()]);
     }
     public function toggle(int $id): void
     {
-        $this->query('UPDATE clients SET is_active = NOT is_active, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [$id]);
+        $this->query('UPDATE clients SET is_active = NOT is_active, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND tenant_id = ?', [$id, $this->tenant->id()]);
     }
     public function countByType(int $typeId): int
     {
-        return (int) ($this->query('SELECT COUNT(*) FROM clients WHERE client_type_id = ?', [$typeId])?->fetchColumn() ?: 0);
+        return (int) ($this->query('SELECT COUNT(*) FROM clients WHERE client_type_id = ? AND tenant_id = ?', [$typeId, $this->tenant->id()])?->fetchColumn() ?: 0);
     }
     private function writeSql(bool $update): string
     {
-        $fields = 'client_type_id, company_name, display_name, contact_first_name, contact_last_name, email, phone, address_line1, address_line2, postal_code, city, country, siret, vat_number, notes, is_active';
+        $fields = 'tenant_id, client_type_id, company_name, display_name, contact_first_name, contact_last_name, email, phone, address_line1, address_line2, postal_code, city, country, siret, vat_number, notes, is_active';
         if (!$update) {
-            return 'INSERT INTO clients (' . $fields . ') VALUES (' . rtrim(str_repeat('?, ', 16), ', ') . ')';
+            return 'INSERT INTO clients (' . $fields . ') VALUES (' . rtrim(str_repeat('?, ', 17), ', ') . ')';
         }
-        return 'UPDATE clients SET client_type_id=?, company_name=?, display_name=?, contact_first_name=?, contact_last_name=?, email=?, phone=?, address_line1=?, address_line2=?, postal_code=?, city=?, country=?, siret=?, vat_number=?, notes=?, is_active=?, updated_at=CURRENT_TIMESTAMP WHERE id=?';
+        return 'UPDATE clients SET client_type_id=?, company_name=?, display_name=?, contact_first_name=?, contact_last_name=?, email=?, phone=?, address_line1=?, address_line2=?, postal_code=?, city=?, country=?, siret=?, vat_number=?, notes=?, is_active=?, updated_at=CURRENT_TIMESTAMP WHERE id=? AND tenant_id=?';
     }
     private function writeParams(array $d): array
     {
