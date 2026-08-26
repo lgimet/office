@@ -7,11 +7,21 @@
   min-width: 0;
 }
 .form-group {
-  margin: 0 0 1rem;
-  padding: 0.9rem;
-  border: 1px solid var(--outline-variant);
-  border-radius: var(--section-radius);
-  background: var(--surface-base);
+    background: var(--surface-base);
+    border: 1px solid color-mix(
+        in srgb,
+        var(--outline) 55%,
+        transparent
+    );
+}
+
+.form-group legend,
+.form-section__title {
+    padding: 0 .4rem;
+    background: var(--surface-base);
+    color: var(--on-surface);
+    font-size: .78rem;
+    font-weight: 500;
 }
 .form-group:last-child {
   margin-bottom: 0;
@@ -22,9 +32,6 @@
   justify-self: start;
   width: auto;
   margin: 0 0 0.1rem;
-  padding: 0;
-  color: var(--on-surface);
-  font-size: 0.78rem;
   font-weight: 500;
   letter-spacing: 0.01em;
 }

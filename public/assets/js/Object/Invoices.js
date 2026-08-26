@@ -84,20 +84,14 @@ export default class Invoices extends Core {
                 }
 
                 this.bodyRef.add_invoice_line.addEventListener("click", () => this.addLine());
+                this.bindPaymentTerms();
                 this.recalculate();
             },
         });
     }
 
     formActions(id = null) {
-        const actions = [
-            {
-                label: "Annuler",
-                className: "m-btn m-btn--outline",
-                icon: "bi-x-lg",
-                callback: () => this.list(),
-            },
-        ];
+        const actions = [];
 
         if (id) {
             actions.push({
@@ -284,6 +278,119 @@ export default class Invoices extends Core {
         row.querySelector(".discount-suffix").textContent = type === "fixed" ? "€" : "%";
         toggle.textContent = discount.hidden ? "+ Remise" : "Remise active";
         toggle.classList.toggle("is-active", !discount.hidden);
+    }
+
+    bindPaymentTerms() {
+        const form = this.bodyRef.invoice_form;
+        const preset = form.querySelector("#invoice-payment-terms-preset");
+        const value = form.querySelector("#invoice-payment-terms");
+        const customWrapper = form.querySelector(".invoice-payment-terms-custom");
+        const customInput = form.querySelector("#invoice-payment-terms-custom-input");
+        const issueDate = form.querySelector("#invoice-issue-date");
+        const dueDate = form.querySelector("#invoice-due-date");
+
+        if (!preset || !value || !customWrapper || !customInput || !issueDate || !dueDate) return;
+
+        const normalize = (text) => String(text || "")
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .trim()
+            .toLowerCase();
+        const existingValue = value.value;
+        const matchingOption = [...preset.options].find((option) => (
+            normalize(option.dataset.label) === normalize(existingValue)
+            || (normalize(existingValue) === "sous 15 jours" && option.value === "days_15")
+        ));
+
+        if (matchingOption) {
+            preset.value = matchingOption.value;
+            customInput.value = matchingOption.dataset.label;
+        } else {
+            preset.value = "custom";
+            customInput.value = existingValue;
+        }
+
+        const syncState = (recalculateDueDate = false) => {
+            const option = preset.options[preset.selectedIndex];
+            const isCustom = preset.value === "custom";
+
+            customWrapper.hidden = !isCustom;
+            customInput.required = isCustom;
+            dueDate.readOnly = !isCustom;
+
+            if (!isCustom) {
+                value.value = option?.dataset.label || "";
+                if (recalculateDueDate) this.updateDueDate(preset.value, issueDate, dueDate);
+            } else {
+                value.value = customInput.value;
+            }
+        };
+
+        preset.addEventListener("change", () => syncState(true));
+        issueDate.addEventListener("change", () => {
+            if (preset.value !== "custom") this.updateDueDate(preset.value, issueDate, dueDate);
+        });
+        customInput.addEventListener("input", () => {
+            value.value = customInput.value;
+        });
+
+        syncState(false);
+    }
+
+    updateDueDate(rule, issueDate, dueDate) {
+        const calculated = this.calculateDueDate(issueDate.value, rule);
+        if (calculated) dueDate.value = calculated;
+    }
+
+    calculateDueDate(issueDate, rule) {
+        const parts = String(issueDate || "").split("-").map(Number);
+        if (parts.length !== 3 || parts.some((part) => !Number.isInteger(part))) return "";
+
+        const [year, month, day] = parts;
+        const date = new Date(year, month - 1, day);
+        if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) return "";
+
+        const addDays = (days) => date.setDate(date.getDate() + days);
+        const endOfMonth = () => date.setMonth(date.getMonth() + 1, 0);
+
+        switch (rule) {
+            case "cash":
+            case "receipt":
+                break;
+            case "days_15":
+                addDays(15);
+                break;
+            case "days_30":
+                addDays(30);
+                break;
+            case "days_45":
+                addDays(45);
+                break;
+            case "days_60":
+                addDays(60);
+                break;
+            case "days_30_then_eom":
+                addDays(30);
+                endOfMonth();
+                break;
+            case "days_45_then_eom":
+                addDays(45);
+                endOfMonth();
+                break;
+            case "eom_plus_30":
+                endOfMonth();
+                addDays(30);
+                break;
+            case "eom_plus_45":
+                endOfMonth();
+                addDays(45);
+                break;
+            default:
+                return "";
+        }
+
+        const pad = (number) => String(number).padStart(2, "0");
+        return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
     }
 
     save() {
