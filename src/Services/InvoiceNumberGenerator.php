@@ -14,6 +14,6 @@ class InvoiceNumberGenerator
         $s->execute([$year]);
         $number = (int)$s->fetchColumn() + 1;
         $pdo->prepare('UPDATE invoice_number_sequences SET last_number=?,updated_at=CURRENT_TIMESTAMP WHERE year=?')->execute([$number,$year]);
-        return sprintf('DEV-%d-%04d', $year, $number);
+        return sprintf('F%d-%04d', $year, $number);
     }
 }

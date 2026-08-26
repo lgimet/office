@@ -158,6 +158,17 @@ class InvoiceService
         $this->invoices->deleteDraft($id);
     }
 
+    public function issueDraft(array $input, ?int $id = null): string
+    {
+        if ($id === null || $id <= 0) {
+            throw new \InvalidArgumentException('Enregistrez la facture avant de l’émettre.');
+        }
+
+        $this->saveDraft($input, $id);
+
+        return $this->invoices->issueDraft($id);
+    }
+
     private function billingDefaults(): array
     {
         $company = $this->companySettings->find() ?? [];

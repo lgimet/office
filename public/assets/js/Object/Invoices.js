@@ -110,6 +110,15 @@ export default class Invoices extends Core {
             callback: () => this.save(),
         });
 
+        if (id) {
+            actions.push({
+                label: "Émettre la facture",
+                className: "m-btn m-btn--primary",
+                icon: "bi-send-check",
+                callback: (record) => this.issue(id, record),
+            });
+        }
+
         return actions;
     }
 
@@ -484,6 +493,44 @@ export default class Invoices extends Core {
                 }
 
                 UI.toast(json.error.message, "error");
+            },
+        });
+    }
+
+    async issue(id, windowRecord = null) {
+        const form = this.bodyRef.invoice_form;
+
+        if (!form.reportValidity()) return;
+
+        const confirmed = await UI.confirm({
+            type: "warning",
+            message: "Émettre cette facture ?<br><br>Un numéro définitif va lui être attribué. Après émission, elle ne pourra plus être modifiée ni supprimée comme un brouillon.",
+            yesText: "Émettre",
+            noText: "Annuler",
+        });
+
+        if (!confirmed) return;
+
+        const data = this.collectFormData(form);
+        data.id = id;
+        data.lines = [...this.bodyRef.invoice_lines.querySelectorAll(".invoice-line-row")].map((row) => (
+            Object.fromEntries(
+                [...row.querySelectorAll("input, select")].map((field) => [field.name, field.value])
+            )
+        ));
+
+        this.callAction("issue", data, {
+            callback: (json) => {
+                if (!json.success) {
+                    UI.toast(json.error.message, "error");
+                    return;
+                }
+
+                UI.toast(json.toast, "ok");
+                if (this.table) this.table.load(true);
+
+                const record = windowRecord || this.resolveWindowRecord(form.closest(".window")?.id);
+                if (record) this.closeWindow(record.id);
             },
         });
     }

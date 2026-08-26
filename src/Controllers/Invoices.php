@@ -93,6 +93,23 @@ class Invoices extends BaseController
 
     #[Route(method: 'POST')]
     #[AuthRequired]
+    public function issue(array $input): Response
+    {
+        try {
+            $data = $this->payload($input);
+            $id = isset($data['id']) ? (int) $data['id'] : null;
+            $number = $this->service->issueDraft($data, $id);
+
+            return (new Response())
+                ->setId($id)
+                ->setToast("La facture {$number} a été émise.");
+        } catch (\InvalidArgumentException | \LogicException $exception) {
+            return (new Response())->setError(422, $exception->getMessage());
+        }
+    }
+
+    #[Route(method: 'POST')]
+    #[AuthRequired]
     public function delete(array $input): Response
     {
         try {

@@ -113,7 +113,7 @@
                 </div>
 
                 <div class="invoice-details-column">
-                    <div class="form-field">
+                    <div class="form-field invoice-details-field">
                         <input
                             id="invoice-issue-date"
                             type="date"
@@ -124,7 +124,7 @@
                         <label for="invoice-issue-date">Date de facture</label>
                     </div>
 
-                    <div class="form-field">
+                    <div class="form-field invoice-details-field">
                         <input
                             id="invoice-due-date"
                             type="date"
@@ -134,7 +134,7 @@
                         <label for="invoice-due-date">Date d’échéance</label>
                     </div>
 
-                    <div class="form-field">
+                    <div class="form-field invoice-details-field invoice-payment-terms-field">
                         <select id="invoice-payment-terms-preset" aria-describedby="invoice-payment-terms-custom-label">
                             <option value="cash" data-label="Comptant" {% if selected_terms_code == 'cash' %}selected{% endif %}>Comptant</option>
                             <option value="receipt" data-label="À réception" {% if selected_terms_code == 'receipt' %}selected{% endif %}>À réception</option>
@@ -155,7 +155,7 @@
                         <label for="invoice-payment-terms-preset">Délai de paiement</label>
                     </div>
 
-                    <div class="form-field">
+                    <div class="form-field invoice-details-field">
                         <select id="invoice-payment-method" name="payment_method">
                             {% set payment_method = invoice.payment_method|default(defaults.payment_method|default('CB')) %}
                             <option value="CB" {% if payment_method == 'CB' %}selected{% endif %}>CB</option>
@@ -165,7 +165,7 @@
                         <label for="invoice-payment-method">Mode de paiement attendu</label>
                     </div>
 
-                    <div class="form-field">
+                    <div class="form-field invoice-details-field">
                         <input id="invoice-currency" name="currency" value="{{ invoice.currency ?? defaults.currency ?? 'EUR' }}" readonly>
                         <label for="invoice-currency">Devise</label>
                     </div>

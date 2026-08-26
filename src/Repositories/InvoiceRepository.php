@@ -3,6 +3,7 @@
 namespace App\Repositories;
 
 use App\Core\BaseRepository;
+use App\Services\InvoiceNumberGenerator;
 
 class InvoiceRepository extends BaseRepository
 {
@@ -145,6 +146,49 @@ class InvoiceRepository extends BaseRepository
             $this->pdo->commit();
         } catch (\Throwable $exception) {
             $this->pdo->rollBack();
+            throw $exception;
+        }
+    }
+
+    public function issueDraft(int $id): string
+    {
+        $this->pdo->beginTransaction();
+
+        try {
+            $invoice = $this->query(
+                'SELECT id, status, invoice_number, issue_date
+                 FROM invoices WHERE id = ? FOR UPDATE',
+                [$id]
+            )?->fetch();
+
+            if ($invoice === false || $invoice === null) {
+                throw new \InvalidArgumentException('La facture demandée est introuvable.');
+            }
+
+            if ($invoice['status'] !== 'draft' || !empty($invoice['invoice_number'])) {
+                throw new \LogicException('Cette facture a déjà été émise.');
+            }
+
+            $issueDate = new \DateTimeImmutable((string) $invoice['issue_date']);
+            $number = (new InvoiceNumberGenerator())->next($this->pdo, $issueDate);
+            $updated = $this->query(
+                'UPDATE invoices
+                 SET invoice_number = ?, status = \'issued\', issued_at = CURRENT_TIMESTAMP,
+                     updated_at = CURRENT_TIMESTAMP
+                 WHERE id = ? AND status = \'draft\' AND invoice_number IS NULL',
+                [$number, $id]
+            );
+
+            if ($updated === null || $updated->rowCount() !== 1) {
+                throw new \LogicException('Cette facture a déjà été émise.');
+            }
+
+            $this->pdo->commit();
+            return $number;
+        } catch (\Throwable $exception) {
+            if ($this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
             throw $exception;
         }
     }
