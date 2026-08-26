@@ -42,6 +42,6 @@ Les tests couvrent l’issuer login valide, le rejet de l’issuer API et les fo
 
 ## Vérifications
 
-`composer validate` passe avec l’avertissement préexistant de licence manquante; `composer dump-autoload --no-interaction` passe. `composer test` passe avec PHPUnit : 80 tests et 125 assertions. Le lint PHP passe sur `src` et `tests`. Aucun secret n’a été modifié et aucun dépôt externe n’a été modifié.
+`composer validate` passe avec l’avertissement préexistant de licence manquante; `composer dump-autoload --no-interaction` passe. `composer test` passe avec PHPUnit : 82 tests et 131 assertions. Le lint PHP passe sur `src` et `tests`. Aucun secret n’a été modifié et aucun dépôt externe n’a été modifié.
 
 La migration ne couvre ni invoices, ni company settings, ni le stockage `dedicated`; 7B ne clôt donc pas le chantier tenant-aware global.

@@ -14,6 +14,14 @@ Le logout existant détruit la session complète et supprime donc également le 
 
 Les tests couvrent le stockage initial du refresh token, son exigence au callback, l’absence de refresh pour un Access Token valide, la requête Basic de refresh sans paramètres métier, la rotation access/refresh, la mise à jour des scopes, les réponses invalides, `invalid_grant`, la purge et la redirection, ainsi que l’absence de retry après erreur réseau.
 
-`composer validate` passe avec l’avertissement préexistant de licence manquante. `composer dump-autoload --no-interaction` passe. `composer test` passe avec 80 tests et 125 assertions. Le lint PHP passe sur `src` et `tests`.
+`composer validate` passe avec l’avertissement préexistant de licence manquante. `composer dump-autoload --no-interaction` passe. `composer test` passe avec 83 tests et 134 assertions. Le lint PHP passe sur `src` et `tests`.
+
+## Correctif post-revue — garde `AuthRequired`
+
+Le garde des routes protégées ne vérifie plus directement `isAuthenticated()` avant le refresh. `AuthService::verify()` exige d’abord une identité locale, demande ensuite un Access Token utilisable à `OfficeAccessTokenProvider`, puis relit l’identité afin d’exposer les scopes éventuellement réduits par le serveur après rotation. `AuthService::isAuthenticated()` suit le même provider et intercepte uniquement le redirect sécurisé pour rester strictement booléen.
+
+Ainsi, une route `AuthRequired` avec un Access Token dans la marge d’expiration effectue au maximum un refresh silencieux avant son contrôleur. En cas d’échec, le provider purge la session et redirige vers le login sans boucle. Le refresh token reste exclusivement côté session serveur et n’est jamais présent dans l’objet identité retourné.
+
+Après ce correctif, `composer test` passe avec 83 tests et 134 assertions; le lint PHP passe sur `src` et `tests`. Aucun changement n’a été effectué dans `Office-Api` ou `office-mcp`.
 
 Le test d’intégration avec un Authorization Server réel supportant la rotation obligatoire du refresh token reste à exécuter après déploiement. Validation manuelle attendue : simuler un Access Token proche de l’expiration, ouvrir une page appelant l’API métier, vérifier un seul POST refresh vers `login.devsys.fr`, la réussite de l’appel API et le remplacement du refresh token, sans afficher de token complet.
