@@ -1,0 +1,20 @@
+{
+    "name": "Office Devsys",
+    "short_name": "Office",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#faf9f8",
+    "theme_color": "#17332e",
+    "icons": [
+        {
+            "src": "/assets/images/icons/icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "/assets/images/icons/icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ]
+}

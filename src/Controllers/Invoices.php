@@ -38,6 +38,12 @@ class Invoices extends BaseController
     #[AuthRequired]
     public function clientOptions(): Response
     {
+        $id = (int) ($_GET['id'] ?? 0);
+        if ($id > 0) {
+            $client = $this->repository->client($id);
+            return (new Response())->setPayload($client ? [$client] : []);
+        }
+
         return (new Response())->setPayload(
             $this->repository->clientOptions(trim((string) ($_GET['q'] ?? '')))
         );

@@ -10,6 +10,29 @@
   }
 }
 
+#invoice-client .custom-select-input-wrapper::before,
+#invoice-client .custom-select-input-wrapper::after {
+  position: absolute;
+  top: 50%;
+  z-index: 1;
+  transform: translateY(-50%);
+  color: var(--on-surface-variant);
+  font-family: "Material Symbols Outlined";
+  font-size: 1.1rem;
+  line-height: 1;
+  pointer-events: none;
+}
+
+#invoice-client .custom-select-input-wrapper::before {
+  left: var(--control-padding-x);
+  content: "person";
+}
+
+#invoice-client .custom-select-input-wrapper::after {
+  right: var(--control-padding-x);
+  content: "search";
+}
+
 .custom-select input {
   width: 100%;
   min-height: 36px;
@@ -19,6 +42,11 @@
   background: var(--surface);
   color: var(--on-surface);
   transition: border-color var(--motion-fast), box-shadow var(--motion-fast), background var(--motion-fast);
+}
+
+#invoice-client .custom-select-input-wrapper > input {
+  padding-right: 2.1rem;
+  padding-left: 2.1rem;
 }
 
 .custom-select input:focus,

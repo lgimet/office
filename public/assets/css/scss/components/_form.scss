@@ -107,6 +107,12 @@
     box-shadow var(--motion-fast),
     background-color var(--motion-fast);
 }
+.form-control:not(textarea),
+.form-field > input:not([type="checkbox"]):not([type="hidden"]),
+.form-field > select {
+  height: var(--control-height);
+  padding-block: 0;
+}
 .form-control:focus,
 .form-control:focus-visible,
 .form-field > input:not([type="checkbox"]):not([type="hidden"]):focus,

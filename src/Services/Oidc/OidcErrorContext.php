@@ -55,6 +55,36 @@ final class OidcErrorContext
 
     public static function log(\Throwable $exception, string $code): void
     {
-        error_log(sprintf('[%s] OIDC callback %s: %s: %s%s%s', date('c'), $code, $exception::class, $exception->getMessage(), PHP_EOL, $exception->getTraceAsString()));
+        $lines = [sprintf('[%s] OIDC callback %s: %s: %s', date('c'), $code, $exception::class, self::safeMessage($exception->getMessage()))];
+        $previous = $exception->getPrevious();
+        $depth = 0;
+
+        while ($previous !== null && $depth < 10) {
+            $lines[] = sprintf('OIDC previous: %s: %s', $previous::class, self::safeMessage($previous->getMessage()));
+            $previous = $previous->getPrevious();
+            $depth++;
+        }
+
+        if ($previous !== null) {
+            $lines[] = 'OIDC previous: [exception chain truncated]';
+        }
+
+        try {
+            error_log(implode(PHP_EOL, $lines));
+        } catch (\Throwable) {
+            // Le diagnostic ne doit jamais interrompre le callback OIDC.
+        }
+    }
+
+    private static function safeMessage(string $message): string
+    {
+        $message = preg_replace(
+            '/((?:access_token|refresh_token|id_token|client_secret|authorization_code|nonce|authorization|cookie))\s*[:=]\s*(?:"[^"]*"|\'[^\']*\'|[^\s,;]+)/i',
+            '$1=[redacted]',
+            $message
+        ) ?? '';
+        $message = preg_replace('/\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\b/', '[jwt redacted]', $message) ?? '';
+
+        return str_replace(["\r", "\n"], ' ', $message);
     }
 }

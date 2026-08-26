@@ -3,6 +3,23 @@
     {% set default_due_date = invoice.due_date|default('') %}
     {% set default_payment_terms = invoice.payment_terms|default(defaults.payment_terms|default('Sous 15 jours')) %}
     {% set default_payment_terms_code = invoice.payment_terms_code|default(defaults.payment_terms_code|default('')) %}
+    {% set selected_terms_code = default_payment_terms_code %}
+    {% if selected_terms_code not in ['cash', 'receipt', 'days_15', 'days_30', 'days_45', 'days_60', 'days_30_then_eom', 'days_45_then_eom', 'custom'] %}
+        {% set selected_terms_code = '' %}
+    {% endif %}
+    {% if not selected_terms_code %}
+        {% set normalized_terms = default_payment_terms|lower|trim %}
+        {% if normalized_terms in ['cash', 'comptant'] %}{% set selected_terms_code = 'cash' %}
+        {% elseif normalized_terms in ['receipt', 'à réception', 'a réception', 'a reception'] %}{% set selected_terms_code = 'receipt' %}
+        {% elseif normalized_terms in ['days_15', '15 jours', 'sous 15 jours'] %}{% set selected_terms_code = 'days_15' %}
+        {% elseif normalized_terms in ['days_30', '30 jours', '30 jours date de facture', 'sous 30 jours'] %}{% set selected_terms_code = 'days_30' %}
+        {% elseif normalized_terms in ['days_45', '45 jours'] %}{% set selected_terms_code = 'days_45' %}
+        {% elseif normalized_terms in ['days_60', '60 jours'] %}{% set selected_terms_code = 'days_60' %}
+        {% elseif normalized_terms in ['days_30_then_eom', '30 jours fin de mois', '30 jours puis fin de mois'] %}{% set selected_terms_code = 'days_30_then_eom' %}
+        {% elseif normalized_terms in ['days_45_then_eom', '45 jours fin de mois', '45 jours puis fin de mois'] %}{% set selected_terms_code = 'days_45_then_eom' %}
+        {% else %}{% set selected_terms_code = 'custom' %}
+        {% endif %}
+    {% endif %}
     <header class="invoice-editor__header">
         <div class="invoice-header__main">
             <div class="invoice-header__icon" aria-hidden="true">
@@ -53,78 +70,105 @@
         <input type="hidden" name="id" value="{{ invoice.id ?? '' }}">
 
         <section class="invoice-card">
-                <h3><span class="material-symbols-outlined" aria-hidden="true">person</span> Client et informations</h3>
+            <h3><span class="material-symbols-outlined" aria-hidden="true">person</span> Client et informations</h3>
 
-            <div class="invoice-grid">
-                <div class="form-field invoice-client-field">
-                    <div
-                        id="invoice-client"
-                        class="select"
-                        data-url="/Invoices/clientOptions"
-                        data-mode="search"
-                        data-placeholder="Rechercher un client"
-                        data-selected-label="{{ invoice.client_name ?? '' }}"
-                    >
-                        <input type="hidden" name="client_id" required value="{{ invoice.client_id ?? '' }}">
+            <div class="invoice-card-columns">
+                <div class="invoice-client-column">
+                    <div class="form-field invoice-client-field">
+                        <div
+                            id="invoice-client"
+                            class="select"
+                            data-url="/Invoices/clientOptions"
+                            data-mode="search"
+                            data-placeholder="Rechercher un client"
+                            data-selected-label="{{ invoice.client_name ?? '' }}"
+                        >
+                            <input type="hidden" name="client_id" required value="{{ invoice.client_id ?? '' }}">
+                        </div>
+                        <label for="invoice-client">Client</label>
                     </div>
-                    <label for="invoice-client">Client</label>
-                </div>
 
-                <div class="form-field">
-                    <input
-                        id="invoice-issue-date"
-                        type="date"
-                        name="issue_date"
-                        value="{{ default_issue_date }}"
-                        required
-                    >
-                    <label for="invoice-issue-date">Date de facture</label>
-                </div>
-
-                <div class="form-field">
-                    <input
-                        id="invoice-due-date"
-                        type="date"
-                        name="due_date"
-                        value="{{ default_due_date }}"
-                    >
-                    <label for="invoice-due-date">Date d’échéance</label>
-                </div>
-
-                <div class="form-field">
-                    <input id="invoice-currency" name="currency" value="{{ invoice.currency ?? defaults.currency ?? 'EUR' }}" readonly>
-                    <label for="invoice-currency">Devise</label>
-                </div>
-
-                <div class="form-field">
-                    <select id="invoice-payment-terms-preset" aria-describedby="invoice-payment-terms-custom-label">
-                        <option value="cash" data-label="Comptant">Comptant</option>
-                        <option value="receipt" data-label="À réception">À réception</option>
-                        <option value="days_15" data-label="15 jours">15 jours</option>
-                        <option value="days_30" data-label="30 jours">30 jours</option>
-                        <option value="days_45" data-label="45 jours">45 jours</option>
-                        <option value="days_60" data-label="60 jours">60 jours</option>
-                        <option value="days_30_then_eom" data-label="30 jours fin de mois">30 jours fin de mois</option>
-                        <option value="days_45_then_eom" data-label="45 jours fin de mois">45 jours fin de mois</option>
-                        <option value="custom" data-label="Personnalisé">Personnalisé</option>
-                    </select>
-                    <input id="invoice-payment-terms-code" type="hidden" name="payment_terms_code" value="{{ default_payment_terms_code }}">
-                    <input id="invoice-payment-terms" type="hidden" name="payment_terms" value="{{ default_payment_terms }}">
-                    <div class="invoice-payment-terms-custom" hidden>
-                        <label id="invoice-payment-terms-custom-label" for="invoice-payment-terms-custom-input">Libellé du délai personnalisé</label>
-                        <input id="invoice-payment-terms-custom-input" type="text" value="{{ default_payment_terms }}" placeholder="Ex. Selon contrat">
+                    <div class="invoice-client-details" aria-live="polite">
+                        <div class="invoice-readonly-field">
+                            <span>Adresse</span>
+                            <output id="invoice-client-address">{{ invoice.client_address_line1 ?? '' }}{% if invoice.client_address_line2 %}, {{ invoice.client_address_line2 }}{% endif %}</output>
+                        </div>
+                        <div class="invoice-readonly-field">
+                            <span>Code postal</span>
+                            <output id="invoice-client-postal-code">{{ invoice.client_postal_code ?? '' }}</output>
+                        </div>
+                        <div class="invoice-readonly-field">
+                            <span>Ville</span>
+                            <output id="invoice-client-city">{{ invoice.client_city ?? '' }}</output>
+                        </div>
+                        <div class="invoice-readonly-field">
+                            <span>Téléphone</span>
+                            <output id="invoice-client-phone">{{ invoice.client_phone ?? '' }}</output>
+                        </div>
+                        <div class="invoice-readonly-field">
+                            <span>E-mail</span>
+                            <output><a id="invoice-client-email" href="{% if invoice.client_email %}mailto:{{ invoice.client_email }}{% endif %}">{{ invoice.client_email ?? '' }}</a></output>
+                        </div>
                     </div>
-                    <label for="invoice-payment-terms-preset">Délai de paiement</label>
                 </div>
 
-                <div class="form-field">
-                    <select id="invoice-payment-method" name="payment_method">
-                        {% set payment_method = invoice.payment_method|default(defaults.payment_method|default('CB')) %}
-                        <option value="CB" {% if payment_method == 'CB' %}selected{% endif %}>CB</option>
-                        <option value="Chèque" {% if payment_method == 'Chèque' %}selected{% endif %}>Chèque</option>
-                        <option value="Virement" {% if payment_method == 'Virement' %}selected{% endif %}>Virement</option>
-                    </select>
-                    <label for="invoice-payment-method">Mode de paiement attendu</label>
+                <div class="invoice-details-column">
+                    <div class="form-field">
+                        <input
+                            id="invoice-issue-date"
+                            type="date"
+                            name="issue_date"
+                            value="{{ default_issue_date }}"
+                            required
+                        >
+                        <label for="invoice-issue-date">Date de facture</label>
+                    </div>
+
+                    <div class="form-field">
+                        <input
+                            id="invoice-due-date"
+                            type="date"
+                            name="due_date"
+                            value="{{ default_due_date }}"
+                        >
+                        <label for="invoice-due-date">Date d’échéance</label>
+                    </div>
+
+                    <div class="form-field">
+                        <select id="invoice-payment-terms-preset" aria-describedby="invoice-payment-terms-custom-label">
+                            <option value="cash" data-label="Comptant" {% if selected_terms_code == 'cash' %}selected{% endif %}>Comptant</option>
+                            <option value="receipt" data-label="À réception" {% if selected_terms_code == 'receipt' %}selected{% endif %}>À réception</option>
+                            <option value="days_15" data-label="15 jours" {% if selected_terms_code == 'days_15' %}selected{% endif %}>15 jours</option>
+                            <option value="days_30" data-label="30 jours" {% if selected_terms_code == 'days_30' %}selected{% endif %}>30 jours</option>
+                            <option value="days_45" data-label="45 jours" {% if selected_terms_code == 'days_45' %}selected{% endif %}>45 jours</option>
+                            <option value="days_60" data-label="60 jours" {% if selected_terms_code == 'days_60' %}selected{% endif %}>60 jours</option>
+                            <option value="days_30_then_eom" data-label="30 jours fin de mois" {% if selected_terms_code == 'days_30_then_eom' %}selected{% endif %}>30 jours fin de mois</option>
+                            <option value="days_45_then_eom" data-label="45 jours fin de mois" {% if selected_terms_code == 'days_45_then_eom' %}selected{% endif %}>45 jours fin de mois</option>
+                            <option value="custom" data-label="Personnalisé" {% if selected_terms_code == 'custom' %}selected{% endif %}>Personnalisé</option>
+                        </select>
+                        <input id="invoice-payment-terms-code" type="hidden" name="payment_terms_code" value="{{ default_payment_terms_code }}">
+                        <input id="invoice-payment-terms" type="hidden" name="payment_terms" value="{{ default_payment_terms }}">
+                        <div class="invoice-payment-terms-custom" hidden>
+                            <label id="invoice-payment-terms-custom-label" for="invoice-payment-terms-custom-input">Libellé du délai personnalisé</label>
+                            <input id="invoice-payment-terms-custom-input" type="text" value="{{ default_payment_terms }}" placeholder="Ex. Selon contrat">
+                        </div>
+                        <label for="invoice-payment-terms-preset">Délai de paiement</label>
+                    </div>
+
+                    <div class="form-field">
+                        <select id="invoice-payment-method" name="payment_method">
+                            {% set payment_method = invoice.payment_method|default(defaults.payment_method|default('CB')) %}
+                            <option value="CB" {% if payment_method == 'CB' %}selected{% endif %}>CB</option>
+                            <option value="Chèque" {% if payment_method == 'Chèque' %}selected{% endif %}>Chèque</option>
+                            <option value="Virement" {% if payment_method == 'Virement' %}selected{% endif %}>Virement</option>
+                        </select>
+                        <label for="invoice-payment-method">Mode de paiement attendu</label>
+                    </div>
+
+                    <div class="form-field">
+                        <input id="invoice-currency" name="currency" value="{{ invoice.currency ?? defaults.currency ?? 'EUR' }}" readonly>
+                        <label for="invoice-currency">Devise</label>
+                    </div>
                 </div>
             </div>
         </section>

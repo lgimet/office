@@ -84,6 +84,7 @@ export default class Invoices extends Core {
                 }
 
                 this.bodyRef.add_invoice_line.addEventListener("click", () => this.addLine());
+                this.bindClientDetails();
                 this.bindPaymentTerms();
                 this.recalculate();
             },
@@ -280,6 +281,50 @@ export default class Invoices extends Core {
         toggle.classList.toggle("is-active", !discount.hidden);
     }
 
+    bindClientDetails() {
+        const form = this.bodyRef.invoice_form;
+        const client = form.querySelector("#invoice-client");
+        const hidden = client?.querySelector("input[name='client_id']");
+        const fields = {
+            address: form.querySelector("#invoice-client-address"),
+            postalCode: form.querySelector("#invoice-client-postal-code"),
+            city: form.querySelector("#invoice-client-city"),
+            phone: form.querySelector("#invoice-client-phone"),
+            email: form.querySelector("#invoice-client-email"),
+        };
+
+        if (!hidden || Object.values(fields).some((field) => !field)) return;
+
+        const render = (data = {}) => {
+            fields.address.textContent = [data.address_line1, data.address_line2]
+                .filter(Boolean)
+                .join(", ");
+            fields.postalCode.textContent = data.postal_code || "";
+            fields.city.textContent = data.city || "";
+            fields.phone.textContent = data.phone || "";
+            fields.email.textContent = data.email || "";
+            fields.email.href = data.email ? `mailto:${data.email}` : "";
+        };
+
+        hidden.addEventListener("change", async () => {
+            const id = Number(hidden.value);
+            if (!id) {
+                render();
+                return;
+            }
+
+            try {
+                const response = await fetch(`/Invoices/clientOptions?id=${encodeURIComponent(id)}`, {
+                    credentials: "same-origin",
+                });
+                const payload = await response.json();
+                render(payload.data?.[0] || {});
+            } catch (error) {
+                console.error("Client details load error", error);
+            }
+        });
+    }
+
     bindPaymentTerms() {
         const form = this.bodyRef.invoice_form;
         const preset = form.querySelector("#invoice-payment-terms-preset");
@@ -302,16 +347,19 @@ export default class Invoices extends Core {
             "30 jours puis fin de mois": "days_30_then_eom",
             "45 jours puis fin de mois": "days_45_then_eom",
         };
-        const matchingOption = [...preset.options].find((option) => (
-            option.value === code.value
-            || normalize(option.dataset.label) === normalize(existingValue)
+        const codeOption = [...preset.options].find((option) => option.value === code.value);
+        const labelOption = [...preset.options].find((option) => (
+            normalize(option.dataset.label) === normalize(existingValue)
             || legacyLabels[normalize(existingValue)] === option.value
             || (normalize(existingValue) === "sous 15 jours" && option.value === "days_15")
         ));
+        const matchingOption = codeOption || labelOption;
 
         if (matchingOption) {
             preset.value = matchingOption.value;
-            customInput.value = matchingOption.dataset.label;
+            customInput.value = matchingOption.value === "custom"
+                ? existingValue
+                : matchingOption.dataset.label;
         } else {
             preset.value = "custom";
             customInput.value = existingValue;
