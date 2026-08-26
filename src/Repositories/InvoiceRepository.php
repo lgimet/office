@@ -100,22 +100,7 @@ class InvoiceRepository extends BaseRepository
                 throw new \LogicException('Cette facture ne peut plus être modifiée.');
             }
 
-            $this->query(
-                'UPDATE invoices
-                 SET client_id = ?, issue_date = ?, due_date = ?, currency = ?, client_name = ?,
-                     client_contact_name = ?, client_email = ?, client_phone = ?,
-                     client_address_line1 = ?, client_address_line2 = ?,
-                     client_postal_code = ?, client_city = ?, client_country = ?,
-                     client_siret = ?, client_vat_number = ?, subtotal_excl_tax = ?,
-                     discount_total_excl_tax = ?, tax_total = ?, total_incl_tax = ?,
-                     payment_terms_code = ?, payment_terms = ?, payment_method = ?, public_note = ?,
-                     internal_note = ?, updated_at = CURRENT_TIMESTAMP
-                 WHERE id = ?',
-                [...$invoice, $id]
-            );
-
-            $this->query('DELETE FROM invoice_lines WHERE invoice_id = ?', [$id]);
-            $this->insertLines($id, $lines);
+            $this->writeDraft($id, $invoice, $lines);
             $this->pdo->commit();
         } catch (\Throwable $exception) {
             $this->pdo->rollBack();
@@ -150,26 +135,27 @@ class InvoiceRepository extends BaseRepository
         }
     }
 
-    public function issueDraft(int $id): string
+    public function issueDraft(int $id, array $invoice, array $lines): string
     {
         $this->pdo->beginTransaction();
 
         try {
-            $invoice = $this->query(
+            $lockedInvoice = $this->query(
                 'SELECT id, status, invoice_number, issue_date
                  FROM invoices WHERE id = ? FOR UPDATE',
                 [$id]
             )?->fetch();
 
-            if ($invoice === false || $invoice === null) {
+            if ($lockedInvoice === false || $lockedInvoice === null) {
                 throw new \InvalidArgumentException('La facture demandée est introuvable.');
             }
 
-            if ($invoice['status'] !== 'draft' || !empty($invoice['invoice_number'])) {
+            if ($lockedInvoice['status'] !== 'draft' || !empty($lockedInvoice['invoice_number'])) {
                 throw new \LogicException('Cette facture a déjà été émise.');
             }
 
-            $issueDate = new \DateTimeImmutable((string) $invoice['issue_date']);
+            $this->writeDraft($id, $invoice, $lines);
+            $issueDate = new \DateTimeImmutable((string) $lockedInvoice['issue_date']);
             $number = (new InvoiceNumberGenerator())->next($this->pdo, $issueDate);
             $updated = $this->query(
                 'UPDATE invoices
@@ -206,5 +192,25 @@ class InvoiceRepository extends BaseRepository
                 [$invoiceId, ...$line]
             );
         }
+    }
+
+    private function writeDraft(int $id, array $invoice, array $lines): void
+    {
+        $this->query(
+            'UPDATE invoices
+             SET client_id = ?, issue_date = ?, due_date = ?, currency = ?, client_name = ?,
+                 client_contact_name = ?, client_email = ?, client_phone = ?,
+                 client_address_line1 = ?, client_address_line2 = ?,
+                 client_postal_code = ?, client_city = ?, client_country = ?,
+                 client_siret = ?, client_vat_number = ?, subtotal_excl_tax = ?,
+                 discount_total_excl_tax = ?, tax_total = ?, total_incl_tax = ?,
+                 payment_terms_code = ?, payment_terms = ?, payment_method = ?, public_note = ?,
+                 internal_note = ?, updated_at = CURRENT_TIMESTAMP
+             WHERE id = ?',
+            [...$invoice, $id]
+        );
+
+        $this->query('DELETE FROM invoice_lines WHERE invoice_id = ?', [$id]);
+        $this->insertLines($id, $lines);
     }
 }

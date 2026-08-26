@@ -23,6 +23,34 @@ class CompanySettingsService
         $this->settings->save($settings);
     }
 
+    public function validateIssuerForInvoice(?array $company): void
+    {
+        $company ??= [];
+        $missing = [];
+
+        foreach ([
+            'legal_name' => 'raison sociale',
+            'address_line1' => 'adresse',
+            'postal_code' => 'code postal',
+            'city' => 'ville',
+            'country' => 'pays',
+        ] as $field => $label) {
+            if (trim((string) ($company[$field] ?? '')) === '') {
+                $missing[] = $label;
+            }
+        }
+
+        if (trim((string) ($company['siren'] ?? '')) === '' && trim((string) ($company['siret'] ?? '')) === '') {
+            $missing[] = 'SIREN ou SIRET';
+        }
+
+        if ($missing !== []) {
+            throw new \InvalidArgumentException(
+                'Complétez les informations de votre société : ' . implode(', ', $missing) . '.'
+            );
+        }
+    }
+
     private function normalize(array $input): array
     {
         $legalName = trim((string) ($input['legal_name'] ?? ''));

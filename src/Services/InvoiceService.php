@@ -10,7 +10,8 @@ class InvoiceService
     public function __construct(
         private InvoiceRepository $invoices,
         private InvoiceCalculationService $calculator,
-        private CompanySettingsRepository $companySettings
+        private CompanySettingsRepository $companySettings,
+        private CompanySettingsService $companySettingsService
     ) {
     }
 
@@ -53,92 +54,7 @@ class InvoiceService
 
     public function saveDraft(array $input, ?int $id = null): int
     {
-        $defaults = $this->billingDefaults();
-        $existingInvoice = null;
-
-        if ($id !== null) {
-            $existingInvoice = $this->invoices->find($id);
-
-            if ($existingInvoice === null) {
-                throw new \InvalidArgumentException('La facture demandée est introuvable.');
-            }
-
-            if ($existingInvoice['status'] !== 'draft') {
-                throw new \InvalidArgumentException('Seules les factures en brouillon peuvent être modifiées.');
-            }
-        }
-
-        $client = $this->invoices->client((int) ($input['client_id'] ?? 0));
-        if ($client === null) {
-            throw new \InvalidArgumentException('Le client sélectionné est invalide.');
-        }
-
-        $issueDate = (string) ($input['issue_date'] ?? '');
-
-        if ($issueDate === '') {
-            throw new \InvalidArgumentException('La date de facture est obligatoire.');
-        }
-
-        if (!empty($input['due_date']) && $input['due_date'] < $issueDate) {
-            throw new \InvalidArgumentException('La date d’échéance ne peut pas être antérieure à la date de facture.');
-        }
-
-        $calculated = $this->calculator->calculate($input['lines'] ?? []);
-
-        if ($calculated['lines'] === []) {
-            throw new \InvalidArgumentException('Ajoutez au moins une ligne de facture valide.');
-        }
-
-        $contact = trim(($client['contact_first_name'] ?? '') . ' ' . ($client['contact_last_name'] ?? '')) ?: null;
-        $currency = $existingInvoice['currency'] ?? $defaults['currency'];
-
-        $invoice = [
-            (int) $client['id'],
-            $issueDate,
-            $input['due_date'] ?: null,
-            $currency,
-            $client['display_name'] ?: $client['company_name'],
-            $contact,
-            $client['email'],
-            $client['phone'],
-            $client['address_line1'],
-            $client['address_line2'],
-            $client['postal_code'],
-            $client['city'],
-            $client['country'],
-            $client['siret'],
-            $client['vat_number'],
-            $calculated['totals']['subtotal_excl_tax'],
-            $calculated['totals']['discount_total_excl_tax'],
-            $calculated['totals']['tax_total'],
-            $calculated['totals']['total_incl_tax'],
-            $this->paymentTermsCode($input['payment_terms_code'] ?? null, $input['payment_terms'] ?? null),
-            $input['payment_terms'] ?: null,
-            $input['payment_method'] ?: null,
-            $input['public_note'] ?: null,
-            $input['internal_note'] ?: null,
-        ];
-
-        $lines = array_map(
-            static fn (array $line, int $position) => [
-                $position + 1,
-                $line['label'],
-                $line['description'] ?: null,
-                $line['quantity'],
-                $line['unit'] ?: null,
-                $line['unit_price_excl_tax'],
-                $line['discount_type'],
-                $line['discount_value'],
-                $line['discount_note'],
-                $line['tax_rate'],
-                $line['line_subtotal_excl_tax'],
-                $line['line_discount_excl_tax'],
-                $line['line_tax_total'],
-                $line['line_total_incl_tax'],
-            ],
-            $calculated['lines'],
-            array_keys($calculated['lines'])
-        );
+        ['invoice' => $invoice, 'lines' => $lines] = $this->prepareDraft($input, $id);
 
         if ($id !== null) {
             $this->invoices->updateDraft($id, $invoice, $lines);
@@ -164,9 +80,56 @@ class InvoiceService
             throw new \InvalidArgumentException('Enregistrez la facture avant de l’émettre.');
         }
 
-        $this->saveDraft($input, $id);
+        $this->companySettingsService->validateIssuerForInvoice($this->companySettings->find());
+        ['invoice' => $invoice, 'lines' => $lines] = $this->prepareDraft($input, $id);
 
-        return $this->invoices->issueDraft($id);
+        return $this->invoices->issueDraft($id, $invoice, $lines);
+    }
+
+    private function prepareDraft(array $input, ?int $id): array
+    {
+        $defaults = $this->billingDefaults();
+        $existingInvoice = null;
+
+        if ($id !== null) {
+            $existingInvoice = $this->invoices->find($id);
+            if ($existingInvoice === null) throw new \InvalidArgumentException('La facture demandée est introuvable.');
+            if ($existingInvoice['status'] !== 'draft') throw new \InvalidArgumentException('Seules les factures en brouillon peuvent être modifiées.');
+        }
+
+        $client = $this->invoices->client((int) ($input['client_id'] ?? 0));
+        if ($client === null) throw new \InvalidArgumentException('Le client sélectionné est invalide.');
+        $issueDate = (string) ($input['issue_date'] ?? '');
+        if ($issueDate === '') throw new \InvalidArgumentException('La date de facture est obligatoire.');
+        if (!empty($input['due_date']) && $input['due_date'] < $issueDate) throw new \InvalidArgumentException('La date d’échéance ne peut pas être antérieure à la date de facture.');
+
+        $calculated = $this->calculator->calculate($input['lines'] ?? []);
+        if ($calculated['lines'] === []) throw new \InvalidArgumentException('Ajoutez au moins une ligne de facture valide.');
+
+        $contact = trim(($client['contact_first_name'] ?? '') . ' ' . ($client['contact_last_name'] ?? '')) ?: null;
+        $invoice = [
+            (int) $client['id'], $issueDate, $input['due_date'] ?: null,
+            $existingInvoice['currency'] ?? $defaults['currency'],
+            $client['display_name'] ?: $client['company_name'], $contact,
+            $client['email'], $client['phone'], $client['address_line1'], $client['address_line2'],
+            $client['postal_code'], $client['city'], $client['country'], $client['siret'], $client['vat_number'],
+            $calculated['totals']['subtotal_excl_tax'], $calculated['totals']['discount_total_excl_tax'],
+            $calculated['totals']['tax_total'], $calculated['totals']['total_incl_tax'],
+            $this->paymentTermsCode($input['payment_terms_code'] ?? null, $input['payment_terms'] ?? null),
+            $input['payment_terms'] ?: null, $input['payment_method'] ?: null,
+            $input['public_note'] ?: null, $input['internal_note'] ?: null,
+        ];
+        $lines = array_map(
+            static fn (array $line, int $position) => [
+                $position + 1, $line['label'], $line['description'] ?: null, $line['quantity'], $line['unit'] ?: null,
+                $line['unit_price_excl_tax'], $line['discount_type'], $line['discount_value'], $line['discount_note'],
+                $line['tax_rate'], $line['line_subtotal_excl_tax'], $line['line_discount_excl_tax'],
+                $line['line_tax_total'], $line['line_total_incl_tax'],
+            ],
+            $calculated['lines'], array_keys($calculated['lines'])
+        );
+
+        return compact('invoice', 'lines');
     }
 
     private function billingDefaults(): array

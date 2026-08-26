@@ -104,3 +104,23 @@ exécutés en intégration.
 
 Le workflow `draft → issued` est disponible avec numérotation annuelle atomique,
 prise en compte du payload courant et verrouillage backend après émission.
+
+## Passe corrective — contrôle émetteur et atomicité
+
+Avant toute émission, `CompanySettingsService::validateIssuerForInvoice()` exige
+la raison sociale, l’adresse, le code postal, la ville, le pays et au moins un
+SIREN ou un SIRET. Le contrôle intervient avant l’opération d’émission et donc
+avant toute génération ou incrément de numéro.
+
+La préparation des données du formulaire a été factorisée dans
+`InvoiceService::prepareDraft()`. `issueDraft()` ne lance plus `saveDraft()` :
+il prépare le payload courant, valide l’émetteur, puis appelle une seule
+opération repository transactionnelle. Celle-ci verrouille le brouillon,
+réécrit son snapshot et ses lignes, verrouille et incrémente la séquence,
+attribue le numéro et passe la facture à `issued` avant le commit.
+
+Ainsi, une erreur avant le commit annule simultanément la sauvegarde, les lignes
+et la séquence. Le verrouillage de la facture conserve également la protection
+contre la double émission. Les tests de concurrence MySQL réels ne sont pas
+exécutables dans l’environnement courant ; les garde-fous transactionnels et
+les tests PHPUnit existants restent vérifiés.
