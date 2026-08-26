@@ -20,10 +20,10 @@ final class OidcClient
         if (($query['error'] ?? null) === 'access_denied') throw new OidcAccessDeniedException('La connexion DevSys a été refusée.');
         if (isset($query['error']) || !is_string($query['code'] ?? null) || $query['code'] === '') throw new OidcProtocolException('La connexion DevSys a été refusée.');
         $token = $this->http->postForm($this->discovery->get()['token_endpoint'], ['grant_type'=>'authorization_code','client_id'=>$this->clientId,'code'=>$query['code'],'redirect_uri'=>$this->redirectUri,'code_verifier'=>$pending['code_verifier']], [$this->clientId,$this->clientSecret]);
-        $body = $token['body']; if ($token['status'] !== 200 || !is_string($body['access_token'] ?? null) || ($body['token_type'] ?? '') !== 'Bearer' || !is_numeric($body['expires_in'] ?? null) || (int)$body['expires_in'] <= 0 || !is_string($body['id_token'] ?? null)) throw new OidcProtocolException('La réponse OAuth est invalide.');
+        $body = $token['body']; if ($token['status'] !== 200 || !is_string($body['access_token'] ?? null) || $body['access_token'] === '' || !is_string($body['refresh_token'] ?? null) || $body['refresh_token'] === '' || ($body['token_type'] ?? '') !== 'Bearer' || !is_numeric($body['expires_in'] ?? null) || (int)$body['expires_in'] <= 0 || !is_string($body['id_token'] ?? null)) throw new OidcProtocolException('La réponse OAuth est invalide.');
         try { $claims = $this->validator->validate($body['id_token'], $pending['nonce']); } catch (OidcValidationException $exception) { throw new OidcIdentityException('Identité OIDC invalide.', 0, $exception); } $info = $this->http->getBearer($this->discovery->get()['userinfo_endpoint'], $body['access_token']);
         if ($info['status'] !== 200) throw new OidcProtocolException('UserInfo est indisponible.');
-        $this->sessions->create($claims, $info['body'], (int)$body['expires_in'], preg_split('/\s+/', (string)($body['scope'] ?? implode(' ', $this->scopes))) ?: []); $this->sessions->storeAccessToken($body['access_token'], (int)$body['expires_in']);
+        $this->sessions->create($claims, $info['body'], (int)$body['expires_in'], preg_split('/\s+/', (string)($body['scope'] ?? implode(' ', $this->scopes))) ?: []); $this->sessions->storeTokenSet($body['access_token'], $body['refresh_token'], (int)$body['expires_in']);
         return $this->returnTo->validate($pending['return_to']);
     }
     private function b64(string $value): string { return rtrim(strtr(base64_encode($value), '+/', '-_'), '='); }

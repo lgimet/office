@@ -20,7 +20,17 @@ class OidcSessionService
         $given = (string) ($userinfo['given_name'] ?? ''); $family = (string) ($userinfo['family_name'] ?? ''); $name = (string) ($userinfo['name'] ?? trim($given . ' ' . $family));
         $_SESSION['office_identity'] = ['sub' => $claims->sub, 'user_uuid' => substr($claims->sub, 5), 'tenant_uuid' => $claims->tenant_id, 'email' => (string) ($userinfo['email'] ?? ''), 'given_name' => $given, 'family_name' => $family, 'name' => $name, 'initials' => $this->initials($given, $family, $name, (string) ($userinfo['email'] ?? '')), 'scopes' => $scopes, 'authenticated_at' => time()];
     }
-    public function storeAccessToken(string $token, int $expiresIn): void { $_SESSION['office_oauth'] = ['access_token' => $token, 'expires_at' => time() + $expiresIn]; }
+    public function storeTokenSet(string $accessToken, string $refreshToken, int $expiresIn, ?array $scopes = null): void
+    {
+        if ($accessToken === '' || $refreshToken === '' || $expiresIn <= 0) throw new OidcProtocolException('Le jeu de tokens OIDC est invalide.');
+        $_SESSION['office_oauth'] = ['access_token' => $accessToken, 'refresh_token' => $refreshToken, 'expires_at' => time() + $expiresIn];
+        if ($scopes !== null && isset($_SESSION['office_identity']) && is_array($_SESSION['office_identity'])) $_SESSION['office_identity']['scopes'] = $scopes;
+    }
+    public function tokenSet(): ?array
+    {
+        $tokens = $_SESSION['office_oauth'] ?? null;
+        return is_array($tokens) && is_string($tokens['access_token'] ?? null) && is_string($tokens['refresh_token'] ?? null) && $tokens['access_token'] !== '' && $tokens['refresh_token'] !== '' ? $tokens : null;
+    }
     public function logout(): void
     {
         $params = session_get_cookie_params();
