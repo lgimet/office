@@ -1,166 +1,32 @@
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  * {
-    box-sizing: border-box;  
-  }
-
-  .required {
-    display: inline-block;
-    width: 6px;
-    height: 6px;
-    min-width: 6px;
-    min-height: 6px;
-    margin-left: 6px;
-    border-radius: 50%;
-    background: var(--error);
-    vertical-align: middle;
-    flex-shrink: 0;
-    align-self: center;
-    position: relative;
-    top: -1px;
-    font-size: 0;
-    line-height: 0;
-  }
-
-  .form-field {
-    position: relative;
-    display: flex;
-    flex-direction: column; // vertical pour éviter chevauchement
-    width: 100%;
-    min-width: 150px;
-    margin-bottom: 12px;
-
-    input,
-    select,
-    textarea,
-    .custom-multi-select {
-      width: 100%;
-      padding: 20px 14px 9px 14px;
-      border: 1px solid var(--outline);
-      border-radius: 12px;
-      font-size: 14px;
-      outline: none;
-      background: var(--surface);
-      color: var(--on-surface);
-      resize: vertical;
-      transition: border-color var(--motion-fast), box-shadow var(--motion-fast), background var(--motion-fast);
-
-      &:is(.custom-multi-select) {
-        border: none;
-        padding-left: 0;
-        padding-right: 0;
-        padding-top: 22px;
-      }
-
-      &:focus {
-        border-color: var(--primary);
-        box-shadow: var(--focus-ring);
-        background: var(--surface-high);
-      }
-
-      &:focus + label {
-        top: 4px;
-        left: 10px;
-        font-size: 12px;
-        color: var(--primary);
-        //background: var(--color-bg);
-        padding: 0 4px;
-      }
-
-      &:is(.custom-multi-select) + label {
-        padding: 0;
-        left: 0;
-      }
-    }
-
-    textarea {
-      padding-top: 18px;
-    }
-
-    select {
-      -webkit-appearance: none;
-      -moz-appearance: none;
-      appearance: none;
-      padding-right: 30px; // pour icône dropdown
-    }
-
-    label {
-      position: absolute;
-      left: 14px;
-      top: 15px;
-      z-index: 10;
-      color: var(--color-text-muted);
-      font-size: 14px;
-      pointer-events: none;
-      transition: all 0.2s ease;
-      background: transparent;
-    }
-
-    &.has-value > label {
-      top: 4px;
-      left: 10px;
-      font-size: 12px;
-      color: var(--primary);
-      background: var(--surface);
-      padding: 0 4px;
-    }
-
-    // Checkbox spécifique
-    &.checkbox-field {
-      flex-direction: row;
-      align-items: flex-start;
-      margin-bottom: 8px;
-
-      input[type="checkbox"] {
-        width: auto;
-        height: auto;
-        padding: 0;
-      }
-
-      label,
-      .m-checkbox-wrapper {
-        position: static;
-        font-size: 14px;
-        color: var(--on-surface);
-        margin: 0;
-        pointer-events: auto;
-        background: transparent;
-        z-index: auto;
-      }
-
-      label.m-checkbox {
-        display: flex;
-        align-items: center;
-      }
-    }
-
-    &.form-field--checkbox {
-      display: flex;
-      align-items: center;
-      min-height: 48px;
-      margin-bottom: 0;
-
-      input[type="checkbox"] {
-        width: 18px;
-        min-width: 18px;
-        min-height: 18px;
-        height: 18px;
-        margin: 0;
-        padding: 0;
-        accent-color: var(--primary);
-      }
-
-      label {
-        position: static;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 0;
-        color: var(--on-surface);
-        pointer-events: auto;
-      }
-    }
-  }
-}
+/* Native Office form controls: compact, fixed labels, reusable grid. */
+.form-group,
+.form-grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 14px 16px; min-width: 0; }
+.form-group { margin: 0 0 18px; padding: 16px; border: 1px solid var(--outline-variant); border-radius: var(--radius-md); background: var(--surface-base); }
+.form-group:last-child { margin-bottom: 0; }
+.form-group legend, .form-section__title { grid-column: 1 / -1; width: 100%; margin: 0 0 2px; padding: 0; color: var(--on-surface); font-size: var(--text-sm); font-weight: 600; letter-spacing: .01em; }
+.form-field { position: relative; display: flex; flex-direction: column; grid-column: span 4; gap: 5px; min-width: 0; margin: 0; }
+.form-field.company-form__wide, .form-field.form-col-12 { grid-column: 1 / -1; }
+.form-field.form-col-8 { grid-column: span 8; }
+.form-field.form-col-6 { grid-column: span 6; }
+.form-field.form-col-4 { grid-column: span 4; }
+.form-field.form-col-3 { grid-column: span 3; }
+.form-field > label:not(.m-checkbox), .form-field__label { position: static; order: -1; display: block; margin: 0; padding: 0; color: var(--on-surface-variant); font-size: var(--text-sm); font-weight: 500; line-height: 1.3; pointer-events: auto; }
+.required { display: inline; width: auto; height: auto; min-width: 0; min-height: 0; margin-left: 3px; color: var(--error); background: none; font-size: inherit; line-height: inherit; }
+.form-control, .form-field > input:not([type="checkbox"]):not([type="hidden"]), .form-field > select, .form-field > textarea { width: 100%; min-height: 36px; padding: 8px 10px; border: 1px solid var(--outline); border-radius: var(--radius-sm); outline: 0; color: var(--on-surface); background: var(--surface-base); font: inherit; font-size: var(--text-sm); line-height: 1.35; transition: border-color var(--motion-fast), box-shadow var(--motion-fast), background-color var(--motion-fast); }
+.form-control:focus, .form-field > input:not([type="checkbox"]):not([type="hidden"]):focus, .form-field > select:focus, .form-field > textarea:focus { border-color: var(--primary); box-shadow: var(--focus-ring); background: var(--surface); }
+.form-control:disabled, .form-control[readonly], .form-field > input:disabled, .form-field > input[readonly], .form-field > select:disabled, .form-field > textarea:disabled { color: var(--on-surface-variant); background: var(--surface-low); cursor: not-allowed; }
+.form-field > textarea, textarea.form-control { min-height: 88px; resize: vertical; }
+.form-field > select, select.form-control { appearance: auto; }
+.form-field .is-invalid, .form-field [aria-invalid="true"] { border-color: var(--error); }
+.form-field .is-valid { border-color: color-mix(in srgb, var(--primary) 55%, var(--outline)); }
+.form-field.checkbox-field, .form-field.form-field--checkbox { display: flex; align-items: center; justify-content: flex-start; min-height: 36px; padding-top: 20px; grid-column: span 4; }
+.form-field.checkbox-field > label, .form-field.form-field--checkbox > label, .form-field .m-checkbox { position: static; order: 0; display: inline-flex; align-items: center; gap: 8px; margin: 0; color: var(--on-surface); pointer-events: auto; }
+.form-field input[type="checkbox"] { accent-color: var(--primary); }
+.form-help, .form-field__help { color: var(--on-surface-variant); font-size: var(--text-xs); line-height: 1.4; }
+.form-error-inline { display: block; margin-top: 2px; padding: 0; color: var(--error); font-size: var(--text-xs); line-height: 1.3; opacity: 0; transform: translateY(-2px); transition: opacity var(--motion-fast), transform var(--motion-fast); }
+.form-error-inline.show { opacity: 1; transform: translateY(0); }
+.form-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+@media (max-width: 980px) { .form-field, .form-field.form-col-4, .form-field.form-col-3 { grid-column: span 6; } .form-field.form-col-8 { grid-column: 1 / -1; } }
+@media (max-width: 640px) { .form-group, .form-grid { grid-template-columns: 1fr; gap: 12px; } .form-field, .form-field.form-col-3, .form-field.form-col-4, .form-field.form-col-6, .form-field.form-col-8, .form-field.form-col-12 { grid-column: 1; } .form-group { padding: 12px; } }
+@keyframes inputShake { 0%, 100% { transform: translateX(0); } 20% { transform: translateX(-3px); } 40% { transform: translateX(3px); } 60% { transform: translateX(-2px); } 80% { transform: translateX(2px); } }
+.shake { animation: inputShake .3s ease; }

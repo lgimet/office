@@ -69,21 +69,15 @@
                 <div class="form-field">
                     <div data-bank class="bank-field">
                         <div class="bank-input-group">
+                            <label class="bank-label" for="client-iban-visible">IBAN</label>
                             <input id="client-iban-visible" class="bank-iban" type="text" placeholder=" " value="{{ client.iban ?? '' }}" />
-                            <label class="bank-label" for="client-iban-visible">
-                                <span class="bank-label__rest">FR76 3000 6000 0112 3456 7890 189</span>
-                                <span class="bank-label__float">IBAN</span>
-                            </label>
                             <input type="hidden" name="iban" value="{{ client.iban ?? '' }}" />
                             <span class="bank-status iban-status"></span>
                         </div>
                         
                         <div class="bank-input-group">
+                            <label class="bank-label" for="client-bic-visible">BIC</label>
                             <input id="client-bic-visible" class="bank-bic" type="text" placeholder=" " value="{{ client.bic ?? '' }}" />
-                            <label class="bank-label" for="client-bic-visible">
-                                <span class="bank-label__rest">AGRIFRPP</span>
-                                <span class="bank-label__float">BIC</span>
-                            </label>
                             <input type="hidden" name="bic" value="{{ client.bic ?? '' }}" />
                             <span class="bank-status bic-status"></span>
                         </div>
