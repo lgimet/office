@@ -36,9 +36,10 @@
       opacity: 0.6;
     }
 
-    &:focus {
+    &:focus,
+    &:focus-visible {
       border-color: var(--primary);
-     box-shadow: var(--focus-ring);
+      box-shadow: var(--control-focus-ring);
       outline: none;
     }
   }

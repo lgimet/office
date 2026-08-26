@@ -1,13 +1,15 @@
-.crm-form { display: grid; gap: 20px; max-width: 1000px; }
+.crm-form { column-count: 2; column-gap: .72rem; width: 100%; max-width: none; }
+.crm-form .form-group { display: grid; width: 100%; margin: 0 0 .72rem; break-inside: avoid; }
 .crm-form .form-group { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .72rem; border: 1px solid var(--outline-variant); border-radius: var(--section-radius); padding: .9rem; }
-.crm-form legend { padding: 0 6px; font-weight: 700; }
+.crm-form legend { justify-self: start; width: auto; padding: 0 6px; font-weight: 700; }
 .crm-form .form-field { display: flex; flex-direction: column; gap: .26rem; }
+.crm-form .form-field { grid-column: auto; }
 .crm-form .form-field > label { order: -1; position: static; display: block; padding: 0; color: var(--on-surface-variant); font-size: .72rem; font-weight: 400; line-height: 1.35; pointer-events: auto; }
 .crm-form .form-field--checkbox { display: flex; align-items: center; align-content: center; min-height: 36px; }
 .crm-form .form-field--checkbox input[type="checkbox"] { width: 18px; min-width: 18px; min-height: 18px; height: 18px; margin: 0; padding: 0; accent-color: var(--primary); }
 .crm-form .form-field--checkbox label { position: static; display: flex; align-items: center; gap: 8px; padding: 0; color: var(--on-surface); pointer-events: auto; }
 .crm-form input,
-.crm-form textarea { width: 100%; min-height: var(--control-height); padding: .38rem var(--control-padding-x); border: 1px solid var(--outline); border-radius: var(--control-radius); background: var(--surface-base); color: var(--on-surface); font: inherit; font-size: .77rem; }
+.crm-form textarea { width: 100%; min-height: var(--control-height); padding: .38rem var(--control-padding-x); border: 1px solid var(--outline-variant); border-radius: var(--control-radius); background: var(--surface-base); color: var(--on-surface); font: inherit; font-size: .77rem; }
 .crm-form .form-field:has(.custom-select) .custom-select input { padding: .38rem 2.1rem .38rem var(--control-padding-x); }
 .crm-form .form-field:has(.custom-select) > label {
   position: static;
@@ -24,4 +26,4 @@
   border-color: var(--error);
 }
 .crm-form .form-field .form-error-inline { grid-column: 1 / -1; }
-@media (max-width: 700px) { .crm-form .form-group { grid-template-columns: 1fr; } }
+@media (max-width: 700px) { .crm-form { column-count: 1; } .crm-form .form-group { grid-template-columns: 1fr; } }

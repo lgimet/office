@@ -21,7 +21,7 @@
 
 .invoice-search-card .form-field { display: flex; flex-direction: column; gap: .26rem; }
 .invoice-search-card input,
-.invoice-search-card select { width: 100%; min-height: var(--control-height); padding: .38rem var(--control-padding-x); border: 1px solid var(--outline); border-radius: var(--control-radius); background: var(--surface-base); color: var(--on-surface); font: inherit; font-size: .77rem; }
+.invoice-search-card select { width: 100%; min-height: var(--control-height); padding: .38rem var(--control-padding-x); border: 1px solid var(--outline-variant); border-radius: var(--control-radius); background: var(--surface-base); color: var(--on-surface); font: inherit; font-size: .77rem; }
 .invoice-search-card label { order: -1; color: var(--on-surface-variant); font-size: .72rem; font-weight: 400; line-height: 1.35; }
 
 @media (max-width: 700px) {

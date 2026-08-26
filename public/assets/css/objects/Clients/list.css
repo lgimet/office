@@ -1,9 +1,12 @@
-.crm-page { display: grid; gap: 16px; height: 100%; }
-.crm-toolbar { display: flex; gap: 12px; align-items: center; }
-.crm-toolbar input { width: 100%; padding: 10px; border: 1px solid var(--outline); border-radius: var(--radius-md); background: var(--surface-base); color: var(--on-surface); font: inherit; }
-.crm-toolbar .select { min-width: 230px; }
-.crm-toolbar input { max-width: 360px; }
+.crm-page { display: grid; grid-template-rows: auto minmax(0, 1fr); gap: .72rem; height: 100%; min-height: 0; }
+.crm-page > #clients-table { height: 100%; min-height: 0; }
+.crm-toolbar { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: .72rem; align-items: end; width: 100%; }
+.crm-toolbar .select { width: 100%; min-width: 0; }
+.crm-toolbar__search { width: 100%; }
+.crm-toolbar__search label { order: -1; margin-bottom: .26rem; color: var(--on-surface-variant); font-size: .72rem; font-weight: 400; line-height: 1.35; }
+.crm-toolbar__search input { width: 100%; min-height: var(--control-height); padding: .38rem var(--control-padding-x); border: 1px solid var(--outline-variant); border-radius: var(--control-radius); background: var(--surface-base); color: var(--on-surface); font: inherit; font-size: .77rem; line-height: 1.35; outline: 0; transition: border-color var(--motion-fast), box-shadow var(--motion-fast); }
+.crm-toolbar__search input:focus, .crm-toolbar__search input:focus-visible { border-color: var(--primary); box-shadow: var(--control-focus-ring); }
 .status-badge { display: inline-flex; padding: 4px 8px; border-radius: 999px; font-size: var(--text-sm); font-weight: 600; }
 .status-badge.is-active { background: var(--primary-container); color: var(--on-primary-container); }
 .status-badge.is-inactive { background: var(--surface-variant); color: var(--on-surface-variant); }
-@media (max-width: 700px) { .crm-toolbar { flex-direction: column; align-items: stretch; } .crm-toolbar input { max-width: none; } }
+@media (max-width: 700px) { .crm-toolbar { grid-template-columns: 1fr; align-items: stretch; } }

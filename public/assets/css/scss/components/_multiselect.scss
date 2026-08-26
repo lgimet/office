@@ -8,7 +8,7 @@
   min-height: 36px;
   padding: 6px 10px;
   background: var(--surface);
-  border: 1px solid var(--outline);
+  border: 1px solid var(--outline-variant);
   border-radius: var(--radius-sm);
   display: flex;
   flex-wrap: wrap;
@@ -17,6 +17,11 @@
   align-items: center;
   color: var(--on-surface);
   transition: border-color var(--motion-fast), box-shadow var(--motion-fast), background var(--motion-fast);
+}
+
+.custom-multi-select:focus-within .cms-label {
+  border-color: var(--primary);
+  box-shadow: var(--control-focus-ring);
 }
 
 .cms-badge {
@@ -32,10 +37,11 @@
   top: 100%;
   left: 0;
   right: 0;
-  background: var(--surface-high);
+  background: var(--surface-base);
   border: 1px solid var(--outline-variant);
-  border-radius: var(--radius-sm);
-  margin-top: 6px;
+  border-top: 0;
+  border-radius: 0;
+  margin-top: 0;
   max-height: 220px;
   overflow-y: auto;
   display: none;

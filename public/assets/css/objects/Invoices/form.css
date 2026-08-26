@@ -88,7 +88,7 @@
 .invoice-discount select {
     min-width: 0;
     padding: 9px;
-    border: 1px solid var(--outline);
+    border: 1px solid var(--outline-variant);
     border-radius: var(--radius-sm);
     background: var(--surface-base);
     color: var(--on-surface);

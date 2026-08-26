@@ -12,8 +12,8 @@
 .invoice-lines-head, .invoice-line { display: grid; grid-template-columns: 28px minmax(120px, 1.5fr) minmax(120px, 1.5fr) 74px 82px 92px 70px 100px 76px; gap: 6px; align-items: center; }
 .invoice-lines-head { margin-bottom: 5px; color: var(--on-surface-variant); font-size: var(--text-xs); }
 .invoice-line-row { padding: 8px 0; border-top: 1px solid var(--outline-variant); }
-.invoice-line input, .invoice-line select, .invoice-discount input, .invoice-discount select { width: 100%; min-height: 32px; padding: 6px 8px; border: 1px solid var(--outline); border-radius: var(--radius-sm); background: var(--surface-base); color: var(--on-surface); font: inherit; font-size: var(--text-xs); }
-.invoice-line input:focus, .invoice-line select:focus, .invoice-discount input:focus, .invoice-discount select:focus { outline: none; border-color: var(--primary); box-shadow: var(--focus-ring); }
+.invoice-line input, .invoice-line select, .invoice-discount input, .invoice-discount select { width: 100%; min-height: 32px; padding: 6px 8px; border: 1px solid var(--outline-variant); border-radius: var(--radius-sm); background: var(--surface-base); color: var(--on-surface); font: inherit; font-size: var(--text-xs); }
+.invoice-line input:focus, .invoice-line input:focus-visible, .invoice-line select:focus, .invoice-line select:focus-visible, .invoice-discount input:focus, .invoice-discount input:focus-visible, .invoice-discount select:focus, .invoice-discount select:focus-visible { outline: none; border-color: var(--primary); box-shadow: var(--control-focus-ring); }
 .line-position, .line-total { font-size: var(--text-xs); }
 .line-actions { display: flex; align-items: center; gap: 4px; }
 .line-actions button, .invoice-discount-remove { padding: 4px 6px; border: 0; border-radius: var(--radius-sm); color: var(--primary); background: transparent; cursor: pointer; font-size: var(--text-xs); }

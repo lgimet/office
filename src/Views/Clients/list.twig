@@ -1,6 +1,9 @@
 <section class="crm-page">
     <div class="crm-toolbar">
-        <input id="clients-search" type="search" placeholder="Rechercher un client">
+        <div class="crm-toolbar__search">
+            <label for="clients-search">Rechercher un client</label>
+            <input id="clients-search" class="form-control" type="search" placeholder="">
+        </div>
         <div id="clients-category-filter" class="select" data-url="/Clients/categories" data-mode="list" data-placeholder="Toutes les catégories" data-empty-label="Toutes les catégories"><input type="hidden" name="client_category" value=""></div>
         <div id="clients-legal-type-filter" class="select" data-url="/Clients/legalTypes" data-mode="list" data-placeholder="Tous les types juridiques" data-empty-label="Tous les types juridiques"><input type="hidden" name="legal_type" value=""></div>
     </div>

@@ -14,18 +14,18 @@
   width: 100%;
   min-height: 36px;
   padding: 8px 34px 8px 10px;
-  border: 1px solid var(--outline);
+  border: 1px solid var(--outline-variant);
   border-radius: var(--radius-sm);
   background: var(--surface);
   color: var(--on-surface);
   transition: border-color var(--motion-fast), box-shadow var(--motion-fast), background var(--motion-fast);
 }
 
-.custom-select input:focus {
+.custom-select input:focus,
+.custom-select input:focus-visible {
   outline: none;
   border-color: var(--primary);
-  box-shadow: var(--focus-ring);
-  background: var(--surface-high);
+  box-shadow: var(--control-focus-ring);
 }
 
 .custom-select-option {
@@ -66,14 +66,15 @@
   top: 100%;
   left: 0;
   right: 0;
-  background: var(--surface-high);
+  background: var(--surface-base);
   border: 1px solid var(--outline-variant);
-  border-radius: var(--radius-sm);
+  border-top: 0;
+  border-radius: 0;
   max-height: 200px;
   overflow-y: auto;
   display: none;
   z-index: 1000;
-  margin-top: 6px;
+  margin-top: 0;
   box-shadow: var(--shadow-1);
 
   &.active {

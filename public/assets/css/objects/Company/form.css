@@ -1,8 +1,11 @@
 .company-form {
-    display: grid;
-    gap: .72rem;
-    max-width: 1000px;
+    column-count: 2;
+    column-gap: .72rem;
+    width: 100%;
+    max-width: none;
 }
+
+.company-form .form-group { display: grid; width: 100%; margin: 0 0 .72rem; break-inside: avoid; }
 
 .company-form .form-group {
     display: grid;
@@ -14,12 +17,15 @@
 }
 
 .company-form legend {
+    justify-self: start;
+    width: auto;
     padding: 0 6px;
     color: var(--on-surface);
     font-weight: 700;
 }
 
 .company-form .form-field { display: flex; flex-direction: column; gap: .26rem; }
+.company-form .form-field { grid-column: auto; }
 
 .company-form .company-form__wide {
     grid-column: 1 / -1;
@@ -32,7 +38,7 @@
     width: 100%;
     min-height: var(--control-height);
     padding: .38rem var(--control-padding-x);
-    border: 1px solid var(--outline);
+    border: 1px solid var(--outline-variant);
     border-radius: var(--control-radius);
     background: var(--surface-base);
     color: var(--on-surface);
@@ -46,6 +52,10 @@
 
 
 @media (max-width: 700px) {
+    .company-form {
+        column-count: 1;
+    }
+
     .company-form .form-group {
         grid-template-columns: 1fr;
     }
