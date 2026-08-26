@@ -1,0 +1,627 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LivePulse — Démonstration des contrôles fins</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Compiler _controls.scss vers controls.css, puis conserver ce lien. -->
+  <link rel="stylesheet" href="./controls.css">
+
+  <style>
+    /* Mise en page propre à cette page de démonstration uniquement. */
+    body {
+      margin: 0;
+      color: #172033;
+      background: #f5f6f8;
+      font-family: "Source Sans 3", "Segoe UI", ui-sans-serif, system-ui, sans-serif;
+    }
+
+    .demo-shell {
+      width: min(1440px, calc(100% - 2rem));
+      margin: 0 auto;
+      padding: 1.1rem 0 2.5rem;
+    }
+
+    .demo-header {
+      display: flex;
+      align-items: center;
+      gap: .68rem;
+      margin-bottom: 1rem;
+    }
+
+    .demo-logo {
+      display: grid;
+      place-items: center;
+      width: 2.8rem;
+      height: 2.8rem;
+      border: 1px solid #dfe5ef;
+      border-radius: .58rem;
+      color: #4f6f8f;
+      background: #fff;
+    }
+
+    .demo-logo svg {
+      width: 1.45rem;
+      height: 1.45rem;
+    }
+
+    .demo-title {
+      margin: 0;
+      font-size: clamp(1.22rem, 2vw, 1.65rem);
+      line-height: 1.15;
+    }
+
+    .demo-subtitle {
+      margin: .25rem 0 0;
+      color: #6f7a8f;
+      font-size: .78rem;
+    }
+
+    .demo-board {
+      display: grid;
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      gap: .68rem;
+    }
+
+    .demo-card {
+      grid-column: span 4;
+    }
+
+    .demo-card--wide {
+      grid-column: span 6;
+    }
+
+    .demo-card--full {
+      grid-column: 1 / -1;
+    }
+
+    .demo-state-grid {
+      display: grid;
+      grid-template-columns: 5.5rem 1fr;
+      align-items: start;
+      gap: .55rem .7rem;
+    }
+
+    .demo-state-label {
+      padding-top: .58rem;
+      color: #687389;
+      font-size: .66rem;
+    }
+
+    .demo-inline {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: .6rem;
+    }
+
+    @media (max-width: 1050px) {
+      .demo-card,
+      .demo-card--wide {
+        grid-column: span 6;
+      }
+    }
+
+    @media (max-width: 680px) {
+      .demo-shell {
+        width: min(100% - 1rem, 1440px);
+        padding-top: .75rem;
+      }
+
+      .demo-card,
+      .demo-card--wide,
+      .demo-card--full {
+        grid-column: 1 / -1;
+      }
+
+      .demo-state-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .demo-state-label {
+        padding-top: 0;
+      }
+
+      .demo-inline {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="demo-shell lp-form">
+    <header class="demo-header">
+      <div class="demo-logo" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path d="M3 12h4l2.2-6 3.4 12 2.3-8 1.8 4H21" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div>
+        <h1 class="demo-title">Système de formulaires — LivePulse</h1>
+        <p class="demo-subtitle">Contrôles fins, discrets et lisibles</p>
+      </div>
+    </header>
+
+    <div class="demo-board">
+
+      <!-- 1. Champ texte -->
+      <section class="lp-form-section demo-card--wide">
+        <h2 class="lp-form-section__title">1. Champ texte</h2>
+
+        <div class="demo-state-grid">
+          <span class="demo-state-label">Par défaut</span>
+          <div class="lp-field">
+            <label class="lp-field__label" for="band-default">Nom du groupe</label>
+            <input class="lp-control" id="band-default" type="text" value="Nom du groupe">
+          </div>
+
+          <span class="demo-state-label">Focus</span>
+          <div class="lp-field">
+            <label class="lp-field__label" for="band-focus">Nom du groupe</label>
+            <input class="lp-control" id="band-focus" type="text" value="Nom du groupe" autofocus>
+          </div>
+
+          <span class="demo-state-label">Désactivé</span>
+          <div class="lp-field">
+            <label class="lp-field__label" for="band-disabled">Nom du groupe</label>
+            <input class="lp-control" id="band-disabled" type="text" value="Nom du groupe" disabled>
+          </div>
+
+          <span class="demo-state-label">Erreur</span>
+          <div class="lp-field lp-field--error">
+            <label class="lp-field__label" for="band-error">Nom du groupe</label>
+            <input class="lp-control" id="band-error" type="text" value="Nom du groupe" aria-invalid="true" aria-describedby="band-error-message">
+            <span class="lp-field__message" id="band-error-message">Ce champ est requis.</span>
+          </div>
+
+          <span class="demo-state-label">Succès</span>
+          <div class="lp-field lp-field--success">
+            <label class="lp-field__label" for="band-success">Nom du groupe</label>
+            <input class="lp-control" id="band-success" type="text" value="Nom du groupe" aria-describedby="band-success-message">
+            <span class="lp-field__message" id="band-success-message">Nom du groupe enregistré.</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- 2. Email -->
+      <section class="lp-form-section demo-card">
+        <h2 class="lp-form-section__title">2. Email</h2>
+        <div class="lp-field">
+          <label class="lp-field__label" for="email">Email</label>
+          <input class="lp-control" id="email" type="email" value="contact@livepulse.fr">
+          <span class="lp-field__help">Nous ne partagerons jamais votre email.</span>
+        </div>
+      </section>
+
+      <!-- 3. Mot de passe -->
+      <section class="lp-form-section demo-card">
+        <h2 class="lp-form-section__title">3. Mot de passe</h2>
+        <div class="lp-field">
+          <label class="lp-field__label" for="password">Mot de passe</label>
+          <div class="lp-control-wrap">
+            <input class="lp-control" id="password" type="password" value="MotDePasse42">
+            <button class="lp-control-wrap__action" type="button" data-password-toggle aria-label="Afficher le mot de passe">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/>
+                <circle cx="12" cy="12" r="2.5"/>
+              </svg>
+            </button>
+          </div>
+          <span class="lp-field__help">Au moins 8 caractères.</span>
+        </div>
+      </section>
+
+      <!-- 4. Recherche -->
+      <section class="lp-form-section demo-card">
+        <h2 class="lp-form-section__title">4. Recherche</h2>
+        <div class="lp-field">
+          <label class="lp-field__label" for="search">Rechercher un artiste</label>
+          <div class="lp-control-wrap lp-control-wrap--leading">
+            <span class="lp-control-wrap__icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                <circle cx="11" cy="11" r="6.5"/>
+                <path d="m16 16 4 4"/>
+              </svg>
+            </span>
+            <input class="lp-control" id="search" type="search" placeholder="Rechercher…">
+          </div>
+        </div>
+      </section>
+
+      <!-- 5. Nombre -->
+      <section class="lp-form-section demo-card">
+        <h2 class="lp-form-section__title">5. Nombre</h2>
+        <div class="lp-field">
+          <label class="lp-field__label" for="members">Nombre de membres</label>
+          <input class="lp-control" id="members" type="number" min="1" max="50" value="5">
+        </div>
+      </section>
+
+      <!-- 6. Téléphone -->
+      <section class="lp-form-section demo-card">
+        <h2 class="lp-form-section__title">6. Téléphone</h2>
+        <div class="lp-field">
+          <label class="lp-field__label" for="phone">Téléphone</label>
+          <div class="lp-input-group">
+            <span class="lp-input-group__prefix" aria-hidden="true">🇫🇷 +33</span>
+            <input class="lp-control" id="phone" type="tel" value="6 12 34 56 78">
+          </div>
+        </div>
+      </section>
+
+      <!-- 7. URL -->
+      <section class="lp-form-section demo-card">
+        <h2 class="lp-form-section__title">7. URL</h2>
+        <div class="lp-field">
+          <label class="lp-field__label" for="website">Site web</label>
+          <input class="lp-control" id="website" type="url" value="https://livepulse.fr">
+        </div>
+      </section>
+
+      <!-- 8. Date et heure -->
+      <section class="lp-form-section demo-card">
+        <h2 class="lp-form-section__title">8. Date et heure</h2>
+        <div class="demo-inline">
+          <div class="lp-field">
+            <label class="lp-field__label" for="date">Date du concert</label>
+            <input class="lp-control" id="date" type="date" value="2026-07-28">
+          </div>
+          <div class="lp-field">
+            <label class="lp-field__label" for="time">Heure</label>
+            <input class="lp-control" id="time" type="time" value="20:30">
+          </div>
+        </div>
+      </section>
+
+      <!-- 9. Zone de texte -->
+      <section class="lp-form-section demo-card">
+        <h2 class="lp-form-section__title">9. Zone de texte</h2>
+        <div class="lp-field">
+          <label class="lp-field__label" for="description">Description</label>
+          <textarea class="lp-control" id="description" maxlength="200" data-counter>LivePulse est un collectif de musique électronique basé à Paris.</textarea>
+          <div class="lp-field__footer">
+            <span class="lp-field__help">Décrivez votre groupe en quelques lignes.</span>
+            <span class="lp-field__counter" data-counter-output>0 / 200</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- 10. Select -->
+      <section class="lp-form-section demo-card">
+        <h2 class="lp-form-section__title">10. Sélection</h2>
+        <div class="lp-field">
+          <label class="lp-field__label" for="city">Ville</label>
+          <select class="lp-control" id="city">
+            <option>Paris</option>
+            <option selected>Lyon</option>
+            <option>Bordeaux</option>
+            <option>Toulouse</option>
+          </select>
+        </div>
+      </section>
+
+      <!-- 11. Multi-select -->
+      <section class="lp-form-section demo-card">
+        <h2 class="lp-form-section__title">11. Sélection multiple</h2>
+        <div class="lp-field">
+          <label class="lp-field__label" for="style-input">Styles musicaux</label>
+          <div class="lp-chip-select" data-chip-select>
+            <span class="lp-chip">Électro <button type="button" class="lp-chip__remove" aria-label="Retirer Électro">×</button></span>
+            <span class="lp-chip">Techno <button type="button" class="lp-chip__remove" aria-label="Retirer Techno">×</button></span>
+            <span class="lp-chip">Ambient <button type="button" class="lp-chip__remove" aria-label="Retirer Ambient">×</button></span>
+            <input class="lp-chip-select__input" id="style-input" type="text" placeholder="Ajouter…">
+          </div>
+          <span class="lp-field__help">Appuyez sur Entrée pour ajouter une valeur.</span>
+        </div>
+      </section>
+
+      <!-- 12. Autocomplétion -->
+      <section class="lp-form-section demo-card">
+        <h2 class="lp-form-section__title">12. Autocomplétion</h2>
+        <div class="lp-field">
+          <label class="lp-field__label" for="autocomplete-city">Ville</label>
+          <div class="lp-autocomplete is-open" data-autocomplete>
+            <input class="lp-control" id="autocomplete-city" type="text" value="Pa" autocomplete="off" aria-expanded="true">
+            <ul class="lp-autocomplete__menu" role="listbox">
+              <li class="lp-autocomplete__option is-active" role="option">Paris</li>
+              <li class="lp-autocomplete__option" role="option">Pau</li>
+              <li class="lp-autocomplete__option" role="option">Paname</li>
+              <li class="lp-autocomplete__option" role="option">Parthenay</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- 13. Checkboxes -->
+      <section class="lp-form-section demo-card">
+        <h2 class="lp-form-section__title">13. Cases à cocher</h2>
+        <div class="lp-choice-list">
+          <label class="lp-choice lp-choice--checkbox">
+            <input type="checkbox" checked>
+            <span class="lp-choice__indicator" aria-hidden="true"></span>
+            <span>J’accepte les conditions d’utilisation</span>
+          </label>
+          <label class="lp-choice lp-choice--checkbox">
+            <input type="checkbox" checked>
+            <span class="lp-choice__indicator" aria-hidden="true"></span>
+            <span>Recevoir la newsletter</span>
+          </label>
+          <label class="lp-choice lp-choice--checkbox">
+            <input type="checkbox">
+            <span class="lp-choice__indicator" aria-hidden="true"></span>
+            <span>Être contacté pour des partenariats</span>
+          </label>
+        </div>
+      </section>
+
+      <!-- 14. Radios -->
+      <section class="lp-form-section demo-card">
+        <h2 class="lp-form-section__title">14. Boutons radio</h2>
+        <div class="lp-field">
+          <span class="lp-field__label">Niveau d’expérience</span>
+          <div class="lp-choice-list" style="margin-top:.55rem">
+            <label class="lp-choice lp-choice--radio">
+              <input type="radio" name="level" value="beginner">
+              <span class="lp-choice__indicator" aria-hidden="true"></span>
+              <span>Débutant</span>
+            </label>
+            <label class="lp-choice lp-choice--radio">
+              <input type="radio" name="level" value="intermediate" checked>
+              <span class="lp-choice__indicator" aria-hidden="true"></span>
+              <span>Intermédiaire</span>
+            </label>
+            <label class="lp-choice lp-choice--radio">
+              <input type="radio" name="level" value="advanced">
+              <span class="lp-choice__indicator" aria-hidden="true"></span>
+              <span>Avancé</span>
+            </label>
+          </div>
+        </div>
+      </section>
+
+      <!-- 15. Toggle -->
+      <section class="lp-form-section demo-card">
+        <h2 class="lp-form-section__title">15. Interrupteur</h2>
+        <div class="lp-switch-row">
+          <div>
+            <span class="lp-field__label">Visibilité publique</span>
+            <span class="lp-field__help">Rendre le profil visible par tous.</span>
+          </div>
+          <label class="lp-switch">
+            <input type="checkbox" checked aria-label="Rendre le profil public">
+            <span class="lp-switch__track" aria-hidden="true"></span>
+          </label>
+        </div>
+      </section>
+
+      <!-- 16. Upload -->
+      <section class="lp-form-section demo-card--wide">
+        <h2 class="lp-form-section__title">16. Téléversement de fichier</h2>
+        <div class="lp-field">
+          <label class="lp-field__label" for="photo">Photo du groupe</label>
+          <div class="lp-file-upload" data-file-upload>
+            <input class="lp-file-upload__input" id="photo" type="file" accept=".png,.jpg,.jpeg,.webp">
+            <label class="lp-file-upload__dropzone" for="photo">
+              <span>
+                <svg class="lp-file-upload__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                  <path d="M12 16V5m0 0-4 4m4-4 4 4"/>
+                  <path d="M5 15.5A4.5 4.5 0 0 0 6.5 24h11a4.5 4.5 0 0 0 1.5-8.74A7 7 0 0 0 5.4 13"/>
+                </svg>
+                <span class="lp-file-upload__main">
+                  Glissez-déposez votre fichier ici<br>
+                  ou <span class="lp-file-upload__link">cliquez pour parcourir</span>
+                </span>
+                <span class="lp-file-upload__meta">PNG, JPG ou WEBP — Max. 5 Mo</span>
+              </span>
+            </label>
+
+            <div class="lp-file-preview" data-file-preview hidden>
+              <img class="lp-file-preview__image" data-file-image alt="">
+              <div class="lp-file-preview__body">
+                <span class="lp-file-preview__name" data-file-name></span>
+                <span class="lp-file-preview__size" data-file-size></span>
+              </div>
+              <button class="lp-button lp-button--ghost" type="button" data-file-remove>Supprimer</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 17. Messages -->
+      <section class="lp-form-section demo-card">
+        <h2 class="lp-form-section__title">17. Textes d’aide</h2>
+        <div class="lp-message-list">
+          <div class="lp-message">
+            <span aria-hidden="true">ⓘ</span>
+            <span>Texte d’aide : donne des informations complémentaires.</span>
+          </div>
+          <div class="lp-message lp-message--danger">
+            <span aria-hidden="true">!</span>
+            <span>Erreur : veuillez corriger ce champ pour continuer.</span>
+          </div>
+          <div class="lp-message lp-message--success">
+            <span aria-hidden="true">✓</span>
+            <span>Succès : tout est enregistré.</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- 18. Optionnel -->
+      <section class="lp-form-section demo-card">
+        <h2 class="lp-form-section__title">18. Indicateur optionnel</h2>
+        <div class="lp-field">
+          <div class="lp-field__label-row">
+            <label class="lp-field__label" for="alias">Alias du groupe</label>
+            <span class="lp-field__badge">Optionnel</span>
+          </div>
+          <input class="lp-control" id="alias" type="text" placeholder="Ex. : LP Crew">
+          <span class="lp-field__help">Nom court utilisé sur l’affiche.</span>
+        </div>
+      </section>
+
+      <!-- 19. Boutons -->
+      <section class="lp-form-section demo-card--wide">
+        <h2 class="lp-form-section__title">19. Boutons d’action</h2>
+        <div class="lp-actions">
+          <button class="lp-button lp-button--primary" type="button">
+            <span aria-hidden="true">✓</span>
+            Enregistrer
+          </button>
+          <button class="lp-button lp-button--secondary" type="button">Annuler</button>
+          <button class="lp-button lp-button--ghost" type="button">
+            <span aria-hidden="true">⌫</span>
+            Supprimer
+          </button>
+        </div>
+      </section>
+
+      <!-- 20. Segmenté -->
+      <section class="lp-form-section demo-card--wide">
+        <h2 class="lp-form-section__title">20. Contrôle segmenté</h2>
+        <div class="lp-field">
+          <span class="lp-field__label">Fréquence des concerts</span>
+          <div class="lp-segmented" style="margin-top:.55rem">
+            <label class="lp-segmented__item">
+              <input type="radio" name="frequency" value="occasional">
+              <span class="lp-segmented__label">Ponctuelle</span>
+            </label>
+            <label class="lp-segmented__item">
+              <input type="radio" name="frequency" value="monthly" checked>
+              <span class="lp-segmented__label">Mensuelle</span>
+            </label>
+            <label class="lp-segmented__item">
+              <input type="radio" name="frequency" value="weekly">
+              <span class="lp-segmented__label">Hebdomadaire</span>
+            </label>
+            <label class="lp-segmented__item">
+              <input type="radio" name="frequency" value="other">
+              <span class="lp-segmented__label">Autre</span>
+            </label>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <script>
+    // Afficher / masquer le mot de passe
+    document.querySelectorAll("[data-password-toggle]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const input = button.parentElement.querySelector("input");
+        const isPassword = input.type === "password";
+        input.type = isPassword ? "text" : "password";
+        button.setAttribute("aria-label", isPassword ? "Masquer le mot de passe" : "Afficher le mot de passe");
+      });
+    });
+
+    // Compteur de caractères
+    document.querySelectorAll("[data-counter]").forEach((textarea) => {
+      const output = textarea.parentElement.querySelector("[data-counter-output]");
+      const update = () => {
+        output.textContent = `${textarea.value.length} / ${textarea.maxLength}`;
+      };
+      textarea.addEventListener("input", update);
+      update();
+    });
+
+    // Chips
+    document.querySelectorAll("[data-chip-select]").forEach((container) => {
+      const input = container.querySelector(".lp-chip-select__input");
+
+      container.addEventListener("click", (event) => {
+        const remove = event.target.closest(".lp-chip__remove");
+        if (remove) {
+          remove.closest(".lp-chip").remove();
+          input.focus();
+        }
+      });
+
+      input.addEventListener("keydown", (event) => {
+        const value = input.value.trim();
+        if (event.key === "Enter" && value) {
+          event.preventDefault();
+          const chip = document.createElement("span");
+          chip.className = "lp-chip";
+          chip.innerHTML = `${value} <button type="button" class="lp-chip__remove" aria-label="Retirer ${value}">×</button>`;
+          container.insertBefore(chip, input);
+          input.value = "";
+        }
+      });
+    });
+
+    // Autocomplétion de démonstration
+    document.querySelectorAll("[data-autocomplete]").forEach((root) => {
+      const input = root.querySelector("input");
+      const options = [...root.querySelectorAll(".lp-autocomplete__option")];
+
+      input.addEventListener("focus", () => {
+        root.classList.add("is-open");
+        input.setAttribute("aria-expanded", "true");
+      });
+
+      options.forEach((option) => {
+        option.addEventListener("click", () => {
+          input.value = option.textContent.trim();
+          root.classList.remove("is-open");
+          input.setAttribute("aria-expanded", "false");
+        });
+      });
+    });
+
+    // Upload avec aperçu local
+    document.querySelectorAll("[data-file-upload]").forEach((root) => {
+      const input = root.querySelector('input[type="file"]');
+      const dropzone = root.querySelector(".lp-file-upload__dropzone");
+      const preview = root.querySelector("[data-file-preview]");
+      const image = root.querySelector("[data-file-image]");
+      const name = root.querySelector("[data-file-name]");
+      const size = root.querySelector("[data-file-size]");
+      const remove = root.querySelector("[data-file-remove]");
+
+      const showFile = (file) => {
+        if (!file) return;
+        name.textContent = file.name;
+        size.textContent = `${(file.size / 1024 / 1024).toFixed(2)} Mo`;
+        preview.hidden = false;
+
+        if (file.type.startsWith("image/")) {
+          image.src = URL.createObjectURL(file);
+          image.alt = `Aperçu de ${file.name}`;
+        }
+      };
+
+      input.addEventListener("change", () => showFile(input.files[0]));
+
+      ["dragenter", "dragover"].forEach((eventName) => {
+        dropzone.addEventListener(eventName, (event) => {
+          event.preventDefault();
+          dropzone.classList.add("is-dragover");
+        });
+      });
+
+      ["dragleave", "drop"].forEach((eventName) => {
+        dropzone.addEventListener(eventName, (event) => {
+          event.preventDefault();
+          dropzone.classList.remove("is-dragover");
+        });
+      });
+
+      dropzone.addEventListener("drop", (event) => {
+        const file = event.dataTransfer.files[0];
+        showFile(file);
+      });
+
+      remove.addEventListener("click", () => {
+        input.value = "";
+        image.removeAttribute("src");
+        preview.hidden = true;
+      });
+    });
+  </script>
+</body>
+</html>

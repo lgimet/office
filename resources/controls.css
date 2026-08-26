@@ -1,0 +1,930 @@
+/* ==========================================================================
+   LivePulse — Contrôles de formulaire
+   Fichier partiel à importer dans app.scss :
+   @use "controls";
+   ========================================================================== */
+
+:root {
+  --lp-color-primary: #4f6f8f;
+  --lp-color-primary-hover: #3e5d7b;
+  --lp-color-primary-soft: #f1f5f8;
+
+  --lp-color-text: #263141;
+  --lp-color-text-muted: #7b8492;
+  --lp-color-border: #dfe3e8;
+  --lp-color-border-strong: #c8ced7;
+  --lp-color-surface: #ffffff;
+  --lp-color-surface-muted: #f7f8fa;
+  --lp-color-page: #f5f6f8;
+
+  --lp-color-success: #4d8968;
+  --lp-color-success-soft: #f2f8f4;
+  --lp-color-danger: #c65e66;
+  --lp-color-danger-soft: #fbf3f4;
+  --lp-color-warning: #c78018;
+
+  --lp-radius-sm: 0.32rem;
+  --lp-radius-md: 0.48rem;
+  --lp-radius-lg: 0.62rem;
+
+  --lp-control-height: 2.18rem;
+  --lp-control-padding-x: 0.62rem;
+  --lp-transition: 140ms ease;
+  --lp-shadow-focus: 0 0 0 2px rgba(79, 111, 143, 0.11);
+  --lp-font-sans: "Source Sans 3", "Segoe UI", ui-sans-serif, system-ui, sans-serif;
+}
+
+/* --------------------------------------------------------------------------
+   Base
+   -------------------------------------------------------------------------- */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+input,
+select,
+textarea {
+  color: var(--lp-color-text);
+}
+
+::placeholder {
+  color: #98a2b5;
+  opacity: 1;
+}
+
+.lp-form {
+  color: var(--lp-color-text);
+  font-family: var(--lp-font-sans);
+}
+
+.lp-form-section {
+  padding: 0.9rem;
+  border: 1px solid #e7e9ed;
+  border-radius: var(--lp-radius-lg);
+  background: var(--lp-color-surface);
+}
+
+.lp-form-section__title {
+  margin: 0 0 0.78rem;
+  color: var(--lp-color-primary);
+  font-size: 0.78rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+
+.lp-form-grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 0.72rem;
+}
+
+.lp-col-12 { grid-column: span 12; }
+.lp-col-8  { grid-column: span 8; }
+.lp-col-6  { grid-column: span 6; }
+.lp-col-4  { grid-column: span 4; }
+.lp-col-3  { grid-column: span 3; }
+
+@media (max-width: 980px) {
+  .lp-col-8,
+  .lp-col-6,
+  .lp-col-4,
+  .lp-col-3 {
+    grid-column: span 6;
+  }
+}
+
+@media (max-width: 640px) {
+  .lp-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .lp-col-12,
+  .lp-col-8,
+  .lp-col-6,
+  .lp-col-4,
+  .lp-col-3 {
+    grid-column: 1;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Champ générique
+   -------------------------------------------------------------------------- */
+
+.lp-field {
+  min-width: 0;
+}
+
+.lp-field + .lp-field {
+  margin-top: 0.78rem;
+}
+
+.lp-field__label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.26rem;
+}
+
+.lp-field__label {
+  display: inline-block;
+  color: #3b4553;
+  font-size: 0.72rem;
+  font-weight: 400;
+  line-height: 1.35;
+}
+
+.lp-field__required {
+  margin-left: 0.2rem;
+  color: var(--lp-color-danger);
+}
+
+.lp-field__badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.08rem;
+  padding: 0.03rem 0.32rem;
+  border: 1px solid #dce2ec;
+  border-radius: 999px;
+  color: var(--lp-color-text-muted);
+  background: var(--lp-color-surface-muted);
+  font-size: 0.6rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.lp-field__help,
+.lp-field__message,
+.lp-field__counter {
+  color: var(--lp-color-text-muted);
+  font-size: 0.67rem;
+  line-height: 1.45;
+}
+
+.lp-field__help,
+.lp-field__message {
+  display: block;
+  margin-top: 0.24rem;
+}
+
+.lp-field__footer {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.46rem;
+  margin-top: 0.24rem;
+}
+
+.lp-field__counter {
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+/* --------------------------------------------------------------------------
+   Inputs, textarea, select
+   -------------------------------------------------------------------------- */
+
+.lp-control {
+  display: block;
+  width: 100%;
+  min-height: var(--lp-control-height);
+  padding: 0.38rem var(--lp-control-padding-x);
+  border: 1px solid var(--lp-color-border);
+  border-radius: var(--lp-radius-sm);
+  outline: 0;
+  color: var(--lp-color-text);
+  background: var(--lp-color-surface);
+  font-size: 0.77rem;
+  line-height: 1.35;
+  transition:
+    border-color var(--lp-transition),
+    box-shadow var(--lp-transition),
+    background-color var(--lp-transition);
+}
+
+.lp-control:hover:not(:disabled):not([readonly]) {
+  border-color: var(--lp-color-border-strong);
+}
+
+.lp-control:focus,
+.lp-control:focus-visible {
+  border-color: var(--lp-color-primary);
+  box-shadow: var(--lp-shadow-focus);
+}
+
+.lp-control:disabled,
+.lp-control[readonly] {
+  cursor: not-allowed;
+  color: #929bad;
+  background: #f2f4f8;
+}
+
+textarea.lp-control {
+  min-height: 5.2rem;
+  resize: vertical;
+}
+
+select.lp-control {
+  padding-right: 1.9rem;
+  appearance: none;
+  background-image:
+    linear-gradient(45deg, transparent 50%, #758197 50%),
+    linear-gradient(135deg, #758197 50%, transparent 50%);
+  background-position:
+    calc(100% - 0.85rem) 50%,
+    calc(100% - 0.63rem) 50%;
+  background-size: 0.24rem 0.24rem, 0.24rem 0.24rem;
+  background-repeat: no-repeat;
+}
+
+/* États */
+
+.lp-field--error .lp-control,
+.lp-control[aria-invalid="true"] {
+  border-color: var(--lp-color-danger);
+  background-color: #fffdfd;
+}
+
+.lp-field--error .lp-control:focus,
+.lp-control[aria-invalid="true"]:focus {
+  box-shadow: 0 0 0 2px rgba(198, 94, 102, 0.10);
+}
+
+.lp-field--error .lp-field__message {
+  color: var(--lp-color-danger);
+}
+
+.lp-field--success .lp-control {
+  border-color: var(--lp-color-success);
+  background-color: #fdfffe;
+}
+
+.lp-field--success .lp-control:focus {
+  box-shadow: 0 0 0 2px rgba(77, 137, 104, 0.10);
+}
+
+.lp-field--success .lp-field__message {
+  color: var(--lp-color-success);
+}
+
+/* --------------------------------------------------------------------------
+   Champs avec icônes / boutons
+   -------------------------------------------------------------------------- */
+
+.lp-control-wrap {
+  position: relative;
+}
+
+.lp-control-wrap .lp-control {
+  padding-right: 2.15rem;
+}
+
+.lp-control-wrap--leading .lp-control {
+  padding-right: var(--lp-control-padding-x);
+  padding-left: 2.1rem;
+}
+
+.lp-control-wrap__icon,
+.lp-control-wrap__action {
+  position: absolute;
+  top: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.8rem;
+  height: 1.8rem;
+  padding: 0;
+  border: 0;
+  color: #748096;
+  background: transparent;
+  transform: translateY(-50%);
+}
+
+.lp-control-wrap__icon {
+  left: 0.15rem;
+  pointer-events: none;
+}
+
+.lp-control-wrap__action {
+  right: 0.14rem;
+  border-radius: 0.4rem;
+  cursor: pointer;
+}
+
+.lp-control-wrap__action:hover {
+  color: var(--lp-color-primary);
+  background: var(--lp-color-primary-soft);
+}
+
+.lp-control-wrap svg {
+  width: 0.8rem;
+  height: 0.8rem;
+  stroke-width: 1.5;
+}
+
+/* Téléphone / groupes d'input */
+
+.lp-input-group {
+  display: flex;
+  min-height: var(--lp-control-height);
+  overflow: hidden;
+  border: 1px solid var(--lp-color-border);
+  border-radius: var(--lp-radius-sm);
+  background: var(--lp-color-surface);
+  transition:
+    border-color var(--lp-transition),
+    box-shadow var(--lp-transition);
+}
+
+.lp-input-group:focus-within {
+  border-color: var(--lp-color-primary);
+  box-shadow: var(--lp-shadow-focus);
+}
+
+.lp-input-group__prefix,
+.lp-input-group__suffix {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.22rem;
+  padding: 0 0.52rem;
+  border: 0;
+  color: var(--lp-color-text-muted);
+  background: var(--lp-color-surface-muted);
+  font-size: 0.7rem;
+  white-space: nowrap;
+}
+
+.lp-input-group__prefix {
+  border-right: 1px solid var(--lp-color-border);
+}
+
+.lp-input-group__suffix {
+  border-left: 1px solid var(--lp-color-border);
+}
+
+.lp-input-group .lp-control {
+  min-height: calc(var(--lp-control-height) - 2px);
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+/* --------------------------------------------------------------------------
+   Cases à cocher et boutons radio
+   -------------------------------------------------------------------------- */
+
+.lp-choice-list {
+  display: grid;
+  gap: 0.48rem;
+}
+
+.lp-choice {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 0.46rem;
+  width: fit-content;
+  color: #3b4553;
+  font-size: 0.68rem;
+  line-height: 1.4;
+  cursor: pointer;
+}
+
+.lp-choice input {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.lp-choice__indicator {
+  position: relative;
+  flex: 0 0 auto;
+  width: 0.8rem;
+  height: 0.8rem;
+  margin-top: 0.05rem;
+  border: 1px solid var(--lp-color-border-strong);
+  background: var(--lp-color-surface);
+  transition:
+    border-color var(--lp-transition),
+    background-color var(--lp-transition),
+    box-shadow var(--lp-transition);
+}
+
+.lp-choice--checkbox .lp-choice__indicator {
+  border-radius: 0.2rem;
+}
+
+.lp-choice--radio .lp-choice__indicator {
+  border-radius: 50%;
+}
+
+.lp-choice input:focus-visible + .lp-choice__indicator {
+  box-shadow: var(--lp-shadow-focus);
+}
+
+.lp-choice input:checked + .lp-choice__indicator {
+  border-color: var(--lp-color-primary);
+  background: var(--lp-color-primary);
+}
+
+.lp-choice--checkbox input:checked + .lp-choice__indicator::after {
+  content: "";
+  position: absolute;
+  top: 0.1rem;
+  left: 0.27rem;
+  width: 0.2rem;
+  height: 0.43rem;
+  border: solid #fff;
+  border-width: 0 0.1rem 0.1rem 0;
+  transform: rotate(45deg);
+}
+
+.lp-choice--radio input:checked + .lp-choice__indicator::after {
+  content: "";
+  position: absolute;
+  inset: 0.2rem;
+  border-radius: 50%;
+  background: #fff;
+}
+
+.lp-choice input:disabled ~ * {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+/* --------------------------------------------------------------------------
+   Interrupteur
+   -------------------------------------------------------------------------- */
+
+.lp-switch-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.lp-switch {
+  position: relative;
+  display: inline-flex;
+  flex: 0 0 auto;
+  width: 2.08rem;
+  height: 1.12rem;
+}
+
+.lp-switch input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.lp-switch__track {
+  width: 100%;
+  height: 100%;
+  border: 1px solid #b8c1d1;
+  border-radius: 999px;
+  background: #dce1ea;
+  cursor: pointer;
+  transition:
+    border-color var(--lp-transition),
+    background-color var(--lp-transition),
+    box-shadow var(--lp-transition);
+}
+
+.lp-switch__track::after {
+  content: "";
+  position: absolute;
+  top: 0.13rem;
+  left: 0.14rem;
+  width: 0.78rem;
+  height: 0.78rem;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(23, 32, 51, 0.2);
+  transition: transform var(--lp-transition);
+}
+
+.lp-switch input:checked + .lp-switch__track {
+  border-color: var(--lp-color-primary);
+  background: var(--lp-color-primary);
+}
+
+.lp-switch input:checked + .lp-switch__track::after {
+  transform: translateX(0.95rem);
+}
+
+.lp-switch input:focus-visible + .lp-switch__track {
+  box-shadow: var(--lp-shadow-focus);
+}
+
+/* --------------------------------------------------------------------------
+   Multi-sélection / chips
+   -------------------------------------------------------------------------- */
+
+.lp-chip-select {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.22rem;
+  min-height: var(--lp-control-height);
+  padding: 0.26rem;
+  border: 1px solid var(--lp-color-border);
+  border-radius: var(--lp-radius-sm);
+  background: var(--lp-color-surface);
+}
+
+.lp-chip-select:focus-within {
+  border-color: var(--lp-color-primary);
+  box-shadow: var(--lp-shadow-focus);
+}
+
+.lp-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.22rem;
+  min-height: 1.45rem;
+  padding: 0.12rem 0.38rem;
+  border: 1px solid #d7deeb;
+  border-radius: 0.26rem;
+  color: #354055;
+  background: #f1f4f9;
+  font-size: 0.66rem;
+}
+
+.lp-chip__remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 0.8rem;
+  height: 0.8rem;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  color: #788398;
+  background: transparent;
+  cursor: pointer;
+}
+
+.lp-chip__remove:hover {
+  color: var(--lp-color-danger);
+  background: #fff;
+}
+
+.lp-chip-select__input {
+  flex: 1 1 7rem;
+  min-width: 5rem;
+  min-height: 1.4rem;
+  padding: 0.1rem 0.25rem;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  font-size: 0.64rem;
+}
+
+/* --------------------------------------------------------------------------
+   Autocomplétion
+   -------------------------------------------------------------------------- */
+
+.lp-autocomplete {
+  position: relative;
+}
+
+.lp-autocomplete__menu {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 0.18rem);
+  right: 0;
+  left: 0;
+  display: none;
+  overflow: hidden;
+  margin: 0;
+  padding: 0.18rem;
+  border: 1px solid var(--lp-color-border);
+  border-radius: var(--lp-radius-sm);
+  background: var(--lp-color-surface);
+  box-shadow: 0 0.75rem 1.8rem rgba(31, 42, 68, 0.12);
+  list-style: none;
+}
+
+.lp-autocomplete.is-open .lp-autocomplete__menu {
+  display: block;
+}
+
+.lp-autocomplete__option {
+  padding: 0.36rem 0.48rem;
+  border-radius: 0.24rem;
+  color: #394459;
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+
+.lp-autocomplete__option:hover,
+.lp-autocomplete__option.is-active {
+  color: var(--lp-color-primary);
+  background: var(--lp-color-primary-soft);
+}
+
+/* --------------------------------------------------------------------------
+   Téléversement
+   -------------------------------------------------------------------------- */
+
+.lp-file-upload {
+  position: relative;
+}
+
+.lp-file-upload__input {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.lp-file-upload__dropzone {
+  display: grid;
+  place-items: center;
+  min-height: 6.6rem;
+  padding: 0.75rem;
+  border: 1px dashed #6f95ee;
+  border-radius: var(--lp-radius-md);
+  color: var(--lp-color-text-muted);
+  background: #fbfcff;
+  text-align: center;
+  cursor: pointer;
+  transition:
+    border-color var(--lp-transition),
+    background-color var(--lp-transition),
+    box-shadow var(--lp-transition);
+}
+
+.lp-file-upload__dropzone:hover,
+.lp-file-upload__dropzone.is-dragover {
+  border-color: var(--lp-color-primary);
+  background: var(--lp-color-primary-soft);
+}
+
+.lp-file-upload__input:focus-visible + .lp-file-upload__dropzone {
+  box-shadow: var(--lp-shadow-focus);
+}
+
+.lp-file-upload__icon {
+  width: 1.35rem;
+  height: 1.35rem;
+  margin-bottom: 0.28rem;
+  color: var(--lp-color-primary);
+}
+
+.lp-file-upload__main {
+  color: #445069;
+  font-size: 0.64rem;
+}
+
+.lp-file-upload__link {
+  color: var(--lp-color-primary);
+  font-weight: 500;
+}
+
+.lp-file-upload__meta {
+  display: block;
+  margin-top: 0.28rem;
+  color: var(--lp-color-text-muted);
+  font-size: 0.62rem;
+}
+
+.lp-file-preview {
+  display: flex;
+  align-items: center;
+  gap: 0.52rem;
+  margin-top: 0.5rem;
+  padding: 0.42rem;
+  border: 1px solid var(--lp-color-border);
+  border-radius: var(--lp-radius-sm);
+  background: var(--lp-color-surface);
+}
+
+.lp-file-preview[hidden] {
+  display: none;
+}
+
+.lp-file-preview__image {
+  width: 3.6rem;
+  height: 2.5rem;
+  border-radius: 0.24rem;
+  object-fit: cover;
+  background: var(--lp-color-surface-muted);
+}
+
+.lp-file-preview__body {
+  min-width: 0;
+  flex: 1;
+}
+
+.lp-file-preview__name,
+.lp-file-preview__size {
+  display: block;
+}
+
+.lp-file-preview__name {
+  overflow: hidden;
+  color: #313c50;
+  font-size: 0.7rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lp-file-preview__size {
+  margin-top: 0.15rem;
+  color: var(--lp-color-text-muted);
+  font-size: 0.67rem;
+}
+
+/* --------------------------------------------------------------------------
+   Messages d'aide
+   -------------------------------------------------------------------------- */
+
+.lp-message-list {
+  display: grid;
+  gap: 0.48rem;
+}
+
+.lp-message {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.48rem;
+  color: var(--lp-color-text-muted);
+  font-size: 0.68rem;
+  line-height: 1.45;
+}
+
+.lp-message svg {
+  flex: 0 0 auto;
+  width: 0.8rem;
+  height: 0.8rem;
+  margin-top: 0.03rem;
+}
+
+.lp-message--danger { color: var(--lp-color-danger); }
+.lp-message--success { color: var(--lp-color-success); }
+
+/* --------------------------------------------------------------------------
+   Boutons
+   -------------------------------------------------------------------------- */
+
+.lp-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.48rem;
+}
+
+.lp-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.34rem;
+  min-height: 2.08rem;
+  padding: 0.36rem 0.68rem;
+  border: 1px solid transparent;
+  border-radius: 0.34rem;
+  font-size: 0.72rem;
+  font-weight: 500;
+  line-height: 1;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    color var(--lp-transition),
+    border-color var(--lp-transition),
+    background-color var(--lp-transition),
+    box-shadow var(--lp-transition),
+    transform var(--lp-transition);
+}
+
+.lp-button:focus-visible {
+  outline: 0;
+  box-shadow: var(--lp-shadow-focus);
+}
+
+.lp-button:active {
+  transform: translateY(1px);
+}
+
+.lp-button svg {
+  width: 0.82rem;
+  height: 0.82rem;
+}
+
+.lp-button--primary {
+  color: #fff;
+  border-color: var(--lp-color-primary);
+  background: var(--lp-color-primary);
+}
+
+.lp-button--primary:hover {
+  border-color: var(--lp-color-primary-hover);
+  background: var(--lp-color-primary-hover);
+}
+
+.lp-button--secondary {
+  color: #354055;
+  border-color: var(--lp-color-border);
+  background: var(--lp-color-surface);
+}
+
+.lp-button--secondary:hover {
+  border-color: var(--lp-color-border-strong);
+  background: var(--lp-color-surface-muted);
+}
+
+.lp-button--ghost {
+  color: #687389;
+  background: transparent;
+}
+
+.lp-button--ghost:hover {
+  color: var(--lp-color-danger);
+  background: var(--lp-color-danger-soft);
+}
+
+.lp-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+/* --------------------------------------------------------------------------
+   Contrôle segmenté
+   -------------------------------------------------------------------------- */
+
+.lp-segmented {
+  display: inline-flex;
+  flex-wrap: wrap;
+  overflow: hidden;
+  border: 1px solid var(--lp-color-border);
+  border-radius: 0.36rem;
+  background: var(--lp-color-surface);
+}
+
+.lp-segmented__item {
+  position: relative;
+}
+
+.lp-segmented__item + .lp-segmented__item {
+  border-left: 1px solid var(--lp-color-border);
+}
+
+.lp-segmented input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.lp-segmented__label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 1.98rem;
+  padding: 0.3rem 0.62rem;
+  color: #4b566d;
+  background: var(--lp-color-surface);
+  font-size: 0.66rem;
+  cursor: pointer;
+  transition:
+    color var(--lp-transition),
+    background-color var(--lp-transition),
+    box-shadow var(--lp-transition);
+}
+
+.lp-segmented input:checked + .lp-segmented__label {
+  color: var(--lp-color-primary);
+  background: var(--lp-color-primary-soft);
+}
+
+.lp-segmented input:focus-visible + .lp-segmented__label {
+  position: relative;
+  z-index: 1;
+  box-shadow: inset var(--lp-shadow-focus);
+}
+
+/* --------------------------------------------------------------------------
+   Variante compacte
+   -------------------------------------------------------------------------- */
+
+.lp-form--compact {
+  --lp-control-height: 2rem;
+  --lp-control-padding-x: 0.56rem;
+}
+
+.lp-form--compact .lp-control,
+.lp-form--compact .lp-button {
+  font-size: 0.72rem;
+}
