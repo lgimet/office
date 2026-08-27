@@ -42,7 +42,20 @@ Le mode recherche de `CustomSelect` utilise un debounce de 275 ms et annule la r
 
 ## Tests
 
-Les tests PHPUnit existants de lecture de facture ont été adaptés à la nouvelle dépendance de service. Les vérifications recommandées sont `composer test`, `npm run build` et `git diff --check`, complétées par un test navigateur de recherche, sélection, réouverture et émission.
+Les tests PHPUnit couvrent désormais :
+
+- les paramètres de recherche active et le mapping UUID public vers les options du sélecteur ;
+- le mapping `ClientDetails` vers le snapshot, pour une société et une personne ;
+- le refus d’un client inactif et d’un UUID invalide ;
+- la construction du snapshot API avec résolution vers l’ID SQL interne.
+
+Les tests utilisent des réponses HTTP simulées via Guzzle et n’appellent pas l’API réelle.
+
+Résultats vérifiés : `composer test` — 98 tests, 177 assertions ; `npm run build` — OK ; `git diff --check` — OK.
+
+## Dépendance obligatoire
+
+`DevsysClientService` est désormais une dépendance obligatoire de `InvoiceService`, car toute sauvegarde ou émission d’un brouillon doit utiliser le client canonique fourni par l’API. Le conteneur autowire cette chaîne via `ClientsApi` et `DevsysApiClient`.
 
 ## Limites / évolution future
 

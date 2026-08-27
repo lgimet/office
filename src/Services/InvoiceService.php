@@ -12,7 +12,7 @@ class InvoiceService
         private InvoiceCalculationService $calculator,
         private CompanySettingsRepository $companySettings,
         private CompanySettingsService $companySettingsService,
-        private ?DevsysClientService $clients = null,
+        private DevsysClientService $clients,
     ) {
     }
 
@@ -127,9 +127,6 @@ class InvoiceService
         if (!preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i', $clientUuid)) {
             throw new \InvalidArgumentException('Le client sélectionné est invalide.');
         }
-        if ($this->clients === null) {
-            throw new \LogicException('Le service clients n’est pas configuré.');
-        }
         $client = $this->clients->invoiceClient($clientUuid);
         if (($client['status'] ?? null) !== 'active') {
             throw new \InvalidArgumentException('Seuls les clients actifs peuvent être associés à une nouvelle facture.');
@@ -174,12 +171,13 @@ class InvoiceService
         $company = $this->companySettings->find() ?? [];
         $taxRate = (string) ($company['default_tax_rate'] ?? '20.00');
         $currency = strtoupper((string) ($company['default_currency'] ?? 'EUR'));
+        $invoiceNumberPrefix = (string) ($company['invoice_number_prefix'] ?? 'F');
 
         return [
             'tax_rate' => is_numeric($taxRate) ? $taxRate : '20.00',
             'currency' => preg_match('/^[A-Z]{3}$/', $currency) ? $currency : 'EUR',
-            'invoice_number_prefix' => preg_match('/^[A-Z0-9]{1,8}$/', (string) ($company['invoice_number_prefix'] ?? 'F'))
-                ? strtoupper((string) $company['invoice_number_prefix'])
+            'invoice_number_prefix' => preg_match('/^[A-Z0-9]{1,8}$/', $invoiceNumberPrefix)
+                ? strtoupper($invoiceNumberPrefix)
                 : 'F',
             'payment_terms' => $company['default_payment_terms'] ?? null,
             'payment_terms_code' => $company['default_payment_terms_code'] ?? null,

@@ -5,8 +5,13 @@ namespace Tests\Unit;
 use App\Repositories\CompanySettingsRepository;
 use App\Repositories\InvoiceRepository;
 use App\Services\CompanySettingsService;
+use App\Services\DevsysClientService;
 use App\Services\InvoiceCalculationService;
 use App\Services\InvoiceService;
+use Devsys\Shared\Api\Devsys\Clients\ClientsApi;
+use Devsys\Shared\Api\Devsys\Configuration\DevsysApiConfig;
+use Devsys\Shared\Api\Devsys\Http\DevsysApiClient;
+use GuzzleHttp\Client;
 use PHPUnit\Framework\TestCase;
 
 final class InvoiceServiceViewTest extends TestCase
@@ -24,6 +29,7 @@ final class InvoiceServiceViewTest extends TestCase
             new InvoiceCalculationService(),
             $this->createMock(CompanySettingsRepository::class),
             $this->createMock(CompanySettingsService::class),
+            $this->clients(),
         );
 
         self::assertSame(['invoice' => $invoice, 'lines' => $lines], $service->view(50));
@@ -56,6 +62,15 @@ final class InvoiceServiceViewTest extends TestCase
             new InvoiceCalculationService(),
             $this->createMock(CompanySettingsRepository::class),
             $this->createMock(CompanySettingsService::class),
+            $this->clients(),
         );
+    }
+
+    private function clients(): DevsysClientService
+    {
+        return new DevsysClientService(new ClientsApi(new DevsysApiClient(
+            new DevsysApiConfig('https://api.example.test/api/v1'),
+            new Client(),
+        )));
     }
 }
