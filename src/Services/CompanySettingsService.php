@@ -19,7 +19,9 @@ class CompanySettingsService
 
     public function save(array $input): void
     {
+        $current = $this->settings->find() ?? [];
         $settings = $this->normalize($input);
+        $settings['invoice_template_version'] = $current['invoice_template_version'] ?? null;
         $this->settings->save($settings);
     }
 

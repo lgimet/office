@@ -20,6 +20,10 @@ Le fond `first-page.pdf` est utilisé sur la première page et `continuation.pdf
 
 Les données sont échappées par Twig. Aucun champ d’émetteur, client, tenant ou template n’est accepté depuis la query string. Le répertoire temporaire mPDF est privé (`OFFICE_PDF_TEMP_DIR` ou le répertoire temporaire système), jamais `public/`.
 
+## Préservation des paramètres et échappement
+
+Le Twig dédié au PDF est explicitement configuré avec `autoescape = html`. Les filtres `nl2br` conservent les retours à la ligne sans introduire de `raw` sur les données utilisateur. `CompanySettingsService::save()` recharge la version de modèle existante côté serveur et ignore toute valeur `invoice_template_version` fournie par le formulaire général société.
+
 ## Tests
 
-Les tests couvrent le rendu d’une facture émise avec accents, caractères spéciaux et retours à la ligne, le refus d’un brouillon et la sélection du template historique. Résultat : `composer test` — 109 tests, 211 assertions ; `npm run build` — OK ; `git diff --check` — OK.
+Les tests couvrent le rendu d’une facture émise avec accents, caractères spéciaux et retours à la ligne, le refus d’un brouillon, la sélection du template historique et un rendu réel multi-page avec 70 lignes. Les tests de paramètres couvrent la préservation de `invoice_template_version` et le rejet d’une valeur forgée. Résultat : `composer test` — 112 tests, 216 assertions ; `npm run build` — OK ; `git diff --check` — OK.

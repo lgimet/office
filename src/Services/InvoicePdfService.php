@@ -13,7 +13,9 @@ final class InvoicePdfService
 
     public function __construct(private readonly InvoiceTemplateResolver $templates)
     {
-        $this->twig = new Environment(new FilesystemLoader(dirname(__DIR__) . '/Views'));
+        $this->twig = new Environment(new FilesystemLoader(dirname(__DIR__) . '/Views'), [
+            'autoescape' => 'html',
+        ]);
     }
 
     /** @param array<string, mixed> $invoice @param array<int, array<string, mixed>> $lines */

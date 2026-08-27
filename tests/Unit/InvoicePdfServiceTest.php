@@ -33,6 +33,34 @@ final class InvoicePdfServiceTest extends TestCase
         (new InvoicePdfService($this->resolver()))->render($invoice, []);
     }
 
+    public function testUserContentIsEscapedWhileNewlinesRemainSafe(): void
+    {
+        $invoice = $this->invoice();
+        $invoice['client_name'] = '<script>alert("x")</script> Client & Associés';
+        $invoice['public_note'] = "A < B\nC & D";
+        $pdf = (new InvoicePdfService($this->resolver()))->render($invoice, []);
+
+        self::assertStringStartsWith('%PDF', $pdf);
+    }
+
+    public function testManyPersistedLinesProduceMultiplePages(): void
+    {
+        $lines = [];
+        for ($i = 1; $i <= 70; $i++) {
+            $lines[] = [
+                'position' => $i, 'label' => 'Ligne ' . $i, 'description' => "Description {$i}\nDétail",
+                'quantity' => '1', 'unit' => 'unité', 'unit_price_excl_tax' => '10.00', 'tax_rate' => '20.00',
+                'line_subtotal_excl_tax' => '10.00', 'line_discount_excl_tax' => '0.00', 'discount_note' => null,
+            ];
+        }
+
+        $pdf = (new InvoicePdfService($this->resolver()))->render($this->invoice(), $lines);
+
+        self::assertStringStartsWith('%PDF', $pdf);
+        self::assertGreaterThan(5000, strlen($pdf));
+        self::assertGreaterThan(1, preg_match_all('/\/Type\s*\/Page\b/', $pdf));
+    }
+
     private function resolver(): InvoiceTemplateResolver
     {
         $context = (new \ReflectionClass(TenantContext::class))->newInstanceWithoutConstructor();

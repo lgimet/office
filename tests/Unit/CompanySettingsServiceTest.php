@@ -45,4 +45,15 @@ final class CompanySettingsServiceTest extends TestCase
         self::assertArrayNotHasKey('default_currency', $snapshot);
         self::assertArrayNotHasKey('tenant_id', $snapshot);
     }
+
+    public function testSavePreservesExistingTemplateVersionAndIgnoresForgedInput(): void
+    {
+        $repository = $this->createMock(CompanySettingsRepository::class);
+        $repository->method('find')->willReturn(['invoice_template_version' => 'v3']);
+        $repository->expects(self::once())->method('save')->with(self::callback(static fn (array $settings): bool => ($settings['invoice_template_version'] ?? null) === 'v3'));
+
+        (new CompanySettingsService($repository))->save([
+            'legal_name' => 'DevSys', 'invoice_template_version' => 'v999',
+        ]);
+    }
 }
