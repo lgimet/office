@@ -33,7 +33,6 @@ final class InvoiceNumberGeneratorTest extends TestCase
     {
         $insert = $this->createMock(PDOStatement::class);
         $insert->expects(self::once())->method('execute')->with([7, $year]);
-
         $select = $this->createMock(PDOStatement::class);
         $select->expects(self::once())->method('execute')->with([7, $year]);
         $select->expects(self::once())->method('fetchColumn')->willReturn($lastNumber);
