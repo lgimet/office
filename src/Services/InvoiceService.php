@@ -52,6 +52,27 @@ class InvoiceService
         ];
     }
 
+    public function view(int $id): array
+    {
+        if ($id <= 0) {
+            throw new \InvalidArgumentException('La facture demandée est invalide.');
+        }
+
+        $invoice = $this->invoices->find($id);
+        if ($invoice === null) {
+            throw new \InvalidArgumentException('La facture demandée est introuvable.');
+        }
+
+        if (!in_array($invoice['status'] ?? null, ['issued', 'cancelled'], true)) {
+            throw new \LogicException('Les brouillons doivent être ouverts dans l’éditeur de facture.');
+        }
+
+        return [
+            'invoice' => $invoice,
+            'lines' => $this->invoices->lines($id),
+        ];
+    }
+
     public function saveDraft(array $input, ?int $id = null): int
     {
         ['invoice' => $invoice, 'lines' => $lines] = $this->prepareDraft($input, $id);

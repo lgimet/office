@@ -72,6 +72,25 @@ class Invoices extends BaseController
 
     #[Route(method: 'POST')]
     #[AuthRequired]
+    public function view(array $input): Response
+    {
+        try {
+            $data = $this->payload($input);
+            $id = (int) ($data['id'] ?? 0);
+            $view = $this->service->view($id);
+            $number = $view['invoice']['invoice_number'] ?? ('#' . $id);
+
+            return (new Response())
+                ->setId($id)
+                ->setTitle('Facture ' . $number)
+                ->setHtml($this->render('view.twig', $view));
+        } catch (\InvalidArgumentException | \LogicException $exception) {
+            return (new Response())->setError(422, $exception->getMessage());
+        }
+    }
+
+    #[Route(method: 'POST')]
+    #[AuthRequired]
     public function save(array $input): Response
     {
         try {

@@ -38,6 +38,12 @@ export default class Invoices extends Core {
                             icon: "bi-trash3-fill",
                             visible: isDraft,
                         },
+                        {
+                            name: "view",
+                            label: "Voir la facture",
+                            icon: "bi-eye-fill",
+                            visible: (invoice) => !isDraft(invoice),
+                        },
                     ],
                     formatters: {
                         status: (value) => {
@@ -55,6 +61,7 @@ export default class Invoices extends Core {
 
                 table.on("edit", (event) => this.form(event.detail.id));
                 table.on("delete", (event) => this.confirmDelete(event.detail.id));
+                table.on("view", (event) => this.view(event.detail.id));
             },
         });
     }
@@ -531,8 +538,14 @@ export default class Invoices extends Core {
 
                 const record = windowRecord || this.resolveWindowRecord(form.closest(".window")?.id);
                 if (record) this.closeWindow(record.id);
+                this.view(id);
             },
         });
+    }
+
+    view(id) {
+        this.actions = [];
+        this.callAction("view", { id });
     }
 
     async confirmDelete(id, windowRecord = null) {

@@ -1,0 +1,84 @@
+{% set is_cancelled = invoice.status == 'cancelled' %}
+<section class="invoice-view">
+    <header class="invoice-editor__header invoice-view__header">
+        <div class="invoice-header__main">
+            <div class="invoice-header__icon" aria-hidden="true">
+                <span class="material-symbols-outlined">receipt_long</span>
+            </div>
+            <div class="invoice-header__identity">
+                <div class="invoice-header__title-row">
+                    <h2>Facture {{ invoice.invoice_number }}</h2>
+                    <span class="invoice-status {{ is_cancelled ? 'invoice-status--cancelled' : 'invoice-status--issued' }}">
+                        {{ is_cancelled ? 'Annulée' : 'Émise' }}
+                    </span>
+                </div>
+                <p>{{ invoice.client_name }}</p>
+            </div>
+        </div>
+        <div class="invoice-header__meta">
+            <span>Émise le <strong>{{ invoice.issue_date|date('d/m/Y') }}</strong></span>
+            {% if invoice.issued_at %}<span>Enregistrée le <strong>{{ invoice.issued_at|date('d/m/Y') }}</strong></span>{% endif %}
+            {% if invoice.due_date %}<span>Échéance le <strong>{{ invoice.due_date|date('d/m/Y') }}</strong></span>{% endif %}
+        </div>
+    </header>
+
+    <section class="invoice-card invoice-view__details">
+        <div class="invoice-view__client">
+            <h3><span class="material-symbols-outlined" aria-hidden="true">person</span> Client</h3>
+            <strong>{{ invoice.client_name }}</strong>
+            {% if invoice.client_contact_name %}<span>{{ invoice.client_contact_name }}</span>{% endif %}
+            {% if invoice.client_address_line1 %}<span>{{ invoice.client_address_line1 }}</span>{% endif %}
+            {% if invoice.client_address_line2 %}<span>{{ invoice.client_address_line2 }}</span>{% endif %}
+            {% if invoice.client_postal_code or invoice.client_city %}<span>{{ invoice.client_postal_code }} {{ invoice.client_city }}</span>{% endif %}
+            {% if invoice.client_country %}<span>{{ invoice.client_country }}</span>{% endif %}
+            {% if invoice.client_phone %}<span>Tél. {{ invoice.client_phone }}</span>{% endif %}
+            {% if invoice.client_email %}<a href="mailto:{{ invoice.client_email }}">{{ invoice.client_email }}</a>{% endif %}
+            {% if invoice.client_siret %}<small>SIRET {{ invoice.client_siret }}</small>{% endif %}
+            {% if invoice.client_vat_number %}<small>TVA {{ invoice.client_vat_number }}</small>{% endif %}
+        </div>
+        <dl class="invoice-view__meta-grid">
+            <div><dt>Numéro</dt><dd>{{ invoice.invoice_number }}</dd></div>
+            <div><dt>Date de facture</dt><dd>{{ invoice.issue_date|date('d/m/Y') }}</dd></div>
+            <div><dt>Date d’échéance</dt><dd>{{ invoice.due_date ? invoice.due_date|date('d/m/Y') : '—' }}</dd></div>
+            <div><dt>Délai de paiement</dt><dd>{{ invoice.payment_terms ?: '—' }}</dd></div>
+            <div><dt>Mode de paiement</dt><dd>{{ invoice.payment_method ?: '—' }}</dd></div>
+            <div><dt>Devise</dt><dd>{{ invoice.currency }}</dd></div>
+            <div><dt>Statut</dt><dd>{{ is_cancelled ? 'Annulée' : 'Émise' }}</dd></div>
+        </dl>
+    </section>
+
+    <section class="invoice-card invoice-view__lines">
+        <h3><span class="material-symbols-outlined" aria-hidden="true">format_list_bulleted</span> Lignes de facture</h3>
+        <div class="invoice-readonly-table">
+            <div class="invoice-readonly-table__head"><span>#</span><span>Désignation</span><span>Qté</span><span>Unité</span><span>Prix HT</span><span>Remise</span><span>TVA</span><span>Total HT</span></div>
+            {% for line in lines %}
+                <div class="invoice-readonly-table__row">
+                    <span>{{ loop.index }}</span>
+                    <div class="invoice-view__line-label"><strong>{{ line.label }}</strong>{% if line.description %}<small>{{ line.description }}</small>{% endif %}{% if line.discount_note %}<small>Remise : {{ line.discount_note }}</small>{% endif %}</div>
+                    <span>{{ line.quantity }}</span>
+                    <span>{{ line.unit ?: '—' }}</span>
+                    <span>{{ line.unit_price_excl_tax|number_format(2, ',', ' ') }} {{ invoice.currency }}</span>
+                    <span>{% if line.discount_type == 'percentage' %}{{ line.discount_value|number_format(2, ',', ' ') }} %{% elseif line.discount_type == 'fixed' %}{{ line.discount_value|number_format(2, ',', ' ') }} {{ invoice.currency }}{% else %}—{% endif %}</span>
+                    <span>{{ line.tax_rate|number_format(2, ',', ' ') }} %</span>
+                    <span>{{ (line.line_subtotal_excl_tax - line.line_discount_excl_tax)|number_format(2, ',', ' ') }} {{ invoice.currency }}</span>
+                </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <div class="invoice-view__bottom">
+        <div>
+            {% if invoice.public_note %}<section class="invoice-card invoice-view__note"><h3>Note visible sur la facture</h3><p>{{ invoice.public_note }}</p></section>{% endif %}
+            {% if invoice.internal_note %}<section class="invoice-card invoice-view__note"><h3>Note interne</h3><p>{{ invoice.internal_note }}</p></section>{% endif %}
+        </div>
+        <aside class="invoice-summary">
+            <h3>Récapitulatif</h3>
+            <p>Sous-total HT <strong>{{ invoice.subtotal_excl_tax|number_format(2, ',', ' ') }} {{ invoice.currency }}</strong></p>
+            {% if invoice.discount_total_excl_tax > 0 %}<p>Remises <strong>-{{ invoice.discount_total_excl_tax|number_format(2, ',', ' ') }} {{ invoice.currency }}</strong></p>{% endif %}
+            <p>Total HT <strong>{{ (invoice.subtotal_excl_tax - invoice.discount_total_excl_tax)|number_format(2, ',', ' ') }} {{ invoice.currency }}</strong></p>
+            <p>TVA <strong>{{ invoice.tax_total|number_format(2, ',', ' ') }} {{ invoice.currency }}</strong></p>
+            <hr>
+            <p class="invoice-summary__total">Total TTC <strong>{{ invoice.total_incl_tax|number_format(2, ',', ' ') }} {{ invoice.currency }}</strong></p>
+        </aside>
+    </div>
+</section>
