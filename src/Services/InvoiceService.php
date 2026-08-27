@@ -106,10 +106,12 @@ class InvoiceService
             throw new \InvalidArgumentException('Enregistrez la facture avant de l’émettre.');
         }
 
-        $this->companySettingsService->validateIssuerForInvoice($this->companySettings->find());
+        $company = $this->companySettings->find();
+        $this->companySettingsService->validateIssuerForInvoice($company);
+        $issuerSnapshot = $this->companySettingsService->invoiceIssuerSnapshot($company);
         ['invoice' => $invoice, 'lines' => $lines] = $this->prepareDraft($input, $id);
 
-        return $this->invoices->issueDraft($id, $invoice, $lines);
+        return $this->invoices->issueDraft($id, $invoice, $lines, $issuerSnapshot);
     }
 
     private function prepareDraft(array $input, ?int $id): array

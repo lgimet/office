@@ -139,7 +139,7 @@ class InvoiceRepository extends BaseRepository
         }
     }
 
-    public function issueDraft(int $id, array $invoice, array $lines): string
+    public function issueDraft(int $id, array $invoice, array $lines, array $issuer): string
     {
         $this->pdo->beginTransaction();
 
@@ -159,6 +159,7 @@ class InvoiceRepository extends BaseRepository
             }
 
             $this->writeDraft($id, $invoice, $lines);
+            $this->writeIssuerSnapshot($id, $issuer);
             $issueDate = new \DateTimeImmutable((string) $invoice[1]);
             $number = (new InvoiceNumberGenerator())->next($this->pdo, $this->tenant->id(), $issueDate, $this->tenant->tenant()['invoice_number_prefix'] ?? 'F');
             $updated = $this->query(
@@ -216,5 +217,26 @@ class InvoiceRepository extends BaseRepository
 
         $this->query('DELETE FROM invoice_lines WHERE invoice_id = ?', [$id]);
         $this->insertLines($id, $lines);
+    }
+
+    /** @param array<string, ?string> $issuer */
+    private function writeIssuerSnapshot(int $invoiceId, array $issuer): void
+    {
+        $fields = [
+            'legal_name', 'trading_name', 'legal_form', 'share_capital',
+            'address_line1', 'address_line2', 'postal_code', 'city', 'country',
+            'email', 'phone', 'website', 'siret', 'siren', 'vat_number',
+            'ape_code', 'rcs_city', 'bank_name', 'iban', 'bic', 'invoice_footer',
+        ];
+        $assignments = implode(', ', array_map(static fn (string $field): string => "issuer_{$field} = :{$field}", $fields));
+        $params = ['invoice_id' => $invoiceId, 'tenant_id' => $this->tenant->id()];
+        foreach ($fields as $field) {
+            $params[$field] = $issuer[$field] ?? null;
+        }
+
+        $this->query(
+            "UPDATE invoices SET {$assignments} WHERE id = :invoice_id AND tenant_id = :tenant_id AND status = 'draft'",
+            $params
+        );
     }
 }

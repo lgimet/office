@@ -51,6 +51,26 @@ class CompanySettingsService
         }
     }
 
+    /** @return array<string, ?string> */
+    public function invoiceIssuerSnapshot(?array $company): array
+    {
+        $company ??= [];
+        $fields = [
+            'legal_name', 'trading_name', 'legal_form', 'share_capital',
+            'address_line1', 'address_line2', 'postal_code', 'city', 'country',
+            'email', 'phone', 'website', 'siret', 'siren', 'vat_number',
+            'ape_code', 'rcs_city', 'bank_name', 'iban', 'bic', 'invoice_footer',
+        ];
+
+        $snapshot = [];
+        foreach ($fields as $field) {
+            $value = trim((string) ($company[$field] ?? ''));
+            $snapshot[$field] = $value === '' ? null : $value;
+        }
+
+        return $snapshot;
+    }
+
     private function normalize(array $input): array
     {
         $legalName = trim((string) ($input['legal_name'] ?? ''));

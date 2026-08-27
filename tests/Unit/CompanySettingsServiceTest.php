@@ -30,4 +30,19 @@ final class CompanySettingsServiceTest extends TestCase
             'default_payment_terms' => 'Sous 15 jours',
         ]);
     }
+
+    public function testInvoiceIssuerSnapshotCopiesOnlyHistoricalIssuerFields(): void
+    {
+        $snapshot = (new CompanySettingsService($this->createMock(CompanySettingsRepository::class)))->invoiceIssuerSnapshot([
+            'legal_name' => 'DevSys', 'address_line1' => '1 rue A', 'iban' => 'FR00', 'invoice_footer' => 'Merci',
+            'default_currency' => 'USD', 'tenant_id' => 999,
+        ]);
+
+        self::assertSame('DevSys', $snapshot['legal_name']);
+        self::assertSame('1 rue A', $snapshot['address_line1']);
+        self::assertSame('FR00', $snapshot['iban']);
+        self::assertSame('Merci', $snapshot['invoice_footer']);
+        self::assertArrayNotHasKey('default_currency', $snapshot);
+        self::assertArrayNotHasKey('tenant_id', $snapshot);
+    }
 }

@@ -142,9 +142,13 @@ final class InvoiceClientApiFlowTest extends TestCase
     {
         $repository = new CapturingInvoiceRepository();
         $repository->existing = ['id' => 10, 'status' => 'draft', 'currency' => 'EUR'];
+        $company = $this->createMock(CompanySettingsRepository::class);
+        $company->method('find')->willReturn(['legal_name' => 'Issuer']);
+        $companyService = $this->createMock(CompanySettingsService::class);
+        $companyService->method('invoiceIssuerSnapshot')->willReturn(['legal_name' => 'Issuer']);
         $service = new InvoiceService(
-            $repository, new InvoiceCalculationService(), $this->createMock(CompanySettingsRepository::class),
-            $this->createMock(CompanySettingsService::class), $this->service(HandlerStack::create(new MockHandler([
+            $repository, new InvoiceCalculationService(), $company,
+            $companyService, $this->service(HandlerStack::create(new MockHandler([
                 new Response(200, [], json_encode(['success' => true, 'data' => ['client' => $this->clientData()]], JSON_THROW_ON_ERROR)),
             ]))),
         );
@@ -210,6 +214,7 @@ final class CapturingInvoiceRepository extends InvoiceRepository
 {
     public array $invoice = [];
     public array $issuedInvoice = [];
+    public array $issuer = [];
     public array $existing = [];
     public array $existingLines = [];
 
@@ -243,9 +248,10 @@ final class CapturingInvoiceRepository extends InvoiceRepository
         return $clientId === 42 ? InvoiceClientApiFlowTest::UUID : null;
     }
 
-    public function issueDraft(int $id, array $invoice, array $lines): string
+    public function issueDraft(int $id, array $invoice, array $lines, array $issuer): string
     {
         $this->issuedInvoice = $invoice;
+        $this->issuer = $issuer;
         return 'F2026-0001';
     }
 }
