@@ -10,6 +10,7 @@ use App\Services\CompanySettingsService;
 use App\Services\DevsysClientService;
 use App\Services\InvoiceCalculationService;
 use App\Services\InvoiceService;
+use App\Services\InvoiceTemplateResolver;
 use App\Services\TenantContext;
 use Devsys\Shared\Api\Devsys\Clients\ClientsApi;
 use Devsys\Shared\Api\Devsys\Configuration\DevsysApiConfig;
@@ -146,11 +147,15 @@ final class InvoiceClientApiFlowTest extends TestCase
         $company->method('find')->willReturn(['legal_name' => 'Issuer']);
         $companyService = $this->createMock(CompanySettingsService::class);
         $companyService->method('invoiceIssuerSnapshot')->willReturn(['legal_name' => 'Issuer']);
+        $systemRoot = sys_get_temp_dir() . '/invoice-template-' . uniqid('', true);
+        mkdir($systemRoot . '/v1', 0777, true);
+        file_put_contents($systemRoot . '/v1/first-page.pdf', '%PDF-test');
         $service = new InvoiceService(
             $repository, new InvoiceCalculationService(), $company,
             $companyService, $this->service(HandlerStack::create(new MockHandler([
                 new Response(200, [], json_encode(['success' => true, 'data' => ['client' => $this->clientData()]], JSON_THROW_ON_ERROR)),
             ]))),
+            new InvoiceTemplateResolver((new \ReflectionClass(TenantContext::class))->newInstanceWithoutConstructor(), $company, null, $systemRoot),
         );
 
         $service->issueDraft($this->invoiceInput(), 10);
@@ -162,6 +167,8 @@ final class InvoiceClientApiFlowTest extends TestCase
         self::assertSame('Paris', $repository->issuedInvoice[11]);
         self::assertSame('12345678901234', $repository->issuedInvoice[13]);
         self::assertSame('FR123456789', $repository->issuedInvoice[14]);
+        self::assertSame('system', $repository->templateSource);
+        self::assertSame('v1', $repository->templateVersion);
     }
 
     public function testClientResolutionIsScopedToTenantInBothDirections(): void
@@ -215,6 +222,8 @@ final class CapturingInvoiceRepository extends InvoiceRepository
     public array $invoice = [];
     public array $issuedInvoice = [];
     public array $issuer = [];
+    public ?string $templateSource = null;
+    public ?string $templateVersion = null;
     public array $existing = [];
     public array $existingLines = [];
 
@@ -248,10 +257,12 @@ final class CapturingInvoiceRepository extends InvoiceRepository
         return $clientId === 42 ? InvoiceClientApiFlowTest::UUID : null;
     }
 
-    public function issueDraft(int $id, array $invoice, array $lines, array $issuer): string
+    public function issueDraft(int $id, array $invoice, array $lines, array $issuer, string $templateSource, string $templateVersion): string
     {
         $this->issuedInvoice = $invoice;
         $this->issuer = $issuer;
+        $this->templateSource = $templateSource;
+        $this->templateVersion = $templateVersion;
         return 'F2026-0001';
     }
 }

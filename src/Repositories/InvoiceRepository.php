@@ -139,7 +139,7 @@ class InvoiceRepository extends BaseRepository
         }
     }
 
-    public function issueDraft(int $id, array $invoice, array $lines, array $issuer): string
+    public function issueDraft(int $id, array $invoice, array $lines, array $issuer, string $templateSource, string $templateVersion): string
     {
         $this->pdo->beginTransaction();
 
@@ -160,6 +160,7 @@ class InvoiceRepository extends BaseRepository
 
             $this->writeDraft($id, $invoice, $lines);
             $this->writeIssuerSnapshot($id, $issuer);
+            $this->writeTemplateSnapshot($id, $templateSource, $templateVersion);
             $issueDate = new \DateTimeImmutable((string) $invoice[1]);
             $number = (new InvoiceNumberGenerator())->next($this->pdo, $this->tenant->id(), $issueDate, $this->tenant->tenant()['invoice_number_prefix'] ?? 'F');
             $updated = $this->query(
@@ -237,6 +238,24 @@ class InvoiceRepository extends BaseRepository
         $this->query(
             "UPDATE invoices SET {$assignments} WHERE id = :invoice_id AND tenant_id = :tenant_id AND status = 'draft'",
             $params
+        );
+    }
+
+    private function writeTemplateSnapshot(int $invoiceId, string $source, string $version): void
+    {
+        if (!in_array($source, ['system', 'tenant'], true) || !preg_match('/^v[1-9][0-9]*$/', $version)) {
+            throw new \InvalidArgumentException('Le modèle PDF de facture est invalide.');
+        }
+
+        $this->query(
+            "UPDATE invoices SET pdf_template_source = :source, pdf_template_version = :version
+             WHERE id = :invoice_id AND tenant_id = :tenant_id AND status = 'draft'",
+            [
+                'source' => $source,
+                'version' => $version,
+                'invoice_id' => $invoiceId,
+                'tenant_id' => $this->tenant->id(),
+            ]
         );
     }
 }

@@ -1,6 +1,7 @@
 <?php
 
 use App\Providers\DevsysApiProvider;
+use App\Services\InvoiceTemplateResolver;
 use Devsys\Shared\Api\Devsys\Clients\ClientsApi;
 use Devsys\Shared\Api\Devsys\Http\DevsysApiClient;
 use App\Providers\OfficeAccessTokenProvider;
@@ -21,4 +22,5 @@ return static function (\App\Core\Container $container): void {
     $container->autowire(OfficeAccessTokenProvider::class);
 
     $container->autowire(ClientsApi::class);
+    $container->autowire(InvoiceTemplateResolver::class);
 };

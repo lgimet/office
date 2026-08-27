@@ -10,7 +10,8 @@ final class TenantRepository extends BaseRepository
     {
         return $this->query(
             'SELECT t.id, t.uuid, t.name, t.slug, t.status, tm.role,
-                    COALESCE(cs.invoice_number_prefix, \'F\') AS invoice_number_prefix
+                    COALESCE(cs.invoice_number_prefix, \'F\') AS invoice_number_prefix,
+                    t.storage_strategy, t.storage_key, t.storage_state
              FROM tenants t
              INNER JOIN tenant_memberships tm ON tm.tenant_id = t.id
              INNER JOIN users u ON u.id = tm.user_id

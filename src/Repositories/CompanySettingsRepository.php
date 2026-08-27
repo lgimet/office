@@ -26,7 +26,7 @@ class CompanySettingsRepository extends BaseRepository
             'email', 'phone', 'website', 'siret', 'siren', 'vat_number', 'ape_code',
             'rcs_city', 'bank_name', 'iban', 'bic', 'default_currency',
             'default_tax_rate', 'invoice_number_prefix', 'default_payment_terms',
-            'default_payment_terms_code', 'default_payment_method', 'invoice_footer',
+            'default_payment_terms_code', 'default_payment_method', 'invoice_footer', 'invoice_template_version',
         ] as $field) {
             $params[$field] = $settings[$field] ?? null;
         }
@@ -38,14 +38,14 @@ class CompanySettingsRepository extends BaseRepository
                 email, phone, website, siret, siren, vat_number, ape_code,
                 rcs_city, bank_name, iban, bic, default_currency,
                 default_tax_rate, invoice_number_prefix, default_payment_terms, default_payment_terms_code,
-                default_payment_method, invoice_footer
+                default_payment_method, invoice_footer, invoice_template_version
             ) VALUES (
                 :tenant_id, :legal_name, :trading_name, :legal_form, :share_capital,
                 :address_line1, :address_line2, :postal_code, :city, :country,
                 :email, :phone, :website, :siret, :siren, :vat_number, :ape_code,
                 :rcs_city, :bank_name, :iban, :bic, :default_currency,
                 :default_tax_rate, :invoice_number_prefix, :default_payment_terms,
-                :default_payment_terms_code, :default_payment_method, :invoice_footer
+                :default_payment_terms_code, :default_payment_method, :invoice_footer, :invoice_template_version
             ) ON DUPLICATE KEY UPDATE
                 legal_name = VALUES(legal_name),
                 trading_name = VALUES(trading_name),
@@ -74,6 +74,7 @@ class CompanySettingsRepository extends BaseRepository
                 default_payment_terms_code = VALUES(default_payment_terms_code),
                 default_payment_method = VALUES(default_payment_method),
                 invoice_footer = VALUES(invoice_footer),
+                invoice_template_version = VALUES(invoice_template_version),
                 updated_at = CURRENT_TIMESTAMP',
             $params
         );

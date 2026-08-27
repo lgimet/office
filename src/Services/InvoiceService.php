@@ -13,6 +13,7 @@ class InvoiceService
         private CompanySettingsRepository $companySettings,
         private CompanySettingsService $companySettingsService,
         private DevsysClientService $clients,
+        private ?InvoiceTemplateResolver $templates = null,
     ) {
     }
 
@@ -109,9 +110,13 @@ class InvoiceService
         $company = $this->companySettings->find();
         $this->companySettingsService->validateIssuerForInvoice($company);
         $issuerSnapshot = $this->companySettingsService->invoiceIssuerSnapshot($company);
+        if ($this->templates === null) {
+            throw new \LogicException('Le résolveur de modèle de facture n’est pas configuré.');
+        }
+        $template = $this->templates->resolveCurrent();
         ['invoice' => $invoice, 'lines' => $lines] = $this->prepareDraft($input, $id);
 
-        return $this->invoices->issueDraft($id, $invoice, $lines, $issuerSnapshot);
+        return $this->invoices->issueDraft($id, $invoice, $lines, $issuerSnapshot, $template['source'], $template['version']);
     }
 
     private function prepareDraft(array $input, ?int $id): array
