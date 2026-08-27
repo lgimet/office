@@ -19,7 +19,18 @@ class CompanySettingsRepository extends BaseRepository
 
     public function save(array $settings): void
     {
-        $settings = [$this->tenant->id(), ...$settings];
+        $params = ['tenant_id' => $this->tenant->id()];
+        foreach ([
+            'legal_name', 'trading_name', 'legal_form', 'share_capital',
+            'address_line1', 'address_line2', 'postal_code', 'city', 'country',
+            'email', 'phone', 'website', 'siret', 'siren', 'vat_number', 'ape_code',
+            'rcs_city', 'bank_name', 'iban', 'bic', 'default_currency',
+            'default_tax_rate', 'invoice_number_prefix', 'default_payment_terms',
+            'default_payment_terms_code', 'default_payment_method', 'invoice_footer',
+        ] as $field) {
+            $params[$field] = $settings[$field] ?? null;
+        }
+
         $this->query(
             'INSERT INTO company_settings (
                 tenant_id, legal_name, trading_name, legal_form, share_capital,
@@ -29,7 +40,12 @@ class CompanySettingsRepository extends BaseRepository
                 default_tax_rate, invoice_number_prefix, default_payment_terms, default_payment_terms_code,
                 default_payment_method, invoice_footer
             ) VALUES (
-                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+                :tenant_id, :legal_name, :trading_name, :legal_form, :share_capital,
+                :address_line1, :address_line2, :postal_code, :city, :country,
+                :email, :phone, :website, :siret, :siren, :vat_number, :ape_code,
+                :rcs_city, :bank_name, :iban, :bic, :default_currency,
+                :default_tax_rate, :invoice_number_prefix, :default_payment_terms,
+                :default_payment_terms_code, :default_payment_method, :invoice_footer
             ) ON DUPLICATE KEY UPDATE
                 legal_name = VALUES(legal_name),
                 trading_name = VALUES(trading_name),
