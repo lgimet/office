@@ -53,6 +53,19 @@ La consultation réutilise `InvoiceRepository::find()` et `lines()`, qui
 appliquent `TenantContext` et `tenant_id`. Un identifiant appartenant à un autre
 tenant est donc introuvable pour la fiche courante.
 
+## Correctif de chargement CSS de la vue
+
+`Core::loadWindowCss()` charge la feuille de style à partir de l’objet et de
+l’action. Ainsi, `/Invoices/view` attend spécifiquement
+`/assets/css/objects/Invoices/view.css`. Ce fichier n’existait pas : la fiche
+pouvait sembler correctement stylée uniquement lorsque `form.css` avait déjà
+été chargé auparavant.
+
+`public/assets/css/objects/Invoices/view.css` contient désormais les styles
+communs réellement utilisés par la fiche et ses styles spécifiques. La vue est
+ainsi autonome lors d’une ouverture directe après un rechargement d’Office,
+comme après l’émission depuis le formulaire.
+
 ## Tests
 
 La couverture vérifie la consultation d’une facture émise avec ses lignes,
