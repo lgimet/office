@@ -45,8 +45,9 @@ l’émetteur via `CompanySettingsRepository::find()`, donc via le tenant couran
 
 ## Tests
 
-La couverture vérifie la normalisation associative et l’ignorance d’un
-`tenant_id` forgé dans le payload. La suite Office passe avec 88 tests et 153
-assertions. La migration API `018_add_office_multi_tenant_foundation.sql`
+La couverture vérifie la normalisation associative, l’utilisation effective du
+`tenant_id` courant dans les paramètres nommés et l’ignorance d’un `tenant_id`
+forgé dans le payload. La suite Office passe avec 89 tests et 158 assertions.
+La migration API `018_add_office_multi_tenant_foundation.sql`
 fournit l’unicité et la clé étrangère nécessaires ; aucune nouvelle migration
 n’a été créée pour ce correctif.

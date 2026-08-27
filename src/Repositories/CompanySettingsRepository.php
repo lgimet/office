@@ -75,7 +75,7 @@ class CompanySettingsRepository extends BaseRepository
                 default_payment_method = VALUES(default_payment_method),
                 invoice_footer = VALUES(invoice_footer),
                 updated_at = CURRENT_TIMESTAMP',
-            $settings
+            $params
         );
     }
 }
