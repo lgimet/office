@@ -39,26 +39,24 @@ class InvoiceRepository extends BaseRepository
         return ['rows' => $rows, 'total' => $total];
     }
 
-    public function client(int $id): ?array
+    public function clientInternalIdByUuid(string $uuid): ?int
     {
-        return $this->query('SELECT * FROM clients WHERE id = ? AND tenant_id = ? AND is_active = 1', [$id, $this->tenant->id()])?->fetch() ?: null;
+        $id = $this->query(
+            'SELECT id FROM clients WHERE uuid = ? AND tenant_id = ?',
+            [$uuid, $this->tenant->id()]
+        )?->fetchColumn();
+
+        return $id === false || $id === null ? null : (int) $id;
     }
 
-    public function clientOptions(string $query = ''): array
+    public function clientUuidForInternalId(int $clientId): ?string
     {
-        $sql = 'SELECT id, COALESCE(NULLIF(display_name, \'\'), company_name) AS label
-                FROM clients
-                WHERE is_active = 1 AND tenant_id = ?';
-        $params = [$this->tenant->id()];
+        $uuid = $this->query(
+            'SELECT uuid FROM clients WHERE id = ? AND tenant_id = ?',
+            [$clientId, $this->tenant->id()]
+        )?->fetchColumn();
 
-        if ($query !== '') {
-            $sql .= ' AND (company_name LIKE ? OR display_name LIKE ? OR email LIKE ?)';
-            array_push($params, ...array_fill(0, 3, '%' . $query . '%'));
-        }
-
-        $sql .= ' ORDER BY company_name LIMIT 25';
-
-        return $this->query($sql, $params)?->fetchAll() ?: [];
+        return $uuid === false || $uuid === null ? null : (string) $uuid;
     }
 
     public function find(int $id): ?array

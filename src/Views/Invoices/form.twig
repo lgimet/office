@@ -83,7 +83,7 @@
                             data-placeholder="Rechercher un client"
                             data-selected-label="{{ invoice.client_name ?? '' }}"
                         >
-                            <input type="hidden" name="client_id" required value="{{ invoice.client_id ?? '' }}">
+                            <input type="hidden" name="client_uuid" required value="{{ invoice.client_uuid ?? '' }}">
                         </div>
                         <label for="invoice-client">Client</label>
                     </div>

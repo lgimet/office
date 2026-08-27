@@ -11,7 +11,8 @@ class InvoiceService
         private InvoiceRepository $invoices,
         private InvoiceCalculationService $calculator,
         private CompanySettingsRepository $companySettings,
-        private CompanySettingsService $companySettingsService
+        private CompanySettingsService $companySettingsService,
+        private ?DevsysClientService $clients = null,
     ) {
     }
 
@@ -43,6 +44,10 @@ class InvoiceService
 
         if ($invoice['status'] !== 'draft') {
             throw new \InvalidArgumentException('Seules les factures en brouillon peuvent être modifiées.');
+        }
+
+        if (!empty($invoice['client_id'])) {
+            $invoice['client_uuid'] = $this->invoices->clientUuidForInternalId((int) $invoice['client_id']);
         }
 
         return [
@@ -118,8 +123,19 @@ class InvoiceService
             if ($existingInvoice['status'] !== 'draft') throw new \InvalidArgumentException('Seules les factures en brouillon peuvent être modifiées.');
         }
 
-        $client = $this->invoices->client((int) ($input['client_id'] ?? 0));
-        if ($client === null) throw new \InvalidArgumentException('Le client sélectionné est invalide.');
+        $clientUuid = trim((string) ($input['client_uuid'] ?? ''));
+        if (!preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i', $clientUuid)) {
+            throw new \InvalidArgumentException('Le client sélectionné est invalide.');
+        }
+        if ($this->clients === null) {
+            throw new \LogicException('Le service clients n’est pas configuré.');
+        }
+        $client = $this->clients->invoiceClient($clientUuid);
+        if (($client['status'] ?? null) !== 'active') {
+            throw new \InvalidArgumentException('Seuls les clients actifs peuvent être associés à une nouvelle facture.');
+        }
+        $clientId = $this->invoices->clientInternalIdByUuid($clientUuid);
+        if ($clientId === null) throw new \InvalidArgumentException('Le client sélectionné est invalide.');
         $issueDate = (string) ($input['issue_date'] ?? '');
         if ($issueDate === '') throw new \InvalidArgumentException('La date de facture est obligatoire.');
         if (!empty($input['due_date']) && $input['due_date'] < $issueDate) throw new \InvalidArgumentException('La date d’échéance ne peut pas être antérieure à la date de facture.');
@@ -129,7 +145,7 @@ class InvoiceService
 
         $contact = trim(($client['contact_first_name'] ?? '') . ' ' . ($client['contact_last_name'] ?? '')) ?: null;
         $invoice = [
-            (int) $client['id'], $issueDate, $input['due_date'] ?: null,
+            $clientId, $issueDate, $input['due_date'] ?: null,
             $existingInvoice['currency'] ?? $defaults['currency'],
             $client['display_name'] ?: $client['company_name'], $contact,
             $client['email'], $client['phone'], $client['address_line1'], $client['address_line2'],

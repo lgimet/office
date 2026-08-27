@@ -8,6 +8,8 @@ use Devsys\Shared\Api\Devsys\Clients\ClientsApi;
 use Devsys\Shared\Api\Devsys\Clients\Dto\ClientCategory;
 use Devsys\Shared\Api\Devsys\Clients\Dto\ClientDetails;
 use Devsys\Shared\Api\Devsys\Clients\Dto\ClientLegalType;
+use Devsys\Shared\Api\Devsys\Clients\Dto\ClientListItem;
+use Devsys\Shared\Api\Devsys\Clients\Dto\ClientListQuery;
 
 final class DevsysClientService
 {
@@ -87,6 +89,59 @@ final class DevsysClientService
             ['id' => 'inactive', 'label' => 'Inactif'],
             ['id' => 'prospect', 'label' => 'Prospect'],
             ['id' => 'archived', 'label' => 'Archivé'],
+        ];
+    }
+
+    /** @return array<int, array{id: string, label: string}> */
+    public function searchInvoiceClientOptions(string $query = ''): array
+    {
+        $result = $this->clientsApi->list(new ClientListQuery(
+            page: 1,
+            perPage: 25,
+            search: trim($query) === '' ? null : trim($query),
+            status: 'active',
+            sort: 'display_name',
+            direction: 'asc',
+        ));
+
+        return array_map(static fn (ClientListItem $client): array => [
+            'id' => $client->id,
+            'label' => $client->displayName,
+        ], $result->items);
+    }
+
+    /** @return array<string, mixed> */
+    public function invoiceClient(string $uuid): array
+    {
+        return $this->invoiceSnapshot($this->clientsApi->get($uuid));
+    }
+
+    /** @return array<string, mixed> */
+    public function invoiceSnapshot(ClientDetails $client): array
+    {
+        $contactFirstName = $this->arrayValue($client->contact, 'first_name');
+        $contactLastName = $this->arrayValue($client->contact, 'last_name');
+        $companyName = $client->companyName;
+        $displayName = $companyName ?: trim(($contactFirstName ?? '') . ' ' . ($contactLastName ?? ''));
+
+        return [
+            'uuid' => $client->id,
+            'display_name' => $displayName,
+            'company_name' => $companyName,
+            'legal_name' => $client->legalName,
+            'contact_first_name' => $contactFirstName,
+            'contact_last_name' => $contactLastName,
+            'email' => $this->arrayValue($client->contact, 'email'),
+            'phone' => $this->arrayValue($client->contact, 'phone'),
+            'address_line1' => $this->arrayValue($client->address, 'line1'),
+            'address_line2' => $this->arrayValue($client->address, 'line2'),
+            'postal_code' => $this->arrayValue($client->address, 'postal_code'),
+            'city' => $this->arrayValue($client->address, 'city'),
+            'country' => $this->arrayValue($client->address, 'country_code'),
+            'siret' => $this->arrayValue($client->business, 'siret'),
+            'siren' => $this->arrayValue($client->business, 'siren'),
+            'vat_number' => $this->arrayValue($client->business, 'vat_number'),
+            'status' => $client->status,
         ];
     }
 

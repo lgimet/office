@@ -16,6 +16,9 @@ export class CustomSelect extends EventTarget {
     this.emptyLabel = emptyLabel;
     this.data = [];
     this.activeIndex = -1;
+    this.searchTimer = null;
+    this.searchRequest = 0;
+    this.searchController = null;
 
 
     this.build();
@@ -235,9 +238,13 @@ export class CustomSelect extends EventTarget {
       });
     }
     else {
-      this.input.addEventListener("focus", () => this.open());
+      this.input.addEventListener("focus", () => {
+        this.open();
+        if (!this.data.length) this.fetchData("");
+      });
       this.input.addEventListener("input", (e) => {
-        this.fetchData(e.target.value);
+        clearTimeout(this.searchTimer);
+        this.searchTimer = setTimeout(() => this.fetchData(e.target.value), 275);
       });
     }
     document.addEventListener("click", (e) => {
@@ -255,14 +262,23 @@ export class CustomSelect extends EventTarget {
       });
   }
   async fetchData(query = "") {
+    const request = ++this.searchRequest;
+    this.searchController?.abort();
+    this.searchController = new AbortController();
     try {
-      const response = await fetch(`${this.url}?q=${encodeURIComponent(query)}`);
+      const response = await fetch(`${this.url}?q=${encodeURIComponent(query)}`, {
+        credentials: "same-origin",
+        signal: this.searchController.signal,
+      });
       const data = await response.json();
+
+      if (request !== this.searchRequest) return;
 
       this.data = data.data;
       this.renderOptions();
 
     } catch (err) {
+      if (err.name === "AbortError") return;
       console.error("Select fetch error", err);
     }
   }

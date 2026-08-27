@@ -300,7 +300,7 @@ export default class Invoices extends Core {
     bindClientDetails() {
         const form = this.bodyRef.invoice_form;
         const client = form.querySelector("#invoice-client");
-        const hidden = client?.querySelector("input[name='client_id']");
+        const hidden = client?.querySelector("input[name='client_uuid']");
         const fields = {
             address: form.querySelector("#invoice-client-address"),
             postalCode: form.querySelector("#invoice-client-postal-code"),
@@ -323,14 +323,14 @@ export default class Invoices extends Core {
         };
 
         hidden.addEventListener("change", async () => {
-            const id = Number(hidden.value);
-            if (!id) {
+            const uuid = hidden.value.trim();
+            if (!uuid) {
                 render();
                 return;
             }
 
             try {
-                const response = await fetch(`/Invoices/clientOptions?id=${encodeURIComponent(id)}`, {
+                const response = await fetch(`/Invoices/clientDetails?uuid=${encodeURIComponent(uuid)}`, {
                     credentials: "same-origin",
                 });
                 const payload = await response.json();
