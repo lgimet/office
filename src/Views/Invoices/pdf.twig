@@ -1,0 +1,53 @@
+<style>
+body { font-family: sans-serif; font-size: 9pt; color: #202124; }
+h1 { font-size: 18pt; margin: 0 0 5mm; }
+h2 { font-size: 11pt; margin: 0 0 2mm; }
+.columns { width: 100%; }
+.columns td { width: 50%; vertical-align: top; }
+.muted { color: #666; }
+.invoice-table { width: 100%; border-collapse: collapse; margin-top: 8mm; }
+.invoice-table th { background: #eeeeee; text-align: left; }
+.invoice-table th, .invoice-table td { border-bottom: 0.2mm solid #cccccc; padding: 2mm 1.5mm; }
+.number, .amount { text-align: right; }
+.summary { width: 45%; margin-left: 55%; margin-top: 6mm; border-collapse: collapse; }
+.summary td { padding: 1.5mm; }
+.summary td:last-child { text-align: right; }
+.total td { border-top: 0.4mm solid #202124; font-size: 11pt; font-weight: bold; }
+.note { margin-top: 8mm; }
+.footer { margin-top: 10mm; font-size: 8pt; color: #666; }
+</style>
+
+<h1>Facture {{ invoice.invoice_number }}</h1>
+<table class="columns"><tr>
+    <td><h2>Émetteur</h2>
+        <strong>{{ invoice.issuer_trading_name ?: invoice.issuer_legal_name }}</strong><br>
+        {% if invoice.issuer_legal_name and invoice.issuer_trading_name %}{{ invoice.issuer_legal_name }}<br>{% endif %}
+        {% if invoice.issuer_address_line1 %}{{ invoice.issuer_address_line1 }}<br>{% endif %}
+        {% if invoice.issuer_address_line2 %}{{ invoice.issuer_address_line2 }}<br>{% endif %}
+        {{ invoice.issuer_postal_code }} {{ invoice.issuer_city }}{% if invoice.issuer_country %}<br>{{ invoice.issuer_country }}{% endif %}<br>
+        {% if invoice.issuer_email %}{{ invoice.issuer_email }}<br>{% endif %}{% if invoice.issuer_phone %}{{ invoice.issuer_phone }}{% endif %}
+        {% if invoice.issuer_siren or invoice.issuer_siret %}<br><span class="muted">{% if invoice.issuer_siren %}SIREN {{ invoice.issuer_siren }}{% endif %}{% if invoice.issuer_siret %} — SIRET {{ invoice.issuer_siret }}{% endif %}</span>{% endif %}
+    </td>
+    <td><h2>Client</h2>
+        <strong>{{ invoice.client_name }}</strong><br>
+        {% if invoice.client_contact_name %}{{ invoice.client_contact_name }}<br>{% endif %}
+        {% if invoice.client_address_line1 %}{{ invoice.client_address_line1 }}<br>{% endif %}
+        {% if invoice.client_address_line2 %}{{ invoice.client_address_line2 }}<br>{% endif %}
+        {{ invoice.client_postal_code }} {{ invoice.client_city }}{% if invoice.client_country %}<br>{{ invoice.client_country }}{% endif %}<br>
+        {% if invoice.client_email %}{{ invoice.client_email }}<br>{% endif %}{% if invoice.client_phone %}{{ invoice.client_phone }}{% endif %}
+    </td>
+</tr></table>
+
+<p><strong>Date :</strong> {{ invoice.issue_date|date('d/m/Y') }}{% if invoice.due_date %} &nbsp; <strong>Échéance :</strong> {{ invoice.due_date|date('d/m/Y') }}{% endif %}{% if invoice.status == 'cancelled' %} &nbsp; <strong>ANNULÉE</strong>{% endif %}</p>
+
+<table class="invoice-table"><thead><tr><th>#</th><th>Désignation</th><th class="number">Qté</th><th>Unité</th><th class="amount">Prix HT</th><th class="amount">TVA</th><th class="amount">Total HT</th></tr></thead><tbody>
+{% for line in lines %}<tr>
+    <td>{{ line.position }}</td><td><strong>{{ line.label }}</strong>{% if line.description %}<br><span class="muted">{{ line.description|nl2br }}</span>{% endif %}{% if line.discount_note %}<br><span class="muted">Remise : {{ line.discount_note }}</span>{% endif %}</td>
+    <td class="number">{{ line.quantity }}</td><td>{{ line.unit ?: '—' }}</td><td class="amount">{{ line.unit_price_excl_tax|number_format(2, ',', ' ') }} {{ invoice.currency }}</td><td class="amount">{{ line.tax_rate|number_format(2, ',', ' ') }} %</td><td class="amount">{{ (line.line_subtotal_excl_tax - line.line_discount_excl_tax)|number_format(2, ',', ' ') }} {{ invoice.currency }}</td>
+</tr>{% endfor %}</tbody></table>
+
+<table class="summary"><tr><td>Sous-total HT</td><td>{{ invoice.subtotal_excl_tax|number_format(2, ',', ' ') }} {{ invoice.currency }}</td></tr>{% if invoice.discount_total_excl_tax > 0 %}<tr><td>Remises</td><td>-{{ invoice.discount_total_excl_tax|number_format(2, ',', ' ') }} {{ invoice.currency }}</td></tr>{% endif %}<tr><td>Total HT</td><td>{{ (invoice.subtotal_excl_tax - invoice.discount_total_excl_tax)|number_format(2, ',', ' ') }} {{ invoice.currency }}</td></tr><tr><td>TVA</td><td>{{ invoice.tax_total|number_format(2, ',', ' ') }} {{ invoice.currency }}</td></tr><tr class="total"><td>Total TTC</td><td>{{ invoice.total_incl_tax|number_format(2, ',', ' ') }} {{ invoice.currency }}</td></tr></table>
+<p><strong>Conditions :</strong> {{ invoice.payment_terms ?: '—' }} &nbsp; <strong>Paiement :</strong> {{ invoice.payment_method ?: '—' }}</p>
+{% if invoice.issuer_iban or invoice.issuer_bic %}<p><strong>Coordonnées bancaires</strong><br>{% if invoice.issuer_bank_name %}{{ invoice.issuer_bank_name }}<br>{% endif %}{% if invoice.issuer_iban %}IBAN {{ invoice.issuer_iban }}{% endif %}{% if invoice.issuer_bic %} — BIC {{ invoice.issuer_bic }}{% endif %}</p>{% endif %}
+{% if invoice.public_note %}<p class="note"><strong>Note :</strong><br>{{ invoice.public_note|nl2br }}</p>{% endif %}
+{% if invoice.issuer_invoice_footer %}<p class="footer">{{ invoice.issuer_invoice_footer|nl2br }}</p>{% endif %}

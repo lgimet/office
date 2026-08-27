@@ -21,7 +21,8 @@ final class InvoiceTemplateResolver
     /** @return array{source: string, version: string, first_page: string, continuation: string} */
     public function resolveCurrent(): array
     {
-        $version = $this->settings->find()['invoice_template_version'] ?? null;
+        $settings = $this->settings->find() ?? [];
+        $version = $settings['invoice_template_version'] ?? null;
         if ($version === null || trim((string) $version) === '') {
             return $this->descriptor('system', self::SYSTEM_VERSION);
         }

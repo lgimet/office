@@ -82,6 +82,7 @@ final class InvoiceClientApiFlowTest extends TestCase
             $this->service(HandlerStack::create(new MockHandler([
                 new Response(200, [], json_encode(['success' => true, 'data' => ['client' => $this->clientData()]], JSON_THROW_ON_ERROR)),
             ]))),
+            $this->templates(),
         );
 
         $service->saveDraft($this->invoiceInput());
@@ -100,6 +101,7 @@ final class InvoiceClientApiFlowTest extends TestCase
             new CapturingInvoiceRepository(), new InvoiceCalculationService(),
             $this->createMock(CompanySettingsRepository::class), $this->createMock(CompanySettingsService::class),
             $this->service(HandlerStack::create(new MockHandler())),
+            $this->templates(),
         );
 
         $this->expectExceptionMessage('Le client sélectionné est invalide.');
@@ -116,6 +118,7 @@ final class InvoiceClientApiFlowTest extends TestCase
             $this->service(HandlerStack::create(new MockHandler([
                 new Response(200, [], json_encode(['success' => true, 'data' => ['client' => $data]], JSON_THROW_ON_ERROR)),
             ]))),
+            $this->templates(),
         );
 
         $this->expectExceptionMessage('Seuls les clients actifs');
@@ -130,6 +133,7 @@ final class InvoiceClientApiFlowTest extends TestCase
         $service = new InvoiceService(
             $repository, new InvoiceCalculationService(), $this->createMock(CompanySettingsRepository::class),
             $this->createMock(CompanySettingsService::class), $this->service(HandlerStack::create(new MockHandler())),
+            $this->templates(),
         );
 
         $form = $service->form(10);
@@ -195,6 +199,14 @@ final class InvoiceClientApiFlowTest extends TestCase
             new DevsysApiConfig('https://api.example.test/api/v1'),
             new Client(['handler' => $stack, 'base_uri' => 'https://api.example.test/api/v1/']),
         )));
+    }
+
+    private function templates(): InvoiceTemplateResolver
+    {
+        return new InvoiceTemplateResolver(
+            (new \ReflectionClass(TenantContext::class))->newInstanceWithoutConstructor(),
+            $this->createMock(CompanySettingsRepository::class),
+        );
     }
 
     private function invoiceInput(array $override = []): array

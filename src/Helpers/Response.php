@@ -26,6 +26,10 @@ class Response
     private ?string $csrf = null;
     private ?string $page = null;
     private ?array $rawPayload = null;
+    private ?string $binaryBody = null;
+    private ?string $binaryContentType = null;
+    private ?string $binaryFilename = null;
+    private string $binaryDisposition = 'inline';
     private int $statusCode = 200;
 
     public function setObject(string $object): self
@@ -52,6 +56,17 @@ class Response
     public function setRawPayload(array $payload, int $statusCode = 200): self
     {
         $this->rawPayload = $payload;
+        $this->statusCode = $statusCode;
+
+        return $this;
+    }
+
+    public function setBinary(string $body, string $contentType, ?string $filename = null, string $disposition = 'inline', int $statusCode = 200): self
+    {
+        $this->binaryBody = $body;
+        $this->binaryContentType = $contentType;
+        $this->binaryFilename = $filename;
+        $this->binaryDisposition = in_array($disposition, ['inline', 'attachment'], true) ? $disposition : 'inline';
         $this->statusCode = $statusCode;
 
         return $this;
@@ -133,6 +148,16 @@ class Response
     public function send(): void
     {
         http_response_code($this->statusCode);
+
+        if ($this->binaryBody !== null) {
+            header('Content-Type: ' . ($this->binaryContentType ?? 'application/octet-stream'));
+            if ($this->binaryFilename !== null) {
+                $filename = preg_replace('/[^A-Za-z0-9._-]+/', '_', $this->binaryFilename) ?: 'document.bin';
+                header('Content-Disposition: ' . $this->binaryDisposition . '; filename="' . $filename . '"');
+            }
+            echo $this->binaryBody;
+            return;
+        }
 
         if ($this->page) {
             header('Content-Type: text/html; charset=utf-8');

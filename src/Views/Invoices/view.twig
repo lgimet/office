@@ -12,6 +12,7 @@
                         {{ is_cancelled ? 'Annulée' : 'Émise' }}
                     </span>
                 </div>
+                <a class="m-btn m-btn--outline" href="/Invoices/{{ invoice.id }}/pdf" target="_blank" rel="noopener">PDF</a>
                 <p>{{ invoice.client_name }}</p>
             </div>
         </div>

@@ -8,6 +8,8 @@ use App\Services\CompanySettingsService;
 use App\Services\DevsysClientService;
 use App\Services\InvoiceCalculationService;
 use App\Services\InvoiceService;
+use App\Services\InvoiceTemplateResolver;
+use App\Services\TenantContext;
 use Devsys\Shared\Api\Devsys\Clients\ClientsApi;
 use Devsys\Shared\Api\Devsys\Configuration\DevsysApiConfig;
 use Devsys\Shared\Api\Devsys\Http\DevsysApiClient;
@@ -30,6 +32,7 @@ final class InvoiceServiceViewTest extends TestCase
             $this->createMock(CompanySettingsRepository::class),
             $this->createMock(CompanySettingsService::class),
             $this->clients(),
+            $this->templates(),
         );
 
         self::assertSame(['invoice' => $invoice, 'lines' => $lines], $service->view(50));
@@ -63,6 +66,7 @@ final class InvoiceServiceViewTest extends TestCase
             $this->createMock(CompanySettingsRepository::class),
             $this->createMock(CompanySettingsService::class),
             $this->clients(),
+            $this->templates(),
         );
     }
 
@@ -72,5 +76,13 @@ final class InvoiceServiceViewTest extends TestCase
             new DevsysApiConfig('https://api.example.test/api/v1'),
             new Client(),
         )));
+    }
+
+    private function templates(): InvoiceTemplateResolver
+    {
+        return new InvoiceTemplateResolver(
+            (new \ReflectionClass(TenantContext::class))->newInstanceWithoutConstructor(),
+            $this->createMock(CompanySettingsRepository::class),
+        );
     }
 }

@@ -9,6 +9,7 @@ use App\Helpers\Response;
 use App\Repositories\InvoiceRepository;
 use App\Services\InvoiceService;
 use App\Services\DevsysClientService;
+use App\Services\InvoicePdfService;
 use Devsys\Shared\Api\Devsys\Exception\DevsysApiException;
 
 class Invoices extends BaseController
@@ -16,7 +17,8 @@ class Invoices extends BaseController
     public function __construct(
         private InvoiceService $service,
         private InvoiceRepository $repository,
-        private DevsysClientService $clients
+        private DevsysClientService $clients,
+        private InvoicePdfService $pdf
     ) {
         parent::__construct();
     }
@@ -101,6 +103,23 @@ class Invoices extends BaseController
                 ->setTitle('Facture ' . $number)
                 ->setHtml($this->render('view.twig', $view));
         } catch (\InvalidArgumentException | \LogicException $exception) {
+            return (new Response())->setError(422, $exception->getMessage());
+        }
+    }
+
+    #[Route(method: 'GET', path: 'Invoices/{id:\\d+}/pdf')]
+    #[AuthRequired]
+    public function pdf(array $input): Response
+    {
+        try {
+            $id = (int) ($input['id'] ?? 0);
+            $view = $this->service->view($id);
+            $invoice = $view['invoice'];
+            $content = $this->pdf->render($invoice, $view['lines']);
+            $number = preg_replace('/[^A-Za-z0-9._-]+/', '_', (string) $invoice['invoice_number']) ?: 'facture';
+
+            return (new Response())->setBinary($content, 'application/pdf', 'Facture-' . $number . '.pdf');
+        } catch (\InvalidArgumentException | \LogicException | \RuntimeException $exception) {
             return (new Response())->setError(422, $exception->getMessage());
         }
     }
