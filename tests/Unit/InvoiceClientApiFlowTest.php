@@ -10,6 +10,7 @@ use App\Services\CompanySettingsService;
 use App\Services\DevsysClientService;
 use App\Services\InvoiceCalculationService;
 use App\Services\InvoiceService;
+use App\Services\TenantContext;
 use Devsys\Shared\Api\Devsys\Clients\ClientsApi;
 use Devsys\Shared\Api\Devsys\Configuration\DevsysApiConfig;
 use Devsys\Shared\Api\Devsys\Http\DevsysApiClient;
@@ -120,6 +121,63 @@ final class InvoiceClientApiFlowTest extends TestCase
         $service->saveDraft($this->invoiceInput());
     }
 
+    public function testExistingDraftRestoresUuidWithoutCallingTheApi(): void
+    {
+        $repository = new CapturingInvoiceRepository();
+        $repository->existing = ['id' => 10, 'status' => 'draft', 'client_id' => 42, 'client_name' => 'Snapshot DevSys'];
+        $repository->existingLines = [['label' => 'Développement']];
+        $service = new InvoiceService(
+            $repository, new InvoiceCalculationService(), $this->createMock(CompanySettingsRepository::class),
+            $this->createMock(CompanySettingsService::class), $this->service(HandlerStack::create(new MockHandler())),
+        );
+
+        $form = $service->form(10);
+
+        self::assertSame(self::UUID, $form['invoice']['client_uuid']);
+        self::assertSame($repository->existingLines, $form['lines']);
+        self::assertSame('Snapshot DevSys', $form['invoice']['client_name']);
+    }
+
+    public function testIssueDraftUsesCurrentApiSnapshotAndNeverIssuesInactiveClient(): void
+    {
+        $repository = new CapturingInvoiceRepository();
+        $repository->existing = ['id' => 10, 'status' => 'draft', 'currency' => 'EUR'];
+        $service = new InvoiceService(
+            $repository, new InvoiceCalculationService(), $this->createMock(CompanySettingsRepository::class),
+            $this->createMock(CompanySettingsService::class), $this->service(HandlerStack::create(new MockHandler([
+                new Response(200, [], json_encode(['success' => true, 'data' => ['client' => $this->clientData()]], JSON_THROW_ON_ERROR)),
+            ]))),
+        );
+
+        $service->issueDraft($this->invoiceInput(), 10);
+
+        self::assertSame(42, $repository->issuedInvoice[0]);
+        self::assertSame('DevSys', $repository->issuedInvoice[4]);
+        self::assertSame('jean@example.test', $repository->issuedInvoice[6]);
+        self::assertSame('1 rue de Paris', $repository->issuedInvoice[8]);
+        self::assertSame('Paris', $repository->issuedInvoice[11]);
+        self::assertSame('12345678901234', $repository->issuedInvoice[13]);
+        self::assertSame('FR123456789', $repository->issuedInvoice[14]);
+    }
+
+    public function testClientResolutionIsScopedToTenantInBothDirections(): void
+    {
+        $tenant = (new \ReflectionClass(TenantContext::class))->newInstanceWithoutConstructor();
+        (new \ReflectionProperty(TenantContext::class, 'resolved'))->setValue($tenant, true);
+        (new \ReflectionProperty(TenantContext::class, 'tenant'))->setValue($tenant, ['id' => 7]);
+        $repository = (new \ReflectionClass(InvoiceRepository::class))->newInstanceWithoutConstructor();
+        (new \ReflectionProperty(InvoiceRepository::class, 'tenant'))->setValue($repository, $tenant);
+        $pdo = new \PDO('sqlite::memory:');
+        $pdo->exec('CREATE TABLE clients (id INTEGER, uuid TEXT, tenant_id INTEGER)');
+        $pdo->exec("INSERT INTO clients VALUES (42, '" . self::UUID . "', 7), (84, 'other-tenant', 8)");
+        (new \ReflectionProperty(\App\Core\BaseRepository::class, 'pdo'))->setValue($repository, $pdo);
+
+        self::assertSame(42, $repository->clientInternalIdByUuid(self::UUID));
+        self::assertSame(self::UUID, $repository->clientUuidForInternalId(42));
+        self::assertNull($repository->clientInternalIdByUuid('other-tenant'));
+        self::assertNull($repository->clientUuidForInternalId(84));
+    }
+
     private function service(HandlerStack $stack): DevsysClientService
     {
         return new DevsysClientService(new ClientsApi(new DevsysApiClient(
@@ -151,6 +209,9 @@ final class InvoiceClientApiFlowTest extends TestCase
 final class CapturingInvoiceRepository extends InvoiceRepository
 {
     public array $invoice = [];
+    public array $issuedInvoice = [];
+    public array $existing = [];
+    public array $existingLines = [];
 
     public function __construct()
     {
@@ -165,5 +226,26 @@ final class CapturingInvoiceRepository extends InvoiceRepository
     {
         $this->invoice = $invoice;
         return 99;
+    }
+
+    public function find(int $id): ?array
+    {
+        return $this->existing ?: null;
+    }
+
+    public function lines(int $invoiceId): array
+    {
+        return $this->existingLines;
+    }
+
+    public function clientUuidForInternalId(int $clientId): ?string
+    {
+        return $clientId === 42 ? InvoiceClientApiFlowTest::UUID : null;
+    }
+
+    public function issueDraft(int $id, array $invoice, array $lines): string
+    {
+        $this->issuedInvoice = $invoice;
+        return 'F2026-0001';
     }
 }

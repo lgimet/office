@@ -47,11 +47,14 @@ Les tests PHPUnit couvrent désormais :
 - les paramètres de recherche active et le mapping UUID public vers les options du sélecteur ;
 - le mapping `ClientDetails` vers le snapshot, pour une société et une personne ;
 - le refus d’un client inactif et d’un UUID invalide ;
-- la construction du snapshot API avec résolution vers l’ID SQL interne.
+- la construction du snapshot API avec résolution vers l’ID SQL interne ;
+- la résolution UUID → ID et ID → UUID strictement tenant-scopée ;
+- la réouverture d’un brouillon avec restauration de `client_uuid` sans appel API ;
+- l’émission avec le snapshot client API courant et le blocage des clients non valides.
 
 Les tests utilisent des réponses HTTP simulées via Guzzle et n’appellent pas l’API réelle.
 
-Résultats vérifiés : `composer test` — 98 tests, 177 assertions ; `npm run build` — OK ; `git diff --check` — OK.
+Résultats vérifiés : `composer test` — 101 tests, 191 assertions ; `npm run build` — OK ; `git diff --check` — OK.
 
 ## Dépendance obligatoire
 
