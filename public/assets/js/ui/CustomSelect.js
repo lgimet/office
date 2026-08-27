@@ -243,8 +243,24 @@ export class CustomSelect extends EventTarget {
         if (!this.data.length) this.fetchData("");
       });
       this.input.addEventListener("input", (e) => {
+        const query = e.target.value;
+
+        if (this.selected && query !== this.selected.label) {
+          this.selected = null;
+          this.hidden.value = "";
+
+          if (this.validator) {
+            this.validator.value = "";
+            this.validator.dispatchEvent(new Event("input", { bubbles: true }));
+          }
+
+          this.container.closest(".form-field")?.classList.remove("has-value");
+          this.hidden.dispatchEvent(new Event("change", { bubbles: true }));
+        }
+
+        this.open();
         clearTimeout(this.searchTimer);
-        this.searchTimer = setTimeout(() => this.fetchData(e.target.value), 275);
+        this.searchTimer = setTimeout(() => this.fetchData(query), 275);
       });
     }
     document.addEventListener("click", (e) => {
