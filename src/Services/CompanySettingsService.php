@@ -104,11 +104,6 @@ class CompanySettingsService
             throw new \InvalidArgumentException('Le préfixe des factures doit comporter de 1 à 8 caractères alphanumériques.');
         }
 
-        $templateVersion = trim((string) ($input['invoice_template_version'] ?? ''));
-        if ($templateVersion !== '' && !preg_match('/^v[1-9][0-9]*$/', $templateVersion)) {
-            throw new \InvalidArgumentException('La version du modèle de facture est invalide.');
-        }
-
         return [
             'legal_name' => $legalName,
             'trading_name' => $this->nullable($input, 'trading_name'),
@@ -137,7 +132,6 @@ class CompanySettingsService
             'default_payment_terms_code' => $this->paymentTermsCode($input['default_payment_terms_code'] ?? null, $input['default_payment_terms'] ?? null),
             'default_payment_method' => $this->nullable($input, 'default_payment_method'),
             'invoice_footer' => $this->nullable($input, 'invoice_footer'),
-            'invoice_template_version' => $templateVersion === '' ? null : $templateVersion,
         ];
     }
 

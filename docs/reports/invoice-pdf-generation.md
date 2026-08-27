@@ -22,7 +22,7 @@ Les données sont échappées par Twig. Aucun champ d’émetteur, client, tenan
 
 ## Préservation des paramètres et échappement
 
-Le Twig dédié au PDF est explicitement configuré avec `autoescape = html`. Les filtres `nl2br` conservent les retours à la ligne sans introduire de `raw` sur les données utilisateur. `CompanySettingsService::save()` recharge la version de modèle existante côté serveur et ignore toute valeur `invoice_template_version` fournie par le formulaire général société.
+Le Twig dédié au PDF est explicitement configuré avec `autoescape = html`. Les filtres `nl2br` conservent les retours à la ligne sans introduire de `raw` sur les données utilisateur. `CompanySettingsService::save()` recharge la version de modèle existante côté serveur et ignore totalement toute valeur `invoice_template_version` fournie par le formulaire général société ; cette valeur n’est ni lue ni validée par `normalize()`.
 
 ## Tests
 

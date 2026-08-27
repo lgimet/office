@@ -53,7 +53,7 @@ final class CompanySettingsServiceTest extends TestCase
         $repository->expects(self::once())->method('save')->with(self::callback(static fn (array $settings): bool => ($settings['invoice_template_version'] ?? null) === 'v3'));
 
         (new CompanySettingsService($repository))->save([
-            'legal_name' => 'DevSys', 'invoice_template_version' => 'v999',
+            'legal_name' => 'DevSys', 'invoice_template_version' => '../../foo',
         ]);
     }
 }
