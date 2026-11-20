@@ -9,6 +9,7 @@ use App\Helpers\Response;
 use App\Repositories\InvoiceRepository;
 use App\Services\InvoiceService;
 use App\Services\DevsysClientService;
+use App\Services\DevsysInvoiceReadService;
 use App\Services\InvoicePdfService;
 use Devsys\Shared\Api\Devsys\Exception\DevsysApiException;
 
@@ -18,7 +19,8 @@ class Invoices extends BaseController
         private InvoiceService $service,
         private InvoiceRepository $repository,
         private DevsysClientService $clients,
-        private InvoicePdfService $pdf
+        private InvoicePdfService $pdf,
+        private DevsysInvoiceReadService $invoiceRead
     ) {
         parent::__construct();
     }
@@ -36,6 +38,27 @@ class Invoices extends BaseController
     #[AuthRequired]
     public function data(): Response
     {
+        if (($_ENV['OFFICE_INVOICE_READ_API_ENABLED'] ?? 'false') === 'true') {
+            try {
+                return (new Response())->setPayload($this->invoiceRead->list($_GET));
+            } catch (DevsysApiException $exception) {
+                error_log(sprintf('[Devsys API] invoice list status=%s request_id=%s', $exception->getStatusCode() ?? 'none', $exception->getRequestId() ?? 'none'));
+                $status = $exception->getStatusCode();
+                if (in_array($status, [401, 403, 404], true)) {
+                    $message = match ($status) {
+                        401 => 'Votre session ne permet pas de consulter les factures. Reconnectez-vous.',
+                        403 => 'L’accès aux factures a été refusé.',
+                        default => 'La liste des factures est introuvable.',
+                    };
+                    return (new Response())->setError($status, $message);
+                }
+                return (new Response())->setError(503, 'Le service de factures est temporairement indisponible.');
+            } catch (\InvalidArgumentException) {
+                error_log('[Devsys API] invoice list status=invalid_response request_id=none');
+                return (new Response())->setError(503, 'Le service de factures a retourné une réponse invalide.');
+            }
+        }
+
         return (new Response())->setPayload($this->service->list($_GET));
     }
 

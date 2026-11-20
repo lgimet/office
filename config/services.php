@@ -4,6 +4,7 @@ use App\Providers\DevsysApiProvider;
 use App\Services\InvoiceTemplateResolver;
 use Devsys\Shared\Api\Devsys\Clients\ClientsApi;
 use Devsys\Shared\Api\Devsys\Http\DevsysApiClient;
+use Devsys\Shared\Api\Devsys\Invoices\InvoicesApi;
 use App\Providers\OfficeAccessTokenProvider;
 use App\Services\Oidc\{CurlOidcHttpClient, LocalReturnToValidator, OidcClient, OidcConfig, OidcDiscoveryProvider, OidcHttpClientInterface, OidcIdTokenValidator, OidcSessionService, OidcTokenRefresher};
 
@@ -22,5 +23,7 @@ return static function (\App\Core\Container $container): void {
     $container->autowire(OfficeAccessTokenProvider::class);
 
     $container->autowire(ClientsApi::class);
+    $container->autowire(InvoicesApi::class);
+    $container->autowire(\App\Services\DevsysInvoiceReadService::class);
     $container->autowire(InvoiceTemplateResolver::class);
 };
