@@ -66,10 +66,12 @@ export default class Invoices extends Core {
         });
     }
 
-    form(id = null) {
+    form(id = null, { refresh = false, windowRecord = null } = {}) {
         this.actions = this.formActions(id);
 
         this.callAction("form", { id }, {
+            refresh,
+            windowId: windowRecord?.id || null,
             callback: (json) => {
                 if (!json.success) {
                     UI.toast(json.error.message, "error");
@@ -78,6 +80,14 @@ export default class Invoices extends Core {
 
                 const form = this.bodyRef.invoice_form;
                 const lines = this.bodyRef.invoice_lines;
+                const apiMode = json.data?.api_mode === true;
+                const apiWritable = json.data?.api_writable === true;
+                if (apiMode && !apiWritable) form.inert = true;
+                const record = this.resolveWindowRecord(form.closest(".window")?.id);
+                if (record) {
+                    record.actions = this.formActions(id, { apiMode, apiWritable });
+                    this.renderWindowFooter(record);
+                }
 
                 form.addEventListener("submit", (event) => {
                     event.preventDefault();
@@ -94,14 +104,15 @@ export default class Invoices extends Core {
                 this.bindClientDetails();
                 this.bindPaymentTerms();
                 this.recalculate();
+                this.applyApiPersistedTotals(form);
             },
         });
     }
 
-    formActions(id = null) {
+    formActions(id = null, { apiMode = false, apiWritable = true } = {}) {
         const actions = [];
 
-        if (id) {
+        if (id && !apiMode) {
             actions.push({
                 label: "Supprimer le brouillon",
                 className: "m-btn m-btn--outline",
@@ -110,14 +121,14 @@ export default class Invoices extends Core {
             });
         }
 
-        actions.push({
+        if (!apiMode || apiWritable) actions.push({
             label: "Enregistrer le brouillon",
             className: "m-btn m-btn--primary",
             icon: "bi-floppy",
             callback: () => this.save(),
         });
 
-        if (id) {
+        if (id && !apiMode) {
             actions.push({
                 label: "Émettre la facture",
                 className: "m-btn m-btn--primary",
@@ -464,6 +475,8 @@ export default class Invoices extends Core {
     save() {
         const form = this.bodyRef.invoice_form;
 
+        if (this.invoiceSaving || form.inert) return;
+
         if (!form.reportValidity()) return;
 
         const data = this.collectFormData(form);
@@ -473,11 +486,33 @@ export default class Invoices extends Core {
                 [...row.querySelectorAll("input, select")].map((field) => [field.name, field.value])
             )
         ));
+        this.setInvoiceBusy(form, true);
 
         this.callAction("save", data, {
             callback: (json) => {
+                this.setInvoiceBusy(form, false);
                 if (json.success) {
                     UI.toast(json.toast, "ok");
+
+                    const result = json.data || {};
+                    if (result.api_mode) {
+                        form.dataset.apiMode = "1";
+                        form.dataset.apiWritable = "1";
+                        if (result.api_totals) this.applyApiPersistedTotals(form, result.api_totals);
+                        if (result.editor_context) {
+                            form.querySelector('[name="api_editor_context"]').value = result.editor_context;
+                        }
+                        form.inert = false;
+                    }
+
+                    if (result.reload_required) {
+                        UI.toast("Le brouillon est sauvegardé. L’éditeur recharge la version API actuelle.", "ok");
+                        form.inert = true;
+                        const staleRecord = this.resolveWindowRecord(form.closest(".window")?.id);
+                        if (json.id) this.form(json.id, { refresh: true, windowRecord: staleRecord });
+                        if (this.table) this.table.load(true);
+                        return;
+                    }
 
                     if (json.id) {
                         form.querySelector('[name="id"]').value = json.id;
@@ -488,7 +523,10 @@ export default class Invoices extends Core {
 
                         if (record) {
                             record.resourceId = json.id;
-                            record.actions = this.formActions(json.id);
+                            record.actions = this.formActions(json.id, {
+                                apiMode: form.dataset.apiMode === "1",
+                                apiWritable: form.dataset.apiWritable === "1",
+                            });
                             this.renderWindowFooter(record);
                         }
                     }
@@ -501,14 +539,21 @@ export default class Invoices extends Core {
 
                 UI.toast(json.error.message, "error");
             },
+            onError: () => {
+                this.setInvoiceBusy(form, false);
+                UI.toast("Le réseau est indisponible. Vos valeurs restent dans le formulaire; réessayez sans les modifier pour reprendre la même tentative.", "error");
+            },
         });
     }
 
     async issue(id, windowRecord = null) {
         const form = this.bodyRef.invoice_form;
 
+        if (this.invoiceSaving || form.inert) return;
+
         if (!form.reportValidity()) return;
 
+        this.setInvoiceBusy(form, true);
         const confirmed = await UI.confirm({
             type: "warning",
             message: "Émettre cette facture ?<br><br>Un numéro définitif va lui être attribué. Après émission, elle ne pourra plus être modifiée ni supprimée comme un brouillon.",
@@ -516,7 +561,10 @@ export default class Invoices extends Core {
             noText: "Annuler",
         });
 
-        if (!confirmed) return;
+        if (!confirmed) {
+            this.setInvoiceBusy(form, false);
+            return;
+        }
 
         const data = this.collectFormData(form);
         data.id = id;
@@ -528,6 +576,7 @@ export default class Invoices extends Core {
 
         this.callAction("issue", data, {
             callback: (json) => {
+                this.setInvoiceBusy(form, false);
                 if (!json.success) {
                     UI.toast(json.error.message, "error");
                     return;
@@ -540,6 +589,10 @@ export default class Invoices extends Core {
                 if (record) this.closeWindow(record.id);
                 this.view(id);
             },
+            onError: () => {
+                this.setInvoiceBusy(form, false);
+                UI.toast("Le réseau est indisponible. Vérifiez l’état de la facture avant de réessayer.", "error");
+            },
         });
     }
 
@@ -549,36 +602,99 @@ export default class Invoices extends Core {
     }
 
     async confirmDelete(id, windowRecord = null) {
-        const confirmed = await UI.confirm({
-            type: "warning",
-            message: "Voulez-vous supprimer définitivement ce brouillon et ses lignes ?",
-            yesText: "Supprimer",
-            noText: "Annuler",
-        });
-
-        if (!confirmed) return;
-
-        this.callAction("delete", { id }, {
-            callback: (json) => {
-                if (!json.success) {
-                    UI.toast(json.error.message, "error");
+        if (this.invoiceSaving) return;
+        const form = this.bodyRef.invoice_form;
+        this.setInvoiceBusy(form, true);
+        this.callAction("actionAvailability", { id }, {
+            callback: async (availability) => {
+                if (!availability.success) {
+                    this.setInvoiceBusy(form, false);
+                    UI.toast(availability.error.message, "error");
+                    return;
+                }
+                if (availability.data?.can_delete !== true) {
+                    this.setInvoiceBusy(form, false);
+                    UI.toast(availability.data?.api_mode
+                        ? "La suppression des brouillons API est désactivée."
+                        : "Cette facture ne peut plus être supprimée.", "error");
                     return;
                 }
 
-                UI.toast(json.toast, "ok");
-
-                if (this.table) {
-                    this.table.load(true);
+                const confirmed = await UI.confirm({
+                    type: "warning",
+                    message: "Voulez-vous supprimer définitivement ce brouillon et ses lignes ?",
+                    yesText: "Supprimer",
+                    noText: "Annuler",
+                });
+                if (!confirmed) {
+                    this.setInvoiceBusy(form, false);
+                    return;
                 }
 
-                if (windowRecord) {
-                    this.closeWindow(windowRecord.id);
-                }
+                this.callAction("delete", { id }, {
+                    callback: (json) => {
+                        this.setInvoiceBusy(form, false);
+                        if (!json.success) {
+                            UI.toast(json.error.message, "error");
+                            return;
+                        }
+
+                        UI.toast(json.toast, "ok");
+                        if (this.table) this.table.load(true);
+                        if (windowRecord) this.closeWindow(windowRecord.id);
+                    },
+                    onError: () => {
+                        this.setInvoiceBusy(form, false);
+                        UI.toast("Le réseau est indisponible. Vérifiez l’état du brouillon avant de réessayer.", "error");
+                    },
+                });
+            },
+            onError: () => {
+                this.setInvoiceBusy(form, false);
+                UI.toast("Impossible de vérifier la provenance. Aucune suppression n’a été tentée.", "error");
             },
         });
     }
 
     formatAmount(value) {
         return `${value.toFixed(2).replace(".", ",")} €`;
+    }
+
+    setInvoiceBusy(form, busy) {
+        this.invoiceSaving = busy;
+        if (form) form.inert = busy;
+        const record = form ? this.resolveWindowRecord(form.closest(".window")?.id) : this.getActiveWindowRecord();
+        record?.footerActions?.querySelectorAll("button").forEach((button) => { button.disabled = busy; });
+    }
+
+    applyApiPersistedTotals(form, totals = null) {
+        const values = totals || {
+            subtotal_excl_tax: form.dataset.apiSubtotal,
+            discount_total_excl_tax: form.dataset.apiDiscount,
+            tax_total: form.dataset.apiTax,
+            total_incl_tax: form.dataset.apiTotal,
+        };
+        if (!values.total_incl_tax) return;
+        const cents = (value) => {
+            const [whole, fraction = ""] = String(value).split(".");
+            const sign = whole.startsWith("-") ? -1n : 1n;
+            const integer = whole.replace(/^-/, "");
+            return sign * (BigInt(integer) * 100n + BigInt((fraction + "00").slice(0, 2)));
+        };
+        const format = (amount) => {
+            const absolute = amount < 0n ? -amount : amount;
+            const whole = (absolute / 100n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+            const fraction = (absolute % 100n).toString().padStart(2, "0");
+            return `${amount < 0n ? "-" : ""}${whole},${fraction} €`;
+        };
+        const subtotal = cents(values.subtotal_excl_tax || "0");
+        const discount = cents(values.discount_total_excl_tax || "0");
+        this.bodyRef.invoice_summary_subtotal.hidden = discount === 0n;
+        this.bodyRef.invoice_summary_discount.hidden = discount === 0n;
+        this.bodyRef.invoice_total_subtotal.textContent = format(subtotal);
+        this.bodyRef.invoice_total_discount.textContent = `-${format(discount)}`;
+        this.bodyRef.invoice_total_ht.textContent = format(subtotal - discount);
+        this.bodyRef.invoice_total_tax.textContent = format(cents(values.tax_total || "0"));
+        this.bodyRef.invoice_total_ttc.textContent = format(cents(values.total_incl_tax));
     }
 }

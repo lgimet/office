@@ -66,8 +66,26 @@
         class="invoice-form"
         data-default-tax-rate="{{ defaults.tax_rate ?? '20.00' }}"
         data-existing-invoice="{{ invoice ? '1' : '0' }}"
+        data-api-mode="{{ api_mode ? '1' : '0' }}"
+        data-api-writable="{{ api_writable ? '1' : '0' }}"
+        data-api-subtotal="{{ api_amounts.subtotal_excl_tax|default('') }}"
+        data-api-discount="{{ api_amounts.discount_total_excl_tax|default('') }}"
+        data-api-tax="{{ api_amounts.tax_total|default('') }}"
+        data-api-total="{{ api_amounts.total_incl_tax|default('') }}"
     >
         <input type="hidden" name="id" value="{{ invoice.id ?? '' }}">
+        <input type="hidden" name="api_editor_context" value="{{ api_editor_context|default('') }}">
+        <input type="hidden" name="api_creation_context" value="{{ api_creation_context|default('') }}">
+
+        {% if api_mode %}
+            <p class="invoice-api-notice" role="status">
+                {% if api_writable %}
+                    {% if invoice %}Brouillon géré par l’API{% else %}Cette création sera gérée par l’API{% endif %} : seule la sauvegarde est disponible. L’émission et la suppression restent désactivées.
+                {% else %}
+                    Brouillon géré par l’API, ouvert en lecture seule. La version API ou l’autorisation d’écriture n’est pas disponible.
+                {% endif %}
+            </p>
+        {% endif %}
 
         <section class="invoice-card">
             <h3><span class="material-symbols-outlined" aria-hidden="true">person</span> Client et informations</h3>
@@ -158,6 +176,9 @@
                     <div class="form-field invoice-details-field">
                         <select id="invoice-payment-method" name="payment_method">
                             {% set payment_method = invoice.payment_method|default(defaults.payment_method|default('CB')) %}
+                            {% if payment_method and payment_method not in ['CB', 'Chèque', 'Virement'] %}
+                                <option value="{{ payment_method }}" selected>{{ payment_method }}</option>
+                            {% endif %}
                             <option value="CB" {% if payment_method == 'CB' %}selected{% endif %}>CB</option>
                             <option value="Chèque" {% if payment_method == 'Chèque' %}selected{% endif %}>Chèque</option>
                             <option value="Virement" {% if payment_method == 'Virement' %}selected{% endif %}>Virement</option>
@@ -198,6 +219,9 @@
                                 <input name="description" placeholder="Description" value="{{ line.description ?? '' }}">
                                 <input name="quantity" type="number" min="0.001" step="0.001" value="{{ line.quantity }}">
                                 <select name="unit">
+                                    {% if line.unit and line.unit not in ['unité', 'heure', 'jour', 'forfait', 'mois'] %}
+                                        <option value="{{ line.unit }}" selected>{{ line.unit }}</option>
+                                    {% endif %}
                                     {% for unit in ['unité', 'heure', 'jour', 'forfait', 'mois'] %}
                                         <option value="{{ unit }}" {% if line.unit == unit %}selected{% endif %}>{{ unit }}</option>
                                     {% endfor %}
@@ -256,8 +280,8 @@
                     </div>
 
                     <div class="form-field">
-                        <textarea id="invoice-internal-note" name="internal_note" placeholder="">{{ invoice.internal_note ?? '' }}</textarea>
-                        <label for="invoice-internal-note">Note interne</label>
+                        <textarea id="invoice-internal-note" name="internal_note" placeholder="" {% if api_mode %}disabled{% endif %}>{{ invoice.internal_note ?? '' }}</textarea>
+                        <label for="invoice-internal-note">Note interne{% if api_mode %} — indisponible pour les brouillons API{% endif %}</label>
                     </div>
                 </div>
             </section>
@@ -270,7 +294,7 @@
                 <p>TVA <strong id="invoice-total-tax">0,00 €</strong></p>
                 <hr>
                 <p class="invoice-summary__total">Total TTC <strong id="invoice-total-ttc">0,00 €</strong></p>
-                <div class="invoice-summary__hint">ⓘ Les montants sont recalculés automatiquement.</div>
+                <div class="invoice-summary__hint">ⓘ {% if api_mode %}Avant sauvegarde, l’aperçu est indicatif. Les montants enregistrés sont calculés par l’API.{% else %}Les montants sont recalculés automatiquement.{% endif %}</div>
             </aside>
         </div>
     </form>

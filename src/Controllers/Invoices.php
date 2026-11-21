@@ -10,6 +10,7 @@ use App\Repositories\InvoiceRepository;
 use App\Services\InvoiceService;
 use App\Services\DevsysClientService;
 use App\Services\DevsysInvoiceReadService;
+use App\Services\DevsysInvoiceDraftService;
 use App\Services\InvoicePdfService;
 use Devsys\Shared\Api\Devsys\Exception\DevsysApiException;
 
@@ -20,7 +21,8 @@ class Invoices extends BaseController
         private InvoiceRepository $repository,
         private DevsysClientService $clients,
         private InvoicePdfService $pdf,
-        private DevsysInvoiceReadService $invoiceRead
+        private DevsysInvoiceReadService $invoiceRead,
+        private DevsysInvoiceDraftService $draftWrites
     ) {
         parent::__construct();
     }
@@ -92,22 +94,51 @@ class Invoices extends BaseController
 
     #[Route(method: 'POST')]
     #[AuthRequired]
+    public function actionAvailability(array $input): Response
+    {
+        try {
+            $data = $this->payload($input);
+            $this->draftWrites->assertNoTenantSelectors($data);
+            $id = filter_var($data['id'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+            if ($id === false) return (new Response())->setError(422, 'La facture demandée est invalide.');
+            return (new Response())->setPayload($this->draftWrites->actionAvailability((int) $id));
+        } catch (DevsysApiException $exception) {
+            return $this->invoiceDraftApiError($exception);
+        } catch (\UnexpectedValueException) {
+            return (new Response())->setError(503, 'Le service de factures a retourné une réponse invalide. Aucune écriture SQL de secours n’a été tentée.');
+        } catch (\LogicException $exception) {
+            return (new Response())->setError(409, $exception->getMessage());
+        }
+    }
+
+    #[Route(method: 'POST')]
+    #[AuthRequired]
     public function form(array $input): Response
     {
         try {
             $data = $this->payload($input);
             $id = isset($data['id']) ? (int) $data['id'] : null;
-            $form = $this->service->form($id);
+            $form = $this->draftWrites->form($id);
 
-            return (new Response())
+            $response = (new Response())
                 ->setId($id)
                 ->setTitle($id === null ? 'Nouvelle facture' : 'Modifier le brouillon')
                 ->setHtml($this->render('form.twig', [
                     ...$form,
                     'today' => date('Y-m-d'),
                 ]));
+            return $response->setPayload([
+                'api_mode' => $form['api_mode'] ?? false,
+                'api_writable' => $form['api_writable'] ?? false,
+            ]);
+        } catch (DevsysApiException $exception) {
+            return $this->invoiceDraftApiError($exception);
+        } catch (\UnexpectedValueException) {
+            return (new Response())->setError(503, 'Le service de factures a retourné une réponse invalide. Aucune écriture SQL de secours n’a été tentée.');
         } catch (\InvalidArgumentException $exception) {
             return (new Response())->setError(422, $exception->getMessage());
+        } catch (\LogicException $exception) {
+            return (new Response())->setError(409, $exception->getMessage());
         }
     }
 
@@ -154,19 +185,24 @@ class Invoices extends BaseController
         try {
             $data = $this->payload($input);
             $id = isset($data['id']) ? (int) $data['id'] : null;
-            $invoiceId = $this->service->saveDraft($data, $id);
+            $result = $this->draftWrites->saveDraft($data, $id);
 
             return (new Response())
-                ->setId($invoiceId)
+                ->setId($result['id'])
+                ->setPayload($result)
                 ->setToast(
                     $id === null
                         ? 'La facture a été enregistrée en brouillon.'
                         : 'Le brouillon a été mis à jour.'
                 );
         } catch (DevsysApiException $exception) {
-            return $this->clientApiError($exception, 'Le service clients est temporairement indisponible.');
-        } catch (\InvalidArgumentException | \LogicException $exception) {
+            return $this->invoiceDraftApiError($exception);
+        } catch (\UnexpectedValueException) {
+            return (new Response())->setError(503, 'Le service de factures a retourné une réponse invalide. Aucune écriture SQL de secours n’a été tentée.');
+        } catch (\InvalidArgumentException $exception) {
             return (new Response())->setError(422, $exception->getMessage());
+        } catch (\LogicException $exception) {
+            return (new Response())->setError(409, $exception->getMessage());
         }
     }
 
@@ -177,15 +213,20 @@ class Invoices extends BaseController
         try {
             $data = $this->payload($input);
             $id = isset($data['id']) ? (int) $data['id'] : null;
-            $number = $this->service->issueDraft($data, $id);
+            $this->draftWrites->assertNoTenantSelectors($data);
+            $number = $this->draftWrites->issueDraft($data, $id);
 
             return (new Response())
                 ->setId($id)
                 ->setToast("La facture {$number} a été émise.");
         } catch (DevsysApiException $exception) {
-            return $this->clientApiError($exception, 'Le service clients est temporairement indisponible.');
-        } catch (\InvalidArgumentException | \LogicException $exception) {
+            return $this->invoiceDraftApiError($exception);
+        } catch (\UnexpectedValueException) {
+            return (new Response())->setError(503, 'Le service de factures a retourné une réponse invalide. Aucune émission SQL de secours n’a été tentée.');
+        } catch (\InvalidArgumentException $exception) {
             return (new Response())->setError(422, $exception->getMessage());
+        } catch (\LogicException $exception) {
+            return (new Response())->setError(409, $exception->getMessage());
         }
     }
 
@@ -195,11 +236,18 @@ class Invoices extends BaseController
     {
         try {
             $data = $this->payload($input);
-            $this->service->deleteDraft((int) ($data['id'] ?? 0));
+            $this->draftWrites->assertNoTenantSelectors($data);
+            $this->draftWrites->deleteDraft((int) ($data['id'] ?? 0), $data);
 
             return (new Response())->setToast('Le brouillon a été supprimé.');
-        } catch (\InvalidArgumentException | \LogicException $exception) {
+        } catch (DevsysApiException $exception) {
+            return $this->invoiceDraftApiError($exception);
+        } catch (\UnexpectedValueException) {
+            return (new Response())->setError(503, 'Le service de factures a retourné une réponse invalide. Aucune suppression SQL de secours n’a été tentée.');
+        } catch (\InvalidArgumentException $exception) {
             return (new Response())->setError(422, $exception->getMessage());
+        } catch (\LogicException $exception) {
+            return (new Response())->setError(409, $exception->getMessage());
         }
     }
 
@@ -214,5 +262,25 @@ class Invoices extends BaseController
     {
         error_log(sprintf('[Devsys API] invoice client path=%s status=%s request_id=%s', $exception->getRequestPath() ?? 'unknown', $exception->getStatusCode() ?? 'none', $exception->getRequestId() ?? 'none'));
         return (new Response())->setError($exception->getStatusCode() === 404 ? 404 : 503, $message);
+    }
+
+    private function invoiceDraftApiError(DevsysApiException $exception): Response
+    {
+        $status = $exception->getStatusCode();
+        error_log(sprintf('[Devsys API] invoice draft status=%s code=%s request_id=%s', $status ?? 'network', $exception->getErrorCode() ?? 'none', $exception->getRequestId() ?? 'none'));
+        $errorCode = $exception->getErrorCode();
+        [$httpStatus, $message] = match (true) {
+            $status === 401 => [401, 'Votre session ne permet pas d’accéder à cette facture. Reconnectez-vous.'],
+            $status === 403 => [403, 'L’accès à cette facture a été refusé.'],
+            $status === 404 => [404, 'La facture est introuvable ou inaccessible. Aucune écriture locale n’a été tentée.'],
+            $status === 409 && $errorCode === 'IDEMPOTENCY_CONFLICT' => [409, 'Cette tentative a déjà été utilisée avec d’autres valeurs. Ouvrez un nouveau formulaire.'],
+            $status === 409 && $errorCode === 'INVOICE_NOT_MODIFIABLE' => [409, 'Cette facture ne peut plus être modifiée. Rechargez-la.'],
+            $status === 409 => [409, 'La facture a changé ou ne peut plus être modifiée. Rechargez-la.'],
+            $status === 412 => [412, 'La facture a changé depuis son ouverture. Fermez et rouvrez le brouillon pour recharger sa version; vos valeurs saisies sont conservées dans ce formulaire.'],
+            $status === 428 => [428, 'La version de la facture manque. Fermez et rouvrez le brouillon avant de réessayer.'],
+            $status === 422 => [422, 'L’API a refusé les valeurs saisies. Vérifiez les champs et réessayez.'],
+            default => [503, 'Le service de factures est indisponible. Vos valeurs restent dans le formulaire; aucun parcours SQL de secours n’a été utilisé.'],
+        };
+        return (new Response())->setError($httpStatus, $message);
     }
 }

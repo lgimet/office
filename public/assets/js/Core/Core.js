@@ -385,7 +385,7 @@ export class Core extends EventTarget {
 			requestOptions.callback?.(json);
 
 		} catch (err) {
-			console.log(err);
+			requestOptions.onError?.(err);
 		}
 	}
 	#getWindowId(route,id) {

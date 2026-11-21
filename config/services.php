@@ -25,5 +25,8 @@ return static function (\App\Core\Container $container): void {
     $container->autowire(ClientsApi::class);
     $container->autowire(InvoicesApi::class);
     $container->autowire(\App\Services\DevsysInvoiceReadService::class);
+    $container->autowire(\App\Services\InvoiceDraftWriteContextStore::class);
+    $container->autowire(\App\Services\DevsysInvoiceDraftService::class);
+    $container->set(\App\Services\InvoiceDraftApiInterface::class, static fn ($c): \App\Services\InvoiceDraftApiInterface => new \App\Services\SharedInvoiceDraftApi($c->get(InvoicesApi::class)));
     $container->autowire(InvoiceTemplateResolver::class);
 };
