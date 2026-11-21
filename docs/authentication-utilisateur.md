@@ -4,7 +4,7 @@
 
 Cette documentation décrit la connexion des utilisateurs de l’interface Office SaaS.
 
-Elle ne concerne pas les endpoints API internes, qui utilisent une clé Bearer `API_INTERNAL_KEY` distincte. Consultez la [documentation d’authentification API](api/authentication.md) pour les appels machine à machine.
+Elle ne concerne pas les endpoints API internes, qui utilisent une clé Bearer `API_INTERNAL_KEY` distincte.
 
 ## Configuration
 

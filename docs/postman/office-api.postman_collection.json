@@ -53,56 +53,6 @@
           "response": []
         }
       ]
-    },
-    {
-      "name": "Clients",
-      "item": [
-        {
-          "name": "Créer un client",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{api_internal_key}}",
-                "type": "text"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              },
-              {
-                "key": "Accept",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"client_type_slug\": \"spotcard\",\n  \"company_name\": \"Restaurant du Centre\",\n  \"display_name\": \"Restaurant du Centre\",\n  \"contact_first_name\": \"Paul\",\n  \"contact_last_name\": \"Martin\",\n  \"email\": \"contact@restaurant.fr\",\n  \"phone\": \"04 00 00 00 00\",\n  \"address_line1\": \"10 rue des Marchands\",\n  \"address_line2\": null,\n  \"postal_code\": \"34000\",\n  \"city\": \"Montpellier\",\n  \"country\": \"France\",\n  \"siret\": \"12345678900012\",\n  \"vat_number\": \"FR12123456789\",\n  \"notes\": null\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{base_url}}/api/v1/clients",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "clients"
-              ]
-            },
-            "description": "Crée un client actif. Le client_type_slug doit correspondre à un type de client actif."
-          },
-          "response": []
-        }
-      ]
     }
   ]
 }
