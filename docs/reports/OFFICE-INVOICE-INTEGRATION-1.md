@@ -9,9 +9,9 @@
 |---|---|---|
 | Office-Api | `main` `c976b6a8e3722aca63fcbe3c73e6e6ea836584cf` | `feature/office-api-invoice-numbering-1.1` `c9df8851d7d1f6d96ac185101b478d2e63862148` |
 | shared | `main` `83e5b7da32ae20039218586e18dc93ee9ad95852` | `feature/office-api-business-reference-1.1` `0661b92b914c28c41f45f5bd19bb9a860c232676` |
-| Office | `work/office-deploy-php84-2.2` `1333e34aac9f1738afaf795efdcb77044be163e9` | `feature/office-inv-recette-1.2` `d9860d8574bd98500bae7df1d8798c531d9b6096` avant ce lot |
+| Office | `work/office-deploy-php84-2.2` `1333e34aac9f1738afaf795efdcb77044be163e9` | `feature/office-inv-recette-1.2` `8889b5b9dc20c442f0cf105540f2e95db9b443a9` après verrouillage Composer |
 
-Les refs distantes ont été relues. Aucun PR API/shared correspondant n'existait lors de la recherche initiale. Office PR brouillon [#2](https://github.com/lgimet/office/pull/2) cible la branche fonctionnelle 2.2, et non `main`, car son parent apporte déjà le parcours UI/PHP 8.4 requis. La base 2.2 doit être intégrée séparément à `office/main` avant une PR de convergence vers `main`. L'état GitHub de mergeabilité de la PR #2 est revenu `false`; l'ascendance Git locale montre cependant la base à zéro commit derrière la tête, donc le statut doit être réévalué par GitHub/review avant intégration. Aucun merge automatique.
+Les refs distantes ont été relues. Office PR brouillon [#2](https://github.com/lgimet/office/pull/2) cible la branche fonctionnelle 2.2, et non `main`, car son parent apporte déjà le parcours UI/PHP 8.4 requis. La base 2.2 doit être intégrée séparément à `office/main` avant une PR de convergence vers `main`. Après mise à jour de sa branche, l'ascendance Git locale est `0 behind / 4 ahead` et `git merge-tree` ne signale aucun conflit. Le premier instantané GitHub avait `mergeable=false`; après rafraîchissement de la PR, son état courant est `mergeable=true`. Aucun merge automatique.
 
 ## Matrice de compatibilité
 
@@ -46,9 +46,9 @@ Un `git diff --check` global contre les bases relève seulement des espaces fina
 
 ## PRs et ordre de mise à disposition
 
-1. PR brouillon Office-Api → `main` depuis sa branche numbering 1.1 ; revue du code puis intégration, sans lancer de migration.
-2. PR brouillon shared → `main`; revue, puis publication ultérieure d'un tag immuable. Le lock Office fixe déjà le SHA feature qui a été testé ; migrer vers le tag seulement après sa publication vérifiée.
-3. PR Office #2 mise à jour → `work/office-deploy-php84-2.2`. Intégrer la base 2.2 vers `main` par une PR séparée, puis décider de la convergence Office.
+1. PR brouillon [Office-Api #3](https://github.com/lgimet/Office-Api/pull/3) → `main`; revue du code puis intégration, sans lancer de migration.
+2. PR brouillon [shared #3](https://github.com/lgimet/shared/pull/3) → `main`; revue, puis publication ultérieure d'un tag immuable. Le lock Office fixe déjà le SHA feature qui a été testé ; migrer vers le tag seulement après sa publication vérifiée.
+3. PR Office [#2](https://github.com/lgimet/office/pull/2) mise à jour → `work/office-deploy-php84-2.2`. Intégrer la base 2.2 vers `main` par une PR séparée, puis décider de la convergence Office.
 4. Construire une release Office depuis le lock sous PHP 8.4 avec `composer install --no-interaction` (pas `update`), builder pouvant lire le dépôt shared. Garder `.env` et données hors artefact, conserver la release antérieure, vérifier en HTTP lecture seule lors d'une fenêtre autorisée.
 5. Les flags de brouillon Office et d'écriture API restent OFF. Migration 024 + mapping issuer, garde tenant/principal et restauration isolée restent des opérations distinctes. Une recette d'écriture future exige un GO distinct ; issue/delete, paiement, webhook, email et export comptable sont exclus.
 
