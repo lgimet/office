@@ -46,7 +46,7 @@ Un `git diff --check` global contre les bases relève seulement des espaces fina
 
 ## PRs et ordre de mise à disposition
 
-1. PR brouillon [Office-Api #3](https://github.com/lgimet/Office-Api/pull/3) → `main`; revue du code puis intégration, sans lancer de migration.
+1. PR brouillon [Office-Api #3](https://github.com/lgimet/Office-Api/pull/3) → `main`; revue du code puis intégration. La nouvelle API sélectionne `invoices.business_reference` dans ses GET : appliquer et contrôler la migration 024 par opération distinctement approuvée **avant** le basculement du code API. Si 024 n'est pas confirmée, ne pas déployer cette version API, même écritures OFF.
 2. PR brouillon [shared #3](https://github.com/lgimet/shared/pull/3) → `main`; revue, puis publication ultérieure d'un tag immuable. Le lock Office fixe déjà le SHA feature qui a été testé ; migrer vers le tag seulement après sa publication vérifiée.
 3. PR Office [#2](https://github.com/lgimet/office/pull/2) mise à jour → `work/office-deploy-php84-2.2`. Intégrer la base 2.2 vers `main` par une PR séparée, puis décider de la convergence Office.
 4. Construire une release Office depuis le lock sous PHP 8.4 avec `composer install --no-interaction` (pas `update`), builder pouvant lire le dépôt shared. Garder `.env` et données hors artefact, conserver la release antérieure, vérifier en HTTP lecture seule lors d'une fenêtre autorisée.
