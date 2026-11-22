@@ -38,9 +38,18 @@ final class DevsysInvoiceDraftService
             return ['api_mode' => false, 'can_edit' => true, 'can_issue' => true, 'can_delete' => true];
         }
         $apiDevSys = $details->origin->sourceApp === 'devsys';
+        $updateContractReady = false;
+        if ($apiDevSys && $this->enabled()) {
+            try {
+                $this->assertUpdateContractReady();
+                $updateContractReady = true;
+            } catch (\LogicException) {
+                // An older SDK cannot safely preserve/clear the reference; hide the edit action.
+            }
+        }
         return [
             'api_mode' => true,
-            'can_edit' => $apiDevSys && $this->enabled() && $this->eligible($details),
+            'can_edit' => $apiDevSys && $this->enabled() && $updateContractReady && $this->eligible($details),
             'can_issue' => false,
             'can_delete' => false,
         ];
@@ -50,7 +59,7 @@ final class DevsysInvoiceDraftService
     public function form(?int $id): array
     {
         if ($id === null) {
-            if ($this->enabled()) $this->assertSharedContractReady();
+            if ($this->enabled()) $this->assertCreateContractReady();
             $form = $this->legacy->form();
             $form['api_mode'] = $this->enabled();
             $form['api_writable'] = $this->enabled();
@@ -74,6 +83,7 @@ final class DevsysInvoiceDraftService
             throw new \LogicException('Cette facture appartient à une autre source et ne peut pas être modifiée depuis Office.');
         }
 
+        $this->assertUpdateContractReady();
         $form = $this->formFromDetails($details);
         $form['api_mode'] = true;
         $form['api_writable'] = $this->enabled() && $this->eligible($details);
@@ -95,7 +105,7 @@ final class DevsysInvoiceDraftService
                 }
                 return ['id' => $this->legacy->saveDraft($input), 'api_mode' => false];
             }
-            $this->assertSharedContractReady();
+            $this->assertCreateContractReady();
             return $this->createApiDraft($input);
         }
 
@@ -111,6 +121,7 @@ final class DevsysInvoiceDraftService
         if (!$this->enabled()) {
             throw new \LogicException('La modification API est désactivée. Aucune écriture SQL n’a été tentée.');
         }
+        $this->assertUpdateContractReady();
         if (!$this->eligible($details)) {
             throw new \LogicException('L’API ne déclare pas ce brouillon modifiable par Office. Rechargez-le.');
         }
@@ -123,7 +134,7 @@ final class DevsysInvoiceDraftService
         if (($context['stale'] ?? false) === true) {
             throw new \LogicException('La facture a changé depuis son ouverture. Fermez et rouvrez le brouillon pour recharger sa version.');
         }
-        $payload = $this->updatePayload($input);
+        $payload = $this->updatePayload($input, $details->businessReference);
         $payloadHash = hash('sha256', json_encode($payload, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
         if (is_array($context['pending_payload'] ?? null) && !hash_equals((string) $context['pending_payload']['hash'], $payloadHash)) {
             throw new \LogicException('Une sauvegarde API précédente est incertaine. Réessayez exactement les mêmes valeurs, ou rechargez le brouillon.');
@@ -196,6 +207,7 @@ final class DevsysInvoiceDraftService
 
     private function createApiDraft(array $input): array
     {
+        $this->assertCreateContractReady();
         if (trim((string) ($input['internal_note'] ?? '')) !== '') {
             throw new \InvalidArgumentException('La note interne n’est pas prise en charge par les brouillons API. Effacez-la explicitement avant l’enregistrement.');
         }
@@ -272,6 +284,24 @@ final class DevsysInvoiceDraftService
         }
     }
 
+    private function assertCreateContractReady(): void
+    {
+        $this->assertSharedContractReady();
+        if (!property_exists(CreateInvoiceDraftRequest::class, 'businessReference')) {
+            throw new \LogicException('Le SDK shared installé ne peut pas transmettre la référence métier à la création. Mettez-le à jour avant d’activer les brouillons API.');
+        }
+    }
+
+    private function assertUpdateContractReady(): void
+    {
+        $this->assertSharedContractReady();
+        if (!property_exists(InvoiceDetails::class, 'businessReference')
+            || !property_exists(UpdateInvoiceDraftRequest::class, 'businessReference')
+            || !method_exists(UpdateInvoiceDraftRequest::class, 'clearingBusinessReference')) {
+            throw new \LogicException('Le SDK shared installé ne prend pas en charge la référence métier sans risque d’effacement implicite. Mettez-le à jour avant d’activer la modification des brouillons API.');
+        }
+    }
+
     private function assertRequestedId(InvoiceDetails $details, int $id): void
     {
         if ($details->id !== $id) {
@@ -300,6 +330,7 @@ final class DevsysInvoiceDraftService
             'payment_terms' => $details->metadata['payment_terms'] ?? null,
             'payment_method' => $details->metadata['payment_method'] ?? null,
             'public_note' => $details->metadata['public_note'] ?? null,
+            'business_reference' => $details->businessReference,
             'internal_note' => '',
         ];
         $lines = array_map(static function (object $line): array {
@@ -338,12 +369,27 @@ final class DevsysInvoiceDraftService
     private function createPayload(array $input, string $sourceEventId): array
     {
         $base = $this->payloadFields($input);
+        $base['business_reference'] = $this->businessReference($input['business_reference'] ?? null);
         return ['source_event_id' => $sourceEventId, 'source_app' => 'devsys', ...$base];
     }
 
-    private function updatePayload(array $input): array
+    private function updatePayload(array $input, ?string $storedBusinessReference): array
     {
-        return ['source_app' => 'devsys', ...$this->payloadFields($input)];
+        $payload = ['source_app' => 'devsys', ...$this->payloadFields($input)];
+        $intent = $input['business_reference_intent'] ?? (array_key_exists('business_reference', $input) ? 'set' : 'preserve');
+        if (!is_string($intent) || !in_array($intent, ['preserve', 'set', 'clear'], true)) {
+            throw new \InvalidArgumentException('L’intention de référence métier est invalide. Rechargez le brouillon.');
+        }
+        if ($intent === 'clear') {
+            $payload['business_reference'] = null;
+        } elseif ($intent === 'set') {
+            $payload['business_reference'] = $this->businessReference($input['business_reference'] ?? null, false);
+        } elseif (array_key_exists('business_reference', $input)
+            && $this->businessReference($input['business_reference']) !== $storedBusinessReference) {
+            throw new \InvalidArgumentException('La référence métier a changé sans intention de modification. Rechargez le formulaire et réessayez.');
+        }
+
+        return $payload;
     }
 
     private function payloadFields(array $input): array
@@ -374,10 +420,15 @@ final class DevsysInvoiceDraftService
                 'tax_rate' => $this->decimal($line['tax_rate'] ?? null, 'taux de TVA'),
             ];
         }
+        $dueDate = $this->nullable($input['due_date'] ?? null);
+        if ($dueDate !== null && $dueDate < $date) {
+            throw new \InvalidArgumentException('La date d’échéance ne peut pas être antérieure à la date de facture.');
+        }
+
         return [
             'client_uuid' => strtolower($clientUuid),
             'issue_date' => $date,
-            'due_date' => $this->nullable($input['due_date'] ?? null),
+            'due_date' => $dueDate,
             'lines' => $mappedLines,
             'payment_terms_code' => $this->nullable($input['payment_terms_code'] ?? null),
             'payment_terms' => $this->nullable($input['payment_terms'] ?? null),
@@ -390,16 +441,39 @@ final class DevsysInvoiceDraftService
     {
         return new CreateInvoiceDraftRequest(
             $payload['source_event_id'], $payload['client_uuid'], $payload['issue_date'], $this->lineDtos($payload['lines']),
-            $payload['due_date'], $payload['payment_terms_code'], $payload['payment_terms'], $payload['payment_method'], $payload['public_note'], 'devsys',
+            $payload['due_date'], $payload['payment_terms_code'], $payload['payment_terms'], $payload['payment_method'], $payload['public_note'], 'devsys', $payload['business_reference'],
         );
     }
 
     private function updateDto(array $payload): UpdateInvoiceDraftRequest
     {
-        return new UpdateInvoiceDraftRequest(
+        $request = new UpdateInvoiceDraftRequest(
             $payload['client_uuid'], $payload['issue_date'], $this->lineDtos($payload['lines']),
             $payload['due_date'], $payload['payment_terms_code'], $payload['payment_terms'], $payload['payment_method'], $payload['public_note'], 'devsys',
         );
+        if (!array_key_exists('business_reference', $payload)) {
+            return $request;
+        }
+        if ($payload['business_reference'] === null) {
+            return UpdateInvoiceDraftRequest::clearingBusinessReference($request);
+        }
+
+        return new UpdateInvoiceDraftRequest(
+            $payload['client_uuid'], $payload['issue_date'], $this->lineDtos($payload['lines']),
+            $payload['due_date'], $payload['payment_terms_code'], $payload['payment_terms'], $payload['payment_method'], $payload['public_note'], 'devsys', $payload['business_reference'],
+        );
+    }
+
+    private function businessReference(mixed $value, bool $nullable = true): ?string
+    {
+        if ($value === null && $nullable) return null;
+        if (!is_string($value)) throw new \InvalidArgumentException('La référence métier doit commencer par DEV-.');
+        $reference = strtoupper(trim($value));
+        if (strlen($reference) > 100 || preg_match('/^DEV-[A-Z0-9][A-Z0-9._\/-]{0,95}$/D', $reference) !== 1) {
+            throw new \InvalidArgumentException('La référence métier doit respecter le format DEV-… (100 caractères maximum). Pour la supprimer, cochez « Effacer la référence ».');
+        }
+
+        return $reference;
     }
 
     private function lineDtos(array $lines): array
@@ -436,7 +510,7 @@ final class DevsysInvoiceDraftService
 
     private function rejectTenantSelectors(array $input): void
     {
-        foreach (['tenant_id', 'tenant_uuid', 'source_app', 'source_event_id', 'idempotency_key'] as $field) {
+        foreach (['tenant_id', 'tenant_uuid', 'issuer_id', 'invoice_number', 'source_app', 'source_event_id', 'idempotency_key'] as $field) {
             if (array_key_exists($field, $input)) throw new \InvalidArgumentException('Le formulaire contient un champ de sécurité interdit. Rechargez-le.');
         }
     }

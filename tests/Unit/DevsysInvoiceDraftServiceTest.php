@@ -121,6 +121,7 @@ final class DevsysInvoiceDraftServiceTest extends TestCase
             self::assertArrayNotHasKey('payment_method', $payload);
             self::assertArrayNotHasKey('public_note', $payload);
             self::assertSame('devsys', $payload['source_app']);
+            self::assertSame('DEV-42', $payload['business_reference']);
             self::assertArrayNotHasKey('total_incl_tax', $payload);
             self::assertSame('2.500', $payload['lines'][0]['quantity']);
             self::assertArrayNotHasKey('discount_type', $payload['lines'][0]);
@@ -136,7 +137,7 @@ final class DevsysInvoiceDraftServiceTest extends TestCase
             'api_creation_context' => $creationToken,
             'client_uuid' => 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
             'issue_date' => '2026-11-21', 'due_date' => '', 'payment_terms_code' => '', 'payment_terms' => '',
-            'payment_method' => '', 'public_note' => '', 'internal_note' => '',
+            'payment_method' => '', 'public_note' => '', 'internal_note' => '', 'business_reference' => 'DEV-42',
             'lines' => [[
                 'label' => 'Consulting', 'description' => '', 'quantity' => '2.500', 'unit' => '',
                 'unit_price_excl_tax' => '12.50', 'tax_rate' => '20.00', 'discount_type' => '',
@@ -175,6 +176,7 @@ final class DevsysInvoiceDraftServiceTest extends TestCase
             $keys[] = $key;
             $events[] = $request->sourceEventId;
             $payloads[] = $request->toPayload();
+            self::assertArrayNotHasKey('business_reference', $request->toPayload());
             if ($calls === 1) throw new DevsysApiNetworkException('timeout');
             return new InvoiceCommandResult(['id' => 23, 'status' => 'draft'], true, 'hash', 'devsys', $request->sourceEventId, true);
         });
@@ -208,13 +210,14 @@ final class DevsysInvoiceDraftServiceTest extends TestCase
     {
         $_ENV['OFFICE_INVOICE_DRAFT_WRITE_API_ENABLED'] = 'true';
         $api = $this->api();
-        $initial = $this->details(25, 'api', 'devsys', 3);
-        $newer = $this->details(25, 'api', 'devsys', 4);
+        $initial = $this->details(25, 'api', 'devsys', 3, 'DEV-OLD');
+        $newer = $this->details(25, 'api', 'devsys', 4, 'DEV-OLD');
         $api->expects(self::exactly(5))->method('get')->with(25)->willReturnOnConsecutiveCalls($initial, $newer, $newer, $newer, $newer);
         $legacy = $this->legacy();
         $legacy->expects(self::never())->method('saveDraft');
         $service = $this->service($api, $legacy);
         $form = $service->form(25);
+        self::assertSame('DEV-OLD', $form['invoice']['business_reference']);
         $keys = [];
         $etags = [];
         $calls = 0;
@@ -225,6 +228,7 @@ final class DevsysInvoiceDraftServiceTest extends TestCase
             self::assertSame(25, $id);
             self::assertSame('devsys', $request->sourceApp);
             self::assertSame('cccccccc-cccc-4ccc-8ccc-cccccccccccc', $request->clientUuid);
+            self::assertArrayNotHasKey('business_reference', $request->toPayload());
             if ($calls === 1) throw new DevsysApiNetworkException('offline');
             return new InvoiceDraftUpdateResult(['id' => 25, 'status' => 'draft', 'revision' => 4], 4, '"4"', false, 'hash', 'devsys');
         });
@@ -232,6 +236,7 @@ final class DevsysInvoiceDraftServiceTest extends TestCase
             'id' => 25, 'api_editor_context' => $form['api_editor_context'], 'internal_note' => '',
             'client_uuid' => 'cccccccc-cccc-4ccc-8ccc-cccccccccccc', 'issue_date' => '2026-11-21', 'due_date' => '',
             'payment_terms_code' => 'days_15', 'payment_terms' => 'Sous 15 jours', 'payment_method' => 'CB', 'public_note' => '',
+            'business_reference' => 'DEV-OLD', 'business_reference_intent' => 'preserve',
             'lines' => [[
                 'label' => 'Consulting', 'description' => '', 'quantity' => '1', 'unit' => '',
                 'unit_price_excl_tax' => '10.00', 'tax_rate' => '20.00', 'discount_type' => '',
@@ -260,6 +265,73 @@ final class DevsysInvoiceDraftServiceTest extends TestCase
         }
         self::assertSame(['"3"', '"3"'], $etags);
         self::assertSame($keys[0], $keys[1]);
+    }
+
+    public function testBusinessReferenceCanBeSetOrExplicitlyClearedInUpdateDto(): void
+    {
+        $_ENV['OFFICE_INVOICE_DRAFT_WRITE_API_ENABLED'] = 'true';
+        $api = $this->api();
+        $versions = [3, 4, 5];
+        $api->expects(self::exactly(6))->method('get')->willReturnCallback(function () use (&$versions) {
+            static $index = 0;
+            $revision = $versions[intdiv($index++, 2)];
+            return $this->details(50, 'api', 'devsys', $revision, 'DEV-OLD');
+        });
+        $payloads = [];
+        $api->expects(self::exactly(3))->method('updateDraft')->willReturnCallback(function ($id, $request, $key, $etag) use (&$payloads) {
+            self::assertSame(50, $id);
+            self::assertSame('devsys', $request->sourceApp);
+            $payloads[] = $request->toPayload();
+            $revision = count($payloads) + 3;
+            return new InvoiceDraftUpdateResult(['id' => 50, 'status' => 'draft', 'revision' => $revision], $revision, '"'.$revision.'"', false, 'hash', 'devsys');
+        });
+        $legacy = $this->legacy();
+        $legacy->expects(self::never())->method('saveDraft');
+        $service = $this->service($api, $legacy);
+        $base = [
+            'id' => 50, 'internal_note' => '', 'client_uuid' => 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
+            'issue_date' => '2026-11-21', 'due_date' => '', 'payment_terms_code' => 'days_15',
+            'payment_terms' => 'Sous 15 jours', 'payment_method' => 'CB', 'public_note' => '',
+            'lines' => [['label' => 'Consulting', 'quantity' => '1', 'unit_price_excl_tax' => '10.00', 'tax_rate' => '20.00']],
+        ];
+        foreach ([
+            ['business_reference' => 'DEV-OLD', 'business_reference_intent' => 'preserve'],
+            ['business_reference' => 'dev-new', 'business_reference_intent' => 'set'],
+            ['business_reference' => 'DEV-NEW', 'business_reference_intent' => 'clear'],
+        ] as $index => $referenceInput) {
+            $form = $service->form(50);
+            $service->saveDraft([...$base, ...$referenceInput, 'api_editor_context' => $form['api_editor_context']], 50);
+        }
+
+        self::assertArrayNotHasKey('business_reference', $payloads[0]);
+        self::assertSame('DEV-NEW', $payloads[1]['business_reference']);
+        self::assertArrayHasKey('business_reference', $payloads[2]);
+        self::assertNull($payloads[2]['business_reference']);
+        self::assertSame('Sous 15 jours', $payloads[1]['payment_terms']);
+    }
+
+    public function testForeignSourceBusinessReferenceIsRejectedBeforeUpdate(): void
+    {
+        $_ENV['OFFICE_INVOICE_DRAFT_WRITE_API_ENABLED'] = 'true';
+        $api = $this->api();
+        $api->expects(self::exactly(2))->method('get')->with(51)->willReturn($this->details(51, 'api', 'devsys'));
+        $api->expects(self::never())->method('updateDraft');
+        $legacy = $this->legacy();
+        $legacy->expects(self::never())->method('saveDraft');
+        $service = $this->service($api, $legacy);
+        $form = $service->form(51);
+
+        try {
+            $service->saveDraft([
+                'id' => 51, 'api_editor_context' => $form['api_editor_context'], 'internal_note' => '',
+                'client_uuid' => 'cccccccc-cccc-4ccc-8ccc-cccccccccccc', 'issue_date' => '2026-11-21',
+                'lines' => [['label' => 'X', 'quantity' => '1', 'unit_price_excl_tax' => '1', 'tax_rate' => '20']],
+                'business_reference' => 'SPC-1', 'business_reference_intent' => 'set',
+            ], 51);
+            self::fail('A source-specific reference from another application must be refused.');
+        } catch (\InvalidArgumentException $exception) {
+            self::assertStringContainsString('DEV-', $exception->getMessage());
+        }
     }
 
     public function testApiUpdateWithInternalNoteIsRejectedBeforeAnyWrite(): void
@@ -356,6 +428,19 @@ final class DevsysInvoiceDraftServiceTest extends TestCase
         }
     }
 
+    public function testBrowserCannotSelectTenantIssuerLegalNumberSourceOrRetryKeys(): void
+    {
+        $service = $this->service($this->api(), $this->legacy());
+        foreach (['tenant_id', 'tenant_uuid', 'issuer_id', 'invoice_number', 'source_app', 'source_event_id', 'idempotency_key'] as $selector) {
+            try {
+                $service->assertNoTenantSelectors([$selector => 'forged']);
+                self::fail('Expected the browser selector to be rejected: '.$selector);
+            } catch (\InvalidArgumentException) {
+                self::assertTrue(true);
+            }
+        }
+    }
+
     private function service(InvoiceDraftApiInterface $api, InvoiceService $legacy): DevsysInvoiceDraftService
     {
         return new DevsysInvoiceDraftService($api, $legacy, new InvoiceDraftWriteContextStore(new OidcSessionService()));
@@ -371,10 +456,11 @@ final class DevsysInvoiceDraftServiceTest extends TestCase
         return $this->getMockBuilder(InvoiceService::class)->disableOriginalConstructor()->onlyMethods(['form', 'saveDraft', 'issueDraft', 'deleteDraft'])->getMock();
     }
 
-    private function details(int $id, ?string $kind, ?string $sourceApp = null, int $revision = 3): InvoiceDetails
+    private function details(int $id, ?string $kind, ?string $sourceApp = null, int $revision = 3, ?string $businessReference = null): InvoiceDetails
     {
         $invoice = [
             'id' => $id, 'invoice_number' => null, 'status' => 'draft', 'revision' => $revision,
+            'business_reference' => $businessReference,
             'issue_date' => '2026-11-21', 'due_date' => null, 'currency' => 'EUR',
             'client' => ['name' => 'Snapshot Client', 'uuid' => 'cccccccc-cccc-4ccc-8ccc-cccccccccccc'],
             'issuer' => null,

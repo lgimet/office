@@ -31,11 +31,15 @@ final class InvoicesDataSwitchTest extends TestCase
     private mixed $previousFlag;
     private bool $hadFlag;
     private mixed $previousGet;
+    private mixed $previousDraftWriteFlag;
+    private bool $hadDraftWriteFlag;
 
     protected function setUp(): void
     {
         $this->hadFlag = array_key_exists('OFFICE_INVOICE_READ_API_ENABLED', $_ENV);
         $this->previousFlag = $_ENV['OFFICE_INVOICE_READ_API_ENABLED'] ?? null;
+        $this->hadDraftWriteFlag = array_key_exists('OFFICE_INVOICE_DRAFT_WRITE_API_ENABLED', $_ENV);
+        $this->previousDraftWriteFlag = $_ENV['OFFICE_INVOICE_DRAFT_WRITE_API_ENABLED'] ?? null;
         $this->previousGet = $_GET;
         $_GET = ['page' => '1'];
     }
@@ -46,6 +50,11 @@ final class InvoicesDataSwitchTest extends TestCase
             $_ENV['OFFICE_INVOICE_READ_API_ENABLED'] = $this->previousFlag;
         } else {
             unset($_ENV['OFFICE_INVOICE_READ_API_ENABLED']);
+        }
+        if ($this->hadDraftWriteFlag) {
+            $_ENV['OFFICE_INVOICE_DRAFT_WRITE_API_ENABLED'] = $this->previousDraftWriteFlag;
+        } else {
+            unset($_ENV['OFFICE_INVOICE_DRAFT_WRITE_API_ENABLED']);
         }
         $_GET = $this->previousGet;
     }
@@ -72,6 +81,36 @@ final class InvoicesDataSwitchTest extends TestCase
 
         self::assertSame(503, $response->getStatusCode());
         self::assertStringContainsString('temporairement indisponible', $this->errorMessage($response->toJson()));
+    }
+
+    public function testApiListUsesServerProvenanceToHideForbiddenDraftActions(): void
+    {
+        $_ENV['OFFICE_INVOICE_READ_API_ENABLED'] = 'true';
+        $_ENV['OFFICE_INVOICE_DRAFT_WRITE_API_ENABLED'] = 'false';
+        $items = [
+            $this->listItem(77),
+            $this->listItem(78),
+        ];
+        $list = new HttpResponse(200, [], json_encode([
+            'success' => true,
+            'data' => ['items' => $items],
+            'meta' => ['pagination' => ['page' => 1, 'per_page' => 25, 'total' => 2, 'total_pages' => 1, 'has_previous' => false, 'has_next' => false]],
+        ], JSON_THROW_ON_ERROR));
+        $sql = $this->createMock(InvoiceService::class);
+        $sql->expects(self::never())->method('list');
+
+        $response = $this->controller($sql, [$list, $this->apiDraftResponse(77), $this->apiDraftResponse(78, 'historical', null)])->data();
+        $rows = json_decode($response->toJson(), true, 512, JSON_THROW_ON_ERROR)['data']['rows'];
+
+        self::assertSame(200, $response->getStatusCode());
+        self::assertTrue($rows[0]['api_mode']);
+        self::assertFalse($rows[0]['can_edit']);
+        self::assertFalse($rows[0]['can_issue']);
+        self::assertFalse($rows[0]['can_delete']);
+        self::assertFalse($rows[1]['api_mode']);
+        self::assertTrue($rows[1]['can_edit']);
+        self::assertTrue($rows[1]['can_issue']);
+        self::assertTrue($rows[1]['can_delete']);
     }
 
     public function testApiHttpErrorsRemainVisibleAndUseSafeMessages(): void
@@ -139,11 +178,11 @@ final class InvoicesDataSwitchTest extends TestCase
         self::assertStringNotContainsString('denied', $response->toJson());
     }
 
-    private function controller(InvoiceService $sql, HttpResponse|\Throwable $apiResponse): Invoices
+    private function controller(InvoiceService $sql, HttpResponse|\Throwable|array $apiResponse): Invoices
     {
         $client = new DevsysApiClient(
             new DevsysApiConfig('https://api.example.test/api/v1'),
-            new Client(['handler' => HandlerStack::create(new MockHandler([$apiResponse])), 'http_errors' => false]),
+            new Client(['handler' => HandlerStack::create(new MockHandler(is_array($apiResponse) ? $apiResponse : [$apiResponse])), 'http_errors' => false]),
         );
         $clients = new DevsysClientService(new ClientsApi($client));
         $templateResolver = (new \ReflectionClass(InvoiceTemplateResolver::class))->newInstanceWithoutConstructor();
@@ -164,18 +203,28 @@ final class InvoicesDataSwitchTest extends TestCase
         return (string) (json_decode($json, true)['error']['message'] ?? '');
     }
 
-    private function apiDraftResponse(int $id): HttpResponse
+    private function apiDraftResponse(int $id, string $originKind = 'api', ?string $sourceApp = 'devsys'): HttpResponse
     {
         $invoice = [
-            'id' => $id, 'invoice_number' => null, 'status' => 'draft', 'revision' => 1,
+            'id' => $id, 'invoice_number' => null, 'status' => 'draft', 'revision' => 1, 'business_reference' => null,
             'issue_date' => '2026-11-21', 'due_date' => null, 'currency' => 'EUR',
             'client' => ['name' => 'Snapshot client', 'uuid' => 'cccccccc-cccc-4ccc-8ccc-cccccccccccc'],
             'issuer' => null,
             'amounts' => ['subtotal_excl_tax' => '10.00', 'discount_total_excl_tax' => '0.00', 'tax_total' => '2.00', 'total_incl_tax' => '12.00'],
             'lines' => [], 'payment_terms_code' => null, 'payment_terms' => null, 'payment_method' => null,
             'public_note' => null, 'created_at' => '2026-11-21T00:00:00Z', 'issued_at' => null, 'cancelled_at' => null,
-            'origin' => ['kind' => 'api', 'source_app' => 'devsys', 'api_update_eligible_for_source' => true],
+            'origin' => ['kind' => $originKind, 'source_app' => $sourceApp, 'api_update_eligible_for_source' => $originKind === 'api' && $sourceApp === 'devsys'],
         ];
         return new HttpResponse(200, ['ETag' => ['"1"']], json_encode(['success' => true, 'data' => ['invoice' => $invoice]], JSON_THROW_ON_ERROR));
+    }
+
+    private function listItem(int $id): array
+    {
+        return [
+            'id' => $id, 'invoice_number' => null, 'status' => 'draft', 'issue_date' => '2026-11-21',
+            'due_date' => null, 'currency' => 'EUR', 'created_at' => '2026-11-21T00:00:00Z',
+            'issued_at' => null, 'cancelled_at' => null, 'client' => ['name' => 'Snapshot client'],
+            'amounts' => ['subtotal_excl_tax' => '10.00', 'discount_total_excl_tax' => '0.00', 'tax_total' => '2.00', 'total_incl_tax' => '12.00'],
+        ];
     }
 }

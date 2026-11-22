@@ -42,7 +42,17 @@ class Invoices extends BaseController
     {
         if (($_ENV['OFFICE_INVOICE_READ_API_ENABLED'] ?? 'false') === 'true') {
             try {
-                return (new Response())->setPayload($this->invoiceRead->list($_GET));
+                $result = $this->invoiceRead->list($_GET);
+                foreach ($result['rows'] as $index => $row) {
+                    if (($row['status'] ?? null) !== 'draft' || !is_int($row['id'] ?? null)) continue;
+                    try {
+                        $result['rows'][$index] = [...$row, ...$this->draftWrites->actionAvailability($row['id'])];
+                    } catch (\Throwable) {
+                        // Unknown provenance must not expose edit, issue, or delete actions in the table.
+                        $result['rows'][$index] = [...$row, 'api_mode' => true, 'can_edit' => false, 'can_issue' => false, 'can_delete' => false];
+                    }
+                }
+                return (new Response())->setPayload($result);
             } catch (DevsysApiException $exception) {
                 error_log(sprintf('[Devsys API] invoice list status=%s request_id=%s', $exception->getStatusCode() ?? 'none', $exception->getRequestId() ?? 'none'));
                 $status = $exception->getStatusCode();

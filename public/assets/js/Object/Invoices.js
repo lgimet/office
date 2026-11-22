@@ -30,13 +30,14 @@ export default class Invoices extends Core {
                             name: "edit",
                             label: "Modifier le brouillon",
                             icon: "bi-pencil-fill",
-                            visible: isDraft,
+                            visible: (invoice) => isDraft(invoice) && invoice.can_edit !== false,
                         },
                         {
                             name: "delete",
                             label: "Supprimer le brouillon",
                             icon: "bi-trash3-fill",
-                            visible: isDraft,
+                            visible: (invoice) => isDraft(invoice)
+                                && (invoice.api_mode === true ? invoice.can_delete === true : invoice.can_delete !== false),
                         },
                         {
                             name: "view",
@@ -103,6 +104,7 @@ export default class Invoices extends Core {
                 this.bodyRef.add_invoice_line.addEventListener("click", () => this.addLine());
                 this.bindClientDetails();
                 this.bindPaymentTerms();
+                this.bindBusinessReference();
                 this.recalculate();
                 this.applyApiPersistedTotals(form);
             },
@@ -422,6 +424,41 @@ export default class Invoices extends Core {
         if (form.dataset.existingInvoice !== "1" && !dueDate.value && preset.value !== "custom") {
             this.updateDueDate(preset.value, issueDate, dueDate);
         }
+    }
+
+    bindBusinessReference() {
+        const form = this.bodyRef.invoice_form;
+        const input = form.querySelector("#invoice-business-reference");
+        const intent = form.querySelector('[name="business_reference_intent"]');
+        const clear = form.querySelector('[name="business_reference_clear"]');
+        if (!input || !intent) return;
+
+        const update = () => {
+            if (clear?.checked) {
+                intent.value = "clear";
+                input.disabled = true;
+                input.setCustomValidity("");
+                return;
+            }
+
+            input.disabled = false;
+            if (form.dataset.existingInvoice === "1" && intent.value === "set" && input.value.trim() === "") {
+                input.setCustomValidity("Pour supprimer la référence, cochez « Effacer la référence enregistrée ».");
+            } else {
+                input.setCustomValidity("");
+            }
+        };
+
+        input.addEventListener("input", () => {
+            if (clear) clear.checked = false;
+            intent.value = "set";
+            update();
+        });
+        clear?.addEventListener("change", () => {
+            intent.value = clear.checked ? "clear" : (input.value.trim() === "" ? "preserve" : "set");
+            update();
+        });
+        update();
     }
 
     updateDueDate(rule, issueDate, dueDate) {

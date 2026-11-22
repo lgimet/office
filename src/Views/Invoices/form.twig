@@ -186,6 +186,29 @@
                         <label for="invoice-payment-method">Mode de paiement attendu</label>
                     </div>
 
+                    {% if api_mode %}
+                        <div class="form-field invoice-details-field">
+                            <input
+                                id="invoice-business-reference"
+                                name="business_reference"
+                                value="{{ invoice.business_reference|default('') }}"
+                                maxlength="100"
+                                pattern="DEV-[A-Za-z0-9][A-Za-z0-9._/-]{0,95}"
+                                placeholder="DEV-001"
+                                autocomplete="off"
+                            >
+                            <label for="invoice-business-reference">Référence métier (optionnelle)</label>
+                            <input type="hidden" name="business_reference_intent" value="{% if invoice %}preserve{% else %}set{% endif %}">
+                            {% if invoice %}
+                                <label class="invoice-business-reference-clear">
+                                    <input type="checkbox" name="business_reference_clear" value="1">
+                                    Effacer la référence enregistrée
+                                </label>
+                            {% endif %}
+                            <small>Référence DevSys distincte du numéro légal attribué à l’émission.</small>
+                        </div>
+                    {% endif %}
+
                     <div class="form-field invoice-details-field">
                         <input id="invoice-currency" name="currency" value="{{ invoice.currency ?? defaults.currency ?? 'EUR' }}" readonly>
                         <label for="invoice-currency">Devise</label>
