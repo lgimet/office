@@ -7,5 +7,11 @@
   },
   "devDependencies": {
     "sass": "1.54.9"
-  }
+  },
+  "overrides": {
+    "sass": {
+      "source-map-js": "^1.2.2"
+    }
+  },
+  "name": "office"
 }
