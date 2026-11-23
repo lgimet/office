@@ -13,6 +13,11 @@ final class SharedInvoiceDraftApi implements InvoiceDraftApiInterface
     {
     }
 
+    public function recipePreflight(): void
+    {
+        $this->invoices->recipePreflight();
+    }
+
     public function get(int $invoiceId): InvoiceDetails
     {
         try {

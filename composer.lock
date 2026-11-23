@@ -4,20 +4,20 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "f4acf31fda25fa87ea07b1ba32007b88",
+    "content-hash": "9a15ae31923a060e40105097df7a08d8",
     "packages": [
         {
             "name": "devsys/shared",
-            "version": "dev-feature/office-api-business-reference-1.1",
+            "version": "dev-feature/office-invoice-recipe-preflight-1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/lgimet/shared.git",
-                "reference": "0661b92b914c28c41f45f5bd19bb9a860c232676"
+                "reference": "b845450b2d4004fa31a5e3a540184fff42c7ebba"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/lgimet/shared/zipball/0661b92b914c28c41f45f5bd19bb9a860c232676",
-                "reference": "0661b92b914c28c41f45f5bd19bb9a860c232676",
+                "url": "https://api.github.com/repos/lgimet/shared/zipball/b845450b2d4004fa31a5e3a540184fff42c7ebba",
+                "reference": "b845450b2d4004fa31a5e3a540184fff42c7ebba",
                 "shasum": ""
             },
             "require": {
@@ -47,7 +47,7 @@
                 "proprietary"
             ],
             "description": "Shared PHP client library for the Devsys API.",
-            "time": "2026-11-22T14:53:42+00:00"
+            "time": "2026-11-23T07:00:33+00:00"
         },
         {
             "name": "firebase/php-jwt",

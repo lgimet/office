@@ -10,6 +10,7 @@ use Devsys\Shared\Api\Devsys\Invoices\Dto\{CreateInvoiceDraftRequest, InvoiceCom
 interface InvoiceDraftApiInterface
 {
     public function get(int $invoiceId): InvoiceDetails;
+    public function recipePreflight(): void;
     public function createDraft(CreateInvoiceDraftRequest $request, string $idempotencyKey): InvoiceCommandResult;
     public function updateDraft(int $invoiceId, UpdateInvoiceDraftRequest $request, string $idempotencyKey, string $etag): InvoiceDraftUpdateResult;
 }
