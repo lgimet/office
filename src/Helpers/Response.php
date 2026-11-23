@@ -31,6 +31,16 @@ class Response
     private ?string $binaryFilename = null;
     private string $binaryDisposition = 'inline';
     private int $statusCode = 200;
+    private array $headers = [];
+
+    public function setHeader(string $name, string $value): self
+    {
+        if (preg_match('/^[A-Za-z0-9-]+$/D', $name) !== 1 || preg_match('/[\r\n]/', $value) === 1) {
+            throw new \InvalidArgumentException('Invalid response header.');
+        }
+        $this->headers[$name] = $value;
+        return $this;
+    }
 
     public function setObject(string $object): self
     {
@@ -148,6 +158,7 @@ class Response
     public function send(): void
     {
         http_response_code($this->statusCode);
+        foreach ($this->headers as $name => $value) header($name . ': ' . $value);
 
         if ($this->binaryBody !== null) {
             header('Content-Type: ' . ($this->binaryContentType ?? 'application/octet-stream'));

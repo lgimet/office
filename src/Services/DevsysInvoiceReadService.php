@@ -6,6 +6,7 @@ namespace App\Services;
 
 use Devsys\Shared\Api\Devsys\Invoices\Dto\InvoiceListQuery;
 use Devsys\Shared\Api\Devsys\Invoices\InvoicesApi;
+use Devsys\Shared\Api\Devsys\Http\DevsysApiBinaryResponse;
 
 /** Adapts the shared invoice list DTOs to the existing Office table contract. */
 final class DevsysInvoiceReadService
@@ -131,6 +132,21 @@ final class DevsysInvoiceReadService
         $lines = array_map(static fn (object $line): array => $line->values, $details->lines);
 
         return ['source' => 'api', 'api_mode' => true, 'pdf_enabled' => false, 'invoice' => $invoice, 'lines' => $lines];
+    }
+
+    public function facturXStatus(int $invoiceId): array
+    {
+        return $this->invoices->facturXStatus($invoiceId);
+    }
+
+    public function generateFacturX(int $invoiceId): array
+    {
+        return $this->invoices->generateFacturX($invoiceId);
+    }
+
+    public function downloadFacturX(int $invoiceId): DevsysApiBinaryResponse
+    {
+        return $this->invoices->downloadFacturX($invoiceId);
     }
 
     private function boundedInteger(mixed $value, int $default, int $minimum, int $maximum): int

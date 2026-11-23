@@ -13,6 +13,14 @@
                     </span>
                 </div>
                 {% if not api_mode or pdf_enabled %}<a class="m-btn m-btn--outline" href="/Invoices/{{ invoice.id }}/pdf" target="_blank" rel="noopener">PDF</a>{% endif %}
+                {% if api_mode and facturx_enabled and invoice.status == 'issued' %}
+                    {% if facturx_available %}
+                        <span class="invoice-facturx-status">Factur-X · EN 16931</span>
+                        <a class="m-btn m-btn--outline" href="/Invoices/{{ invoice.id }}/facturx">Télécharger le Factur-X</a>
+                    {% else %}
+                        <button class="m-btn m-btn--outline" type="button" data-facturx-generate="{{ invoice.id }}">Générer le Factur-X</button>
+                    {% endif %}
+                {% endif %}
                 <p>{{ invoice.client_name }}</p>
             </div>
         </div>

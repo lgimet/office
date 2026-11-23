@@ -163,7 +163,19 @@ class Invoices extends BaseController
             $view = null;
             if (($_ENV['OFFICE_INVOICE_READ_API_ENABLED'] ?? 'false') === 'true') {
                 $apiView = $this->invoiceRead->view($id);
-                if (($apiView['source'] ?? null) === 'api') $view = $apiView;
+                if (($apiView['source'] ?? null) === 'api') {
+                    $view = $apiView;
+                    if (($_ENV['OFFICE_INVOICE_FACTURX_ENABLED'] ?? 'false') === 'true'
+                        && ($apiView['invoice']['status'] ?? null) === 'issued') {
+                        try {
+                            $archive = $this->invoiceRead->facturXStatus($id);
+                            $view['facturx_available'] = ($archive['available'] ?? false) === true;
+                        } catch (\Throwable) {
+                            $view['facturx_available'] = false;
+                        }
+                        $view['facturx_enabled'] = true;
+                    }
+                }
             }
             $view ??= $this->service->view($id);
             $number = $view['invoice']['invoice_number'] ?? ('#' . $id);
@@ -178,6 +190,55 @@ class Invoices extends BaseController
             return $this->invoiceDraftApiError($exception);
         } catch (\UnexpectedValueException) {
             return (new Response())->setError(503, 'Le service de factures a retourné une réponse invalide.');
+        }
+    }
+
+    #[Route(method: 'POST')]
+    #[AuthRequired]
+    public function facturxGenerate(array $input): Response
+    {
+        if (($_ENV['OFFICE_INVOICE_FACTURX_ENABLED'] ?? 'false') !== 'true' || ($_ENV['OFFICE_INVOICE_READ_API_ENABLED'] ?? 'false') !== 'true') {
+            return (new Response())->setError(404, 'La génération Factur-X est indisponible.');
+        }
+        try {
+            $data = $this->payload($input);
+            $this->draftWrites->assertNoTenantSelectors($data);
+            $id = filter_var($data['id'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+            if ($id === false) return (new Response())->setError(422, 'La facture demandée est invalide.');
+            $view = $this->invoiceRead->view((int) $id);
+            if (($view['source'] ?? null) !== 'api' || ($view['invoice']['status'] ?? null) !== 'issued') return (new Response())->setError(409, 'Seule une facture API émise peut produire un Factur-X.');
+            $result = $this->invoiceRead->generateFacturX((int) $id);
+            return (new Response())->setId((int) $id)->setPayload(['invoice_number' => $result['invoice_number'] ?? null, 'available' => true])->setToast('Le Factur-X validé est archivé.');
+        } catch (DevsysApiException $exception) {
+            return $this->invoiceDraftApiError($exception);
+        } catch (\Throwable) {
+            return (new Response())->setError(422, 'Les données figées ne permettent pas de produire un Factur-X conforme.');
+        }
+    }
+
+    #[Route(method: 'GET', path: 'Invoices/{id:\\d+}/facturx')]
+    #[AuthRequired]
+    public function facturxDownload(array $input): Response
+    {
+        if (($_ENV['OFFICE_INVOICE_FACTURX_ENABLED'] ?? 'false') !== 'true' || ($_ENV['OFFICE_INVOICE_READ_API_ENABLED'] ?? 'false') !== 'true') {
+            return (new Response())->setError(404, 'Le téléchargement Factur-X est indisponible.');
+        }
+        try {
+            $id = filter_var($input['id'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+            if ($id === false) return (new Response())->setError(404, 'Facture introuvable.');
+            $view = $this->invoiceRead->view((int) $id);
+            if (($view['source'] ?? null) !== 'api' || ($view['invoice']['status'] ?? null) !== 'issued') return (new Response())->setError(404, 'Factur-X introuvable.');
+            $document = $this->invoiceRead->downloadFacturX((int) $id);
+            $number = (string) ($view['invoice']['invoice_number'] ?? '');
+            if (preg_match('/^[0-9]{4}-[0-9]{4,}$/D', $number) !== 1) return (new Response())->setError(404, 'Factur-X introuvable.');
+            return (new Response())->setBinary($document->body, 'application/pdf', 'Facture-'.$number.'.pdf', 'attachment')
+                ->setHeader('Cache-Control', 'private, no-store')
+                ->setHeader('X-Content-Type-Options', 'nosniff')
+                ->setHeader('Content-Length', (string) strlen($document->body));
+        } catch (DevsysApiException $exception) {
+            return $this->invoiceDraftApiError($exception);
+        } catch (\Throwable) {
+            return (new Response())->setError(503, 'Le Factur-X archivé est temporairement indisponible.');
         }
     }
 

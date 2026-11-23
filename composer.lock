@@ -4,20 +4,20 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "4a6a5911a31a990a8734a5e0409ac0ea",
+    "content-hash": "73dd1f63ab1205e660fe217975f110f8",
     "packages": [
         {
             "name": "devsys/shared",
-            "version": "dev-feature/shared-invoice-facturx-1",
+            "version": "dev-feature/office-invoice-facturx-2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/lgimet/shared.git",
-                "reference": "d2b52a83a7265b4fa158090549462ec72c26ad45"
+                "reference": "ab5ba633dcb3247bb7f6751f0801bd4fca97da77"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/lgimet/shared/zipball/d2b52a83a7265b4fa158090549462ec72c26ad45",
-                "reference": "d2b52a83a7265b4fa158090549462ec72c26ad45",
+                "url": "https://api.github.com/repos/lgimet/shared/zipball/ab5ba633dcb3247bb7f6751f0801bd4fca97da77",
+                "reference": "ab5ba633dcb3247bb7f6751f0801bd4fca97da77",
                 "shasum": ""
             },
             "require": {
@@ -47,7 +47,7 @@
                 "proprietary"
             ],
             "description": "Shared PHP client library for the Devsys API.",
-            "time": "2026-11-23T20:01:14+00:00"
+            "time": "2026-11-23T22:43:32+00:00"
         },
         {
             "name": "firebase/php-jwt",
@@ -187,22 +187,22 @@
         },
         {
             "name": "guzzlehttp/guzzle",
-            "version": "7.16.5",
+            "version": "7.17.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/guzzle/guzzle.git",
-                "reference": "b0605f32e77a13cf98bc5e75b1d71877b6814e17"
+                "reference": "f61ba5ea0a55032a55ddbb72cab7d307c1043654"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/guzzle/guzzle/zipball/b0605f32e77a13cf98bc5e75b1d71877b6814e17",
-                "reference": "b0605f32e77a13cf98bc5e75b1d71877b6814e17",
+                "url": "https://api.github.com/repos/guzzle/guzzle/zipball/f61ba5ea0a55032a55ddbb72cab7d307c1043654",
+                "reference": "f61ba5ea0a55032a55ddbb72cab7d307c1043654",
                 "shasum": ""
             },
             "require": {
                 "ext-json": "*",
-                "guzzlehttp/promises": "^2.6.1",
-                "guzzlehttp/psr7": "^2.13.5",
+                "guzzlehttp/promises": "^2.6.2",
+                "guzzlehttp/psr7": "^2.13.6",
                 "php": "^7.2.5 || ^8.0",
                 "psr/http-client": "^1.0",
                 "symfony/deprecation-contracts": "^2.5 || ^3.0",
@@ -295,7 +295,7 @@
             ],
             "support": {
                 "issues": "https://github.com/guzzle/guzzle/issues",
-                "source": "https://github.com/guzzle/guzzle/tree/7.16.5"
+                "source": "https://github.com/guzzle/guzzle/tree/7.17.0"
             },
             "funding": [
                 {
@@ -311,7 +311,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2026-11-20T22:56:33+00:00"
+            "time": "2026-11-22T16:49:11+00:00"
         },
         {
             "name": "guzzlehttp/promises",
