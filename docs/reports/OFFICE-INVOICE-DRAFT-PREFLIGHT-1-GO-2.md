@@ -6,7 +6,7 @@ Date : 2026-11-23. Statut : `READY_FOR_DIAGNOSTIC_DEPLOY_GO` pour revue; aucune 
 
 - Office worktree basé sur le rapport GO-1 `work/office-invoice-draft-preflight-1` SHA `75776e6662962505cd78e0904c5386fd5d167023`; code GO-2 `06aab44ae40723b0fcad4951cdbb97e5d2d527ba`, lignée issue du parcours fonctionnel 1.2.
 - Release active résolue en lecture seule : `office-invoice-web-20261123-64b6b29-0661b92`.
-- Le SDK candidat est `devsys/shared` commit `b845450b2d4004fa31a5e3a540184fff42c7ebba` sur une branche dérivée de `feature/office-api-business-reference-1.1`; `composer.lock` est épinglé à ce SHA exact. Le runtime actif conserve son paquet existant tant qu'une release Office n'est pas approuvée et déployée.
+- Le SDK candidat est `devsys/shared` commit `b845450b2d4004fa31a5e3a540184fff42c7ebba` sur une branche dérivée de `feature/office-api-business-reference-1.1`; `composer.lock` est épinglé à ce SHA exact (SHA-256 `a7a7a5941baca4d2b4e782894f5d8f5e2292a05b0f0374d291c1490a33991cc5`). Le runtime actif conserve son paquet existant tant qu'une release Office n'est pas approuvée et déployée.
 
 ## Changement
 
