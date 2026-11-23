@@ -95,7 +95,7 @@ final class DevsysInvoiceDraftService
         $form['business_reference_locked'] = $form['business_reference_prefix'] === null;
         $form['business_reference_pattern'] = $form['business_reference_prefix'] === null
             ? null
-            : preg_quote($form['business_reference_prefix'], '/').'[A-Za-z0-9][A-Za-z0-9._/-]{0,95}';
+            : $form['business_reference_prefix'].'[A-Za-z0-9][A-Za-z0-9._/-]{0,95}';
         $form['api_mode'] = true;
         $form['api_writable'] = $this->enabled();
         $form['api_editor_context'] = $form['api_writable']

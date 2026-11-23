@@ -439,6 +439,7 @@ final class DevsysInvoiceDraftServiceTest extends TestCase
         self::assertTrue($form['api_mode']);
         self::assertTrue($form['api_writable']);
         self::assertSame('SPC-REC-45', $form['invoice']['business_reference']);
+        self::assertSame('SPC-[A-Za-z0-9][A-Za-z0-9._/-]{0,95}', $form['business_reference_pattern']);
 
         $result = $service->saveDraft([
             'id' => 45, 'api_editor_context' => $form['api_editor_context'], 'internal_note' => '',
