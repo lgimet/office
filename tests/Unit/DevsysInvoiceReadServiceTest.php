@@ -80,7 +80,7 @@ final class DevsysInvoiceReadServiceTest extends TestCase
             'id' => 84, 'invoice_number' => '2026-0008', 'status' => 'issued', 'revision' => 5,
             'business_reference' => 'DEV-TEST-84', 'issue_date' => '2026-11-23', 'due_date' => '2026-12-08', 'currency' => 'EUR',
             'client' => ['name' => 'Snapshot Client', 'contact_name' => 'Snapshot Contact', 'address_line1' => '1 rue test', 'address_line2' => null, 'postal_code' => '75000', 'city' => 'Paris', 'country' => 'FR', 'phone' => null, 'email' => null, 'siret' => '123', 'vat_number' => null, 'uuid' => 'cccccccc-cccc-4ccc-8ccc-cccccccccccc'],
-            'issuer' => ['legal_name' => 'Snapshot Issuer', 'trading_name' => null, 'legal_form' => 'SAS', 'share_capital' => '1000.00', 'address_line1' => '2 rue test', 'address_line2' => null, 'postal_code' => '75001', 'city' => 'Paris', 'country' => 'FR', 'email' => null, 'phone' => null, 'website' => null, 'siret' => '456', 'siren' => '456', 'vat_number' => null, 'ape_code' => null, 'rcs_city' => 'Paris', 'bank_name' => null, 'iban' => null, 'bic' => null, 'invoice_footer' => 'Snapshot footer'],
+            'issuer' => ['legal_name' => 'Snapshot Issuer', 'trading_name' => null, 'legal_form' => 'SAS', 'share_capital' => '1000.00', 'address_line1' => '2 rue test', 'address_line2' => null, 'postal_code' => '75001', 'city' => 'Paris', 'country' => 'FR', 'email' => null, 'phone' => null, 'website' => null, 'siret' => '456', 'siren' => '456', 'vat_number' => null, 'ape_code' => null, 'rcs_city' => 'Paris', 'bank_name' => null, 'iban' => 'FR761234', 'bic' => null, 'invoice_footer' => 'Snapshot footer'],
             'amounts' => ['subtotal_excl_tax' => '10.00', 'discount_total_excl_tax' => '0.00', 'tax_total' => '2.00', 'total_incl_tax' => '12.00'],
             'lines' => [[
                 'id' => 1, 'position' => 1, 'label' => 'Service', 'description' => 'Issued snapshot', 'quantity' => '1.000', 'unit' => 'unité',
@@ -103,6 +103,7 @@ final class DevsysInvoiceReadServiceTest extends TestCase
         self::assertSame('Snapshot Client', $result['invoice']['client_name']);
         self::assertSame('Snapshot Issuer', $result['invoice']['issuer_legal_name']);
         self::assertSame('Snapshot footer', $result['invoice']['issuer_invoice_footer']);
+        self::assertSame('FR761234', $result['invoice']['issuer_iban']);
         self::assertSame('issued', $result['invoice']['status']);
         self::assertSame('Service', $result['lines'][0]['label']);
         self::assertSame('12.00', $result['invoice']['total_incl_tax']);

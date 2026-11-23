@@ -25,7 +25,7 @@ Date : 2026-11-23 (Europe/Paris)
 
 ## Validations
 
-- `composer test` : PASS, 171 tests / 516 assertions.
+- `composer test` : PASS, 171 tests / 517 assertions.
 - `composer validate --no-check-publish` : PASS avec l’avertissement préexistant d’absence de licence.
 - `composer check-platform-reqs --no-dev` : PASS sous PHP 8.4.24.
 - `composer audit --locked --no-dev` : PASS, aucun avis de vulnérabilité.

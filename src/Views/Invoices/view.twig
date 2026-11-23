@@ -59,10 +59,17 @@
             {% if invoice.issuer_address_line2 %}<span>{{ invoice.issuer_address_line2 }}</span>{% endif %}
             {% if invoice.issuer_postal_code or invoice.issuer_city %}<span>{{ invoice.issuer_postal_code }} {{ invoice.issuer_city }}</span>{% endif %}
             {% if invoice.issuer_country %}<span>{{ invoice.issuer_country }}</span>{% endif %}
+            {% if invoice.issuer_email %}<a href="mailto:{{ invoice.issuer_email }}">{{ invoice.issuer_email }}</a>{% endif %}
+            {% if invoice.issuer_phone %}<span>Tél. {{ invoice.issuer_phone }}</span>{% endif %}
+            {% if invoice.issuer_website %}<span>{{ invoice.issuer_website }}</span>{% endif %}
             {% if invoice.issuer_siret %}<small>SIRET {{ invoice.issuer_siret }}</small>{% endif %}
             {% if invoice.issuer_siren %}<small>SIREN {{ invoice.issuer_siren }}</small>{% endif %}
             {% if invoice.issuer_vat_number %}<small>TVA {{ invoice.issuer_vat_number }}</small>{% endif %}
+            {% if invoice.issuer_ape_code %}<small>Code APE {{ invoice.issuer_ape_code }}</small>{% endif %}
             {% if invoice.issuer_rcs_city %}<small>RCS {{ invoice.issuer_rcs_city }}</small>{% endif %}
+            {% if invoice.issuer_bank_name %}<small>{{ invoice.issuer_bank_name }}</small>{% endif %}
+            {% if invoice.issuer_iban %}<small>IBAN {{ invoice.issuer_iban }}</small>{% endif %}
+            {% if invoice.issuer_bic %}<small>BIC {{ invoice.issuer_bic }}</small>{% endif %}
             {% if invoice.issuer_invoice_footer %}<p>{{ invoice.issuer_invoice_footer }}</p>{% endif %}
         </section>
     {% endif %}
