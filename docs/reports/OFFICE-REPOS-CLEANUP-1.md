@@ -24,13 +24,13 @@ Before this consolidation, GitHub showed 15 Office branches and 4 open PRs. The 
 
 ### Completion update — verified 2026-11-23
 
-| Repository | Branches before → after | Open PRs before → after | Final `main` | Consolidation PR |
+| Repository | Branches before → after | Open PRs before → after | Code consolidation merge in `main` | Consolidation PR |
 |---|---:|---:|---|---|
 | `office` | 15 → 2 | 4 → 0 | `93fa76bad253091490c02e4b13823f9ee6286eb4` | [#6 merged](https://github.com/lgimet/office/pull/6) |
 | `Office-Api` | 21 → 7 | 9 → 0 | `33398b1245e610d1f53cb38020a59398bafbbba2` | [#12 merged](https://github.com/lgimet/Office-Api/pull/12) |
 | `shared` | 7 → 1 | 2 → 0 | `8eb7d2eff1ca9688bf0acc020f580bb08a98a79b` | [#5 merged](https://github.com/lgimet/shared/pull/5) |
 
-The consolidations were merged in dependency order: shared, API, Office. GitHub marked the existing API #3 and shared #3 merged because their commits were included. Other draft PRs were closed with a reference to the relevant consolidation PR.
+The consolidations were merged in dependency order: shared, API, Office. The table records each code-consolidation merge; report-only follow-up PRs #6 (shared), #13 (API), and #7 (Office) then recorded final cleanup results. GitHub marked the existing API #3 and shared #3 merged because their commits were included. Other draft PRs were closed with a reference to the relevant consolidation PR.
 
 Branches deleted were checked for ancestry in `main`; the Office UI branch with a distinct tree and API branches carrying unique reports/tools were retained. API retains `feature/office-api-inv-recette-guard-1`, `work/office-api-deploy-guard-1`, `work/office-api-db-validation-1`, and `work/office-api-reconcile-{1,2,3}`. Office retains `feature/office-ui-inv-1`. Shared has only `main`.
 
