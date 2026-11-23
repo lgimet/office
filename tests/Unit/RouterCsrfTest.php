@@ -48,6 +48,20 @@ final class RouterCsrfTest extends TestCase
         }
     }
 
+    public function testInvoiceRecipePreflightPostRequiresCsrfBeforeControllerResolution(): void
+    {
+        $sessions = new OidcSessionService();
+        $router = new Router(new AuthService($sessions, new OfficeAccessTokenProvider($sessions, $this->createMock(OidcTokenRefresher::class))));
+
+        try {
+            $router->dispatch('POST', 'Invoices/recipePreflight');
+            self::fail('Le diagnostic POST sans CSRF devait être rejeté.');
+        } catch (HttpException $exception) {
+            self::assertSame(403, $exception->getStatusCode());
+            self::assertSame('Token CSRF invalide', $exception->getMessage());
+        }
+    }
+
     public function testAuthRequiredRouteRunsAfterOneSilentRefresh(): void
     {
         $sessions = new OidcSessionService();
