@@ -6,7 +6,7 @@ Date : 2026-11-23
 ## Références
 
 - Base Office : `main` `174adb1e1ec4cc56c8062cbd0082f385912aed8a`.
-- Branche : `feature/office-invoice-facturx-1` (SHA final indiqué par le commit de livraison).
+- Branche : `feature/office-invoice-facturx-1`, commit `c288887bbbf959a919ad3e6331a440c31c2cc4d1`.
 - Base SDK déjà épinglée avant ce changement : `b845450b2d4004fa31a5e3a540184fff42c7ebba`.
 - SDK étendu utilisé par le candidat : `shared` `d2b52a83a7265b4fa158090549462ec72c26ad45`, épinglé dans `composer.lock` (pas de référence flottante).
 - Release Office constatée en lecture seule : `office-invoice-mvp2-20261123-86df387`.
