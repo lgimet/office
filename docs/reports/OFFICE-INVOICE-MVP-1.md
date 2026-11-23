@@ -6,7 +6,7 @@ Date: 2026-11-23 (Europe/Paris)
 
 - Repository: `lgimet/office`.
 - Feature branch: `feature/office-invoice-mvp-1`, based directly on refreshed `main` `34646a5229f350c3bcd5a9fe120eb9e48d3840ea`.
-- Implementation commit: `fe28d7bda82022f7f9f48a82077d36f9d9c4499d`.
+- Implementation commits: `fe28d7bda82022f7f9f48a82077d36f9d9c4499d`, `1c2d9cb` (browser-compatible source prefix pattern).
 - Draft PR: [#9](https://github.com/lgimet/office/pull/9), base `main`, state open/draft, GitHub reported mergeable/clean at report time; no CI checks were attached.
 - Office `composer.lock` SHA-256: `a7a7a5941baca4d2b4e782894f5d8f5e2292a05b0f0374d291c1490a33991cc5`.
 - The locked SDK and the physically installed SDK source both resolve to `b845450b2d4004fa31a5e3a540184fff42c7ebba`; no floating branch or mutable `../shared` path is used.
@@ -19,11 +19,12 @@ Date: 2026-11-23 (Europe/Paris)
 - Cross-source drafts remain read-only unless that API capability is present. API update continues through `InvoiceDraftApiInterface` / the installed SDK with Office as editor source, opening ETag, idempotency context and retry payload protection.
 - API-owned drafts never fall back to the legacy SQL service when disabled, stale, missing provenance, or on API failure. The existing SQL behavior for historical invoices remains unchanged. Issue and delete stay unavailable for API invoices.
 - Existing source business references are displayed with their origin label. Office permits the known `SPC-` and `STI-` forms for their respective origins, preserves omission, and supports explicit clearing. MenuFlow has no defined prefix: its existing reference is read-only in the form; users may preserve or explicitly clear it. No prefix was invented.
+- The HTML validation pattern is built only from the closed set of known prefixes; unknown source prefixes do not get a fabricated browser pattern.
 - Added tests for denied foreign-source form, authorized Office admin update without origin spoofing or SQL fallback, reference preservation and replacement, and retry behavior.
 
 ## Validation
 
-- `composer test`: PASS — 167 tests, 487 assertions. (Initial run before the final replacement test was 166 tests / 484 assertions.)
+- `composer test`: PASS — 167 tests, 490 assertions.
 - `composer validate --no-check-publish`: PASS with existing missing-license warning.
 - `composer check-platform-reqs --no-dev`: PASS on PHP 8.4.24.
 - `composer audit --locked --no-dev`: PASS, no production advisories.
