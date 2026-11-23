@@ -1,8 +1,8 @@
 # OFFICE-INVOICE-WEB-DEPLOY-1
 
 **Date:** 2026-11-23 (Europe/Paris)  
-**Decision:** `READY_FOR_WEB_GO`  
-**Deployment state:** not deployed; no production pointer, vhost, service, or flag was changed.
+**Decision:** `DEPLOYED`
+**Deployment state:** deployed read-only on 2026-11-23; authenticated invoice workflow was not tested because no operator session was available.
 
 ## Source and release identity
 
@@ -81,7 +81,7 @@ The dashboard CSS checksum matches the currently served file. The invoice JavaSc
 
 These anonymous probes do not demonstrate a successful authenticated Office/OIDC session or invoice read. No authenticated session was available, so those checks remain `NOT_RUN`.
 
-## Proposed activation and rollback (not executed)
+## Planned activation and rollback (before the GO)
 
 The vhost currently uses a symlink path, while PHP-FPM's realpath cache has a 120-second TTL. For a future separately approved change, use the absolute candidate path in the Office vhost to make the requested code target explicit:
 
@@ -94,7 +94,56 @@ The dry-run found exactly four path substitutions in the Office vhost (the HTTP/
 
 Rollback: atomically point `current` back to `office-php84-20261122-7f84691-83e5b7d`, restore the fresh vhost backup byte-for-byte, run `apachectl configtest`, and gracefully reload Apache if the vhost changed. Recheck Office and witness GET baselines. Do not touch the database or delete either release.
 
-No switch dry-run script is installed for Office; the non-mutating dry-run was an exact-path replacement assertion against the current vhost bytes. No active config write, symlink change, service reload, HTTP mutation, invoice creation/update/issue/delete, SQL, or deployment occurred.
+No switch dry-run script is installed for Office; the non-mutating dry-run was an exact-path replacement assertion against the current vhost bytes. During that preparation stage, no active config write, symlink change, service reload, HTTP mutation, SQL or invoice operation occurred. The separately authorized activation is recorded below.
+
+## Production activation and read-only checks
+
+The operator gave a distinct GO for this exact Office release and SHA-256. The final preflight immediately before change confirmed the archive hash, the existing release tree, `www-data` readability, the old `current` target, the expected vhost hash, Apache/FPM configuration tests, and flags. A fresh vhost backup was created at:
+
+`/home/devsys/office-deploy/backups/office-invoice-web-20261123-64b6b29-0661b92-deploy/office.devsys.fr.conf.before`
+
+Its SHA-256 is the same as the pre-change active vhost: `7e0fe3fee37e0012c16896bcbad7d7deebbbed595aa2755c4437fff4ed311929`.
+
+At approximately 04:44 Europe/Paris, only the four `DocumentRoot`/`<Directory>` path values in `/etc/apache2/sites-enabled/office.devsys.fr.conf` were replaced with the absolute candidate path. The exact inverse replacement restores the pre-change file. `apachectl configtest` returned `Syntax OK`; one `systemctl reload apache2.service` completed. PHP-FPM was not reloaded or restarted. The `current` symlink was then atomically changed to the candidate release.
+
+Post-switch state:
+
+- `current` resolves to `/home/devsys/office-deploy/releases/office-invoice-web-20261123-64b6b29-0661b92`.
+- The four Office vhost path directives use `/home/devsys/office-deploy/releases/office-invoice-web-20261123-64b6b29-0661b92/public`.
+- Active vhost SHA-256: `7e43eb0b0596f09f0a5d3fb2b029189193c4ca419377fc67c85f68fb07305c59`.
+- Apache and PHP-FPM 8.4 remain active; active release entrypoint and Composer autoloader remain readable by `www-data`.
+- The archive SHA remains `121801a14bec6f912807bbeec7e08cf399ca2a041301e4ff1786afbd9b4d6851`.
+
+Read-only GET checks at 04:45–04:47 Europe/Paris:
+
+| Request | Result |
+|---|---|
+| Office `/` | 302 to the existing login flow. |
+| Office `/auth/oidc/login?return_to=%2Fdashboard` | 302; no interactive login was completed. |
+| Office dashboard CSS `/assets/css/dashboard.css` | 200; SHA-256 `18b518a05919af7fd981a2ed0459318b9e409e790634776eaec86ca953ae3b9f`, matching candidate. |
+| Office login CSS `/assets/css/login.css` | 200; SHA-256 `b119e224cb980478c598a8b8176f5e4db94d58f679313d2a36bff07ef515ef09`, matching candidate. |
+| Office invoice JS `/assets/js/Object/Invoices.js` | 200; Office prepends its existing dynamic `DEBUG` comment. After that three-line comment, the response matches the candidate file byte-for-byte; candidate payload SHA-256 `6a189e2253b3ca7f0d61dbbf541789be133235ff9862ed1392e971a5b3e94c52`. |
+| Office `/Invoices/data` without session | 401, expected authentication protection. |
+| Office `/Invoices/list` with GET | 405, expected route method protection; no mutation was attempted. |
+| API `/api/v1/health` | 200. |
+| API `/api/v1/invoices` without bearer | 401, expected authentication protection. |
+| Login OIDC discovery | 200. |
+| SpotCard witness root | 404, matching pre-switch baseline. |
+| MenuFlow witness root | 200, matching pre-switch baseline. |
+
+The recent Office error log had no PHP fatal entries or unexpected 5xx evidence. FCGI error-log records at probe time correspond to the expected anonymous authentication refusal and GET method refusal; their source paths resolve to the candidate release. No authenticated OIDC session or invoice list/detail GET was available, so those are `NOT_RUN`; the successful anonymous checks do not claim authenticated functionality was exercised. API health and unauthenticated access control were verified, but an authenticated Office-to-API invoice read was not.
+
+Flags after deployment, inspected without printing unrelated environment values:
+
+- `OFFICE_INVOICE_DRAFT_WRITE_API_ENABLED=false`.
+- `OFFICE_INVOICE_READ_API_ENABLED=true` (preserved).
+- API `INVOICE_WRITES_ENABLED` and `INVOICE_WRITE_SOURCES` are absent from the external environment; the active API code defaults the write gate to false and the allowlist to empty. The recipe guard setting is absent and defaults OFF. No flag changed.
+
+No invoice/client data was created or changed. No SQL, migration, scope, OAuth configuration, API/login vhost, other application, or PHP-FPM service was modified. No rollback condition was met; deployment remains active.
+
+### Rollback if a later issue is found
+
+The former release is retained at `/home/devsys/office-deploy/releases/office-php84-20261122-7f84691-83e5b7d`. Restore `current` atomically to that target, restore the fresh vhost backup above byte-for-byte, run `apachectl configtest`, and gracefully reload Apache if the vhost file changed. Then recheck Office, API health, OIDC discovery, and witness GET baselines. Do not restore or modify the database and do not remove either release.
 
 ## Operator approval still required
 
