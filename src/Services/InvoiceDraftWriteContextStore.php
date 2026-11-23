@@ -49,6 +49,42 @@ final class InvoiceDraftWriteContextStore
         return $token;
     }
 
+    /** Reuse one session-bound idempotency key for this invoice across retries and form reloads. */
+    public function newIssueContext(int $invoiceId): string
+    {
+        if ($invoiceId < 1) throw new \InvalidArgumentException('La facture demandée est invalide.');
+        $owner = $this->owner();
+        foreach ($this->all() as $token => $context) {
+            if (($context['type'] ?? null) === 'issue'
+                && ($context['invoice_id'] ?? null) === $invoiceId
+                && hash_equals((string) ($context['owner'] ?? ''), $owner)
+                && is_string($context['idempotency_key'] ?? null)) {
+                return (string) $token;
+            }
+        }
+
+        $token = bin2hex(random_bytes(32));
+        $this->put($token, [
+            'type' => 'issue',
+            'created_at' => time(),
+            'invoice_id' => $invoiceId,
+            'idempotency_key' => 'office-issue-' . bin2hex(random_bytes(32)),
+        ]);
+
+        return $token;
+    }
+
+    public function issueKey(string $token, int $invoiceId): string
+    {
+        $context = $this->get($token, 'issue', $invoiceId);
+        $key = $context['idempotency_key'] ?? null;
+        if (!is_string($key) || preg_match('/^office-issue-[a-f0-9]{64}$/D', $key) !== 1) {
+            throw new \LogicException('La tentative d’émission a expiré. Rechargez la facture.');
+        }
+
+        return $key;
+    }
+
     /** @return array<string, mixed> */
     public function get(string $token, string $type, ?int $invoiceId = null): array
     {

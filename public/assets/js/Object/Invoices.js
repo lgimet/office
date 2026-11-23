@@ -83,10 +83,11 @@ export default class Invoices extends Core {
                 const lines = this.bodyRef.invoice_lines;
                 const apiMode = json.data?.api_mode === true;
                 const apiWritable = json.data?.api_writable === true;
+                const apiCanIssue = json.data?.api_can_issue === true;
                 if (apiMode && !apiWritable) form.inert = true;
                 const record = this.resolveWindowRecord(form.closest(".window")?.id);
                 if (record) {
-                    record.actions = this.formActions(id, { apiMode, apiWritable });
+                    record.actions = this.formActions(id, { apiMode, apiWritable, apiCanIssue });
                     this.renderWindowFooter(record);
                 }
 
@@ -111,7 +112,7 @@ export default class Invoices extends Core {
         });
     }
 
-    formActions(id = null, { apiMode = false, apiWritable = true } = {}) {
+    formActions(id = null, { apiMode = false, apiWritable = true, apiCanIssue = false } = {}) {
         const actions = [];
 
         if (id && !apiMode) {
@@ -130,12 +131,12 @@ export default class Invoices extends Core {
             callback: () => this.save(),
         });
 
-        if (id && !apiMode) {
+        if (id && (!apiMode || apiCanIssue)) {
             actions.push({
                 label: "Émettre la facture",
                 className: "m-btn m-btn--primary",
                 icon: "bi-send-check",
-                callback: (record) => this.issue(id, record),
+                callback: (record) => this.issue(id, record, apiMode),
             });
         }
 
@@ -583,17 +584,19 @@ export default class Invoices extends Core {
         });
     }
 
-    async issue(id, windowRecord = null) {
+    async issue(id, windowRecord = null, apiMode = false) {
         const form = this.bodyRef.invoice_form;
 
         if (this.invoiceSaving || form.inert) return;
 
-        if (!form.reportValidity()) return;
+        if (!apiMode && !form.reportValidity()) return;
 
         this.setInvoiceBusy(form, true);
         const confirmed = await UI.confirm({
             type: "warning",
-            message: "Émettre cette facture ?<br><br>Un numéro définitif va lui être attribué. Après émission, elle ne pourra plus être modifiée ni supprimée comme un brouillon.",
+            message: apiMode
+                ? "Émettre la dernière version enregistrée de cette facture ?<br><br>L’API attribuera un numéro légal définitif. Les modifications non enregistrées ne seront pas incluses. Après émission, la facture sera consultable en lecture seule."
+                : "Émettre cette facture ?<br><br>Un numéro définitif va lui être attribué. Après émission, elle ne pourra plus être modifiée ni supprimée comme un brouillon.",
             yesText: "Émettre",
             noText: "Annuler",
         });
@@ -603,13 +606,17 @@ export default class Invoices extends Core {
             return;
         }
 
-        const data = this.collectFormData(form);
+        const data = apiMode
+            ? { id, api_issue_context: form.querySelector('[name="api_issue_context"]')?.value || "" }
+            : this.collectFormData(form);
         data.id = id;
-        data.lines = [...this.bodyRef.invoice_lines.querySelectorAll(".invoice-line-row")].map((row) => (
-            Object.fromEntries(
-                [...row.querySelectorAll("input, select")].map((field) => [field.name, field.value])
-            )
-        ));
+        if (!apiMode) {
+            data.lines = [...this.bodyRef.invoice_lines.querySelectorAll(".invoice-line-row")].map((row) => (
+                Object.fromEntries(
+                    [...row.querySelectorAll("input, select")].map((field) => [field.name, field.value])
+                )
+            ));
+        }
 
         this.callAction("issue", data, {
             callback: (json) => {

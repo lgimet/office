@@ -477,6 +477,62 @@ final class DevsysInvoiceDraftServiceTest extends TestCase
         ], 46);
     }
 
+    public function testApiDevSysIssueUsesOneSessionBoundKeyAcrossUncertainRetryAndNeverUsesSql(): void
+    {
+        $_ENV['OFFICE_INVOICE_DRAFT_WRITE_API_ENABLED'] = 'true';
+        $api = $this->api();
+        $draft = $this->details(51, 'api', 'devsys');
+        $api->expects(self::exactly(4))->method('get')->with(51)->willReturn($draft);
+        $keys = [];
+        $api->expects(self::exactly(2))->method('issue')->willReturnCallback(function (int $id, string $key, string $source) use (&$keys) {
+            self::assertSame(51, $id);
+            self::assertSame('devsys', $source);
+            $keys[] = $key;
+            if (count($keys) === 1) throw new DevsysApiNetworkException('timeout');
+            return new InvoiceCommandResult(['id' => 51, 'status' => 'issued', 'invoice_number' => '2026-0007'], false, 'hash', 'devsys', null, false);
+        });
+        $legacy = $this->legacy();
+        $legacy->expects(self::never())->method('form');
+        $legacy->expects(self::never())->method('issueDraft');
+        $service = $this->service($api, $legacy);
+        $form = $service->form(51);
+        self::assertNotEmpty($form['api_issue_context']);
+        self::assertSame($form['api_issue_context'], $service->form(51)['api_issue_context']);
+        $input = ['id' => 51, 'api_issue_context' => $form['api_issue_context']];
+
+        try {
+            $service->issueDraft($input, 51);
+            self::fail('Expected the first issue request to time out.');
+        } catch (DevsysApiNetworkException) {
+        }
+
+        self::assertSame('2026-0007', $service->issueDraft($input, 51));
+        self::assertSame($keys[0], $keys[1]);
+        self::assertMatchesRegularExpression('/^office-issue-[a-f0-9]{64}$/', $keys[0]);
+    }
+
+    public function testApiIssueIsRestrictedToDevSysOriginAndIssuedReplayReadsExistingNumber(): void
+    {
+        $_ENV['OFFICE_INVOICE_DRAFT_WRITE_API_ENABLED'] = 'true';
+        $api = $this->api();
+        $api->expects(self::exactly(2))->method('get')->willReturnOnConsecutiveCalls(
+            $this->details(52, 'api', 'spotcard'),
+            $this->details(53, 'api', 'devsys', 3, null, true, 'issued', '2026-0012'),
+        );
+        $api->expects(self::never())->method('issue');
+        $legacy = $this->legacy();
+        $legacy->expects(self::never())->method('issueDraft');
+        $service = $this->service($api, $legacy);
+
+        try {
+            $service->issueDraft(['id' => 52], 52);
+            self::fail('Office must not issue a foreign-source API draft.');
+        } catch (\LogicException $exception) {
+            self::assertStringContainsString('créés par DevSys', $exception->getMessage());
+        }
+        self::assertSame('2026-0012', $service->issueDraft(['id' => 53], 53));
+    }
+
     public function testActionAvailabilityMarksApiActionsUnavailableAndHistoricalActionsAvailable(): void
     {
         $_ENV['OFFICE_INVOICE_DRAFT_WRITE_API_ENABLED'] = 'false';
@@ -534,10 +590,10 @@ final class DevsysInvoiceDraftServiceTest extends TestCase
         return $this->getMockBuilder(InvoiceService::class)->disableOriginalConstructor()->onlyMethods(['form', 'saveDraft', 'issueDraft', 'deleteDraft'])->getMock();
     }
 
-    private function details(int $id, ?string $kind, ?string $sourceApp = null, int $revision = 3, ?string $businessReference = null, ?bool $updateEligible = null): InvoiceDetails
+    private function details(int $id, ?string $kind, ?string $sourceApp = null, int $revision = 3, ?string $businessReference = null, ?bool $updateEligible = null, string $status = 'draft', ?string $invoiceNumber = null): InvoiceDetails
     {
         $invoice = [
-            'id' => $id, 'invoice_number' => null, 'status' => 'draft', 'revision' => $revision,
+            'id' => $id, 'invoice_number' => $invoiceNumber, 'status' => $status, 'revision' => $revision,
             'business_reference' => $businessReference,
             'issue_date' => '2026-11-21', 'due_date' => null, 'currency' => 'EUR',
             'client' => ['name' => 'Snapshot Client', 'uuid' => 'cccccccc-cccc-4ccc-8ccc-cccccccccccc'],
@@ -550,7 +606,7 @@ final class DevsysInvoiceDraftServiceTest extends TestCase
                 'line_subtotal_excl_tax' => '10.00', 'line_discount_excl_tax' => '0.00', 'line_tax_total' => '2.00', 'line_total_incl_tax' => '12.00',
             ]],
             'payment_terms_code' => 'days_15', 'payment_terms' => 'Sous 15 jours', 'payment_method' => 'CB', 'public_note' => null,
-            'created_at' => '2026-11-21T00:00:00Z', 'issued_at' => null, 'cancelled_at' => null,
+            'created_at' => '2026-11-21T00:00:00Z', 'issued_at' => $status === 'issued' ? '2026-11-21T00:00:00Z' : null, 'cancelled_at' => null,
             'origin' => $kind === null ? null : ['kind' => $kind, 'source_app' => $sourceApp, 'api_update_eligible_for_source' => $updateEligible ?? ($kind === 'api' && $sourceApp === 'devsys')],
         ];
         if ($kind === null) unset($invoice['origin']);

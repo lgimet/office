@@ -74,6 +74,61 @@ final class DevsysInvoiceReadServiceTest extends TestCase
         }
     }
 
+    public function testIssuedApiViewUsesFrozenClientAndIssuerSnapshotsAndDisablesUnsupportedPdf(): void
+    {
+        $invoice = [
+            'id' => 84, 'invoice_number' => '2026-0008', 'status' => 'issued', 'revision' => 5,
+            'business_reference' => 'DEV-TEST-84', 'issue_date' => '2026-11-23', 'due_date' => '2026-12-08', 'currency' => 'EUR',
+            'client' => ['name' => 'Snapshot Client', 'contact_name' => 'Snapshot Contact', 'address_line1' => '1 rue test', 'address_line2' => null, 'postal_code' => '75000', 'city' => 'Paris', 'country' => 'FR', 'phone' => null, 'email' => null, 'siret' => '123', 'vat_number' => null, 'uuid' => 'cccccccc-cccc-4ccc-8ccc-cccccccccccc'],
+            'issuer' => ['legal_name' => 'Snapshot Issuer', 'trading_name' => null, 'legal_form' => 'SAS', 'share_capital' => '1000.00', 'address_line1' => '2 rue test', 'address_line2' => null, 'postal_code' => '75001', 'city' => 'Paris', 'country' => 'FR', 'email' => null, 'phone' => null, 'website' => null, 'siret' => '456', 'siren' => '456', 'vat_number' => null, 'ape_code' => null, 'rcs_city' => 'Paris', 'bank_name' => null, 'iban' => 'FR761234', 'bic' => null, 'invoice_footer' => 'Snapshot footer'],
+            'amounts' => ['subtotal_excl_tax' => '10.00', 'discount_total_excl_tax' => '0.00', 'tax_total' => '2.00', 'total_incl_tax' => '12.00'],
+            'lines' => [[
+                'id' => 1, 'position' => 1, 'label' => 'Service', 'description' => 'Issued snapshot', 'quantity' => '1.000', 'unit' => 'unité',
+                'unit_price_excl_tax' => '10.00', 'discount_type' => null, 'discount_value' => null, 'discount_note' => null, 'tax_rate' => '20.00',
+                'line_subtotal_excl_tax' => '10.00', 'line_discount_excl_tax' => '0.00', 'line_tax_total' => '2.00', 'line_total_incl_tax' => '12.00',
+            ]],
+            'payment_terms_code' => 'days_15', 'payment_terms' => 'Sous 15 jours', 'payment_method' => 'Virement', 'public_note' => 'Snapshot note',
+            'created_at' => '2026-11-23T09:00:00Z', 'issued_at' => '2026-11-23T10:00:00Z', 'cancelled_at' => null,
+            'origin' => ['kind' => 'api', 'source_app' => 'devsys', 'api_update_eligible_for_source' => false],
+        ];
+        $history = [];
+        $client = $this->client($history, new Response(200, ['ETag' => '"5"'], json_encode(['success' => true, 'data' => ['invoice' => $invoice]], JSON_THROW_ON_ERROR)));
+
+        $result = (new DevsysInvoiceReadService(new InvoicesApi($client)))->view(84);
+
+        self::assertSame('api', $result['source']);
+        self::assertFalse($result['pdf_enabled']);
+        self::assertSame('2026-0008', $result['invoice']['invoice_number']);
+        self::assertSame('DEV-TEST-84', $result['invoice']['business_reference']);
+        self::assertSame('Snapshot Client', $result['invoice']['client_name']);
+        self::assertSame('Snapshot Issuer', $result['invoice']['issuer_legal_name']);
+        self::assertSame('Snapshot footer', $result['invoice']['issuer_invoice_footer']);
+        self::assertSame('FR761234', $result['invoice']['issuer_iban']);
+        self::assertSame('issued', $result['invoice']['status']);
+        self::assertSame('Service', $result['lines'][0]['label']);
+        self::assertSame('12.00', $result['invoice']['total_incl_tax']);
+    }
+
+    public function testUnknownApiProvenanceDoesNotFallBackToLocalInvoiceData(): void
+    {
+        $invoice = [
+            'id' => 85, 'invoice_number' => '2026-0009', 'status' => 'issued', 'revision' => 1,
+            'business_reference' => null, 'issue_date' => '2026-11-23', 'due_date' => null, 'currency' => 'EUR',
+            'client' => ['name' => 'Snapshot Client'], 'issuer' => ['legal_name' => 'Issuer'],
+            'amounts' => ['subtotal_excl_tax' => '1.00', 'discount_total_excl_tax' => '0.00', 'tax_total' => '0.00', 'total_incl_tax' => '1.00'],
+            'lines' => [], 'payment_terms_code' => null, 'payment_terms' => null, 'payment_method' => null, 'public_note' => null,
+            'created_at' => null, 'issued_at' => null, 'cancelled_at' => null,
+        ];
+        $history = [];
+        $client = $this->client($history, new Response(200, ['ETag' => '"1"'], json_encode(['success' => true, 'data' => ['invoice' => $invoice]], JSON_THROW_ON_ERROR)));
+        try {
+            (new DevsysInvoiceReadService(new InvoicesApi($client)))->view(85);
+            self::fail('Unknown invoice provenance must fail closed.');
+        } catch (\LogicException $exception) {
+            self::assertStringContainsString('provenance', $exception->getMessage());
+        }
+    }
+
     private function client(array &$history, Response $response): DevsysApiClient
     {
         $stack = HandlerStack::create(new MockHandler([$response]));

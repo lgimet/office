@@ -75,12 +75,13 @@
     >
         <input type="hidden" name="id" value="{{ invoice.id ?? '' }}">
         <input type="hidden" name="api_editor_context" value="{{ api_editor_context|default('') }}">
+        <input type="hidden" name="api_issue_context" value="{{ api_issue_context|default('') }}">
         <input type="hidden" name="api_creation_context" value="{{ api_creation_context|default('') }}">
 
         {% if api_mode %}
             <p class="invoice-api-notice" role="status">
                 {% if api_writable %}
-                    {% if invoice %}Brouillon géré par l’API{% else %}Cette création sera gérée par l’API{% endif %} : seule la sauvegarde est disponible. L’émission et la suppression restent désactivées.
+                    {% if invoice %}Brouillon géré par l’API{% else %}Cette création sera gérée par l’API{% endif %} : la sauvegarde est disponible{% if api_issue_context %} et l’émission définitive est proposée pour les brouillons DevSys{% endif %}. La suppression reste désactivée.
                 {% else %}
                     Brouillon géré par l’API, ouvert en lecture seule. La version API ou l’autorisation d’écriture n’est pas disponible.
                 {% endif %}
