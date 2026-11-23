@@ -330,7 +330,7 @@ final class DevsysInvoiceDraftServiceTest extends TestCase
             ], 51);
             self::fail('A source-specific reference from another application must be refused.');
         } catch (\InvalidArgumentException $exception) {
-            self::assertStringContainsString('DEV-', $exception->getMessage());
+            self::assertStringContainsString('source d’origine', $exception->getMessage());
         }
     }
 
@@ -399,6 +399,84 @@ final class DevsysInvoiceDraftServiceTest extends TestCase
         }
     }
 
+    public function testForeignSourceApiDraftIsReadOnlyWithoutServerCapability(): void
+    {
+        $_ENV['OFFICE_INVOICE_DRAFT_WRITE_API_ENABLED'] = 'true';
+        $api = $this->api();
+        $api->expects(self::once())->method('get')->with(44)->willReturn($this->details(44, 'api', 'spotcard', 3, 'SPC-REC-44'));
+        $api->expects(self::never())->method('updateDraft');
+        $legacy = $this->legacy();
+        $legacy->expects(self::never())->method('form');
+        $legacy->expects(self::never())->method('saveDraft');
+
+        try {
+            $this->service($api, $legacy)->form(44);
+            self::fail('A same-tenant read without the API capability must not grant edit access.');
+        } catch (\LogicException $exception) {
+            self::assertStringContainsString('ne peut pas être modifiée', $exception->getMessage());
+        }
+    }
+
+    public function testAuthorizedOfficeTenantAdminUpdatesForeignDraftThroughApiAndPreservesOriginReference(): void
+    {
+        $_ENV['OFFICE_INVOICE_DRAFT_WRITE_API_ENABLED'] = 'true';
+        $details = $this->details(45, 'api', 'spotcard', 3, 'SPC-REC-45', true);
+        $api = $this->api();
+        $api->expects(self::exactly(2))->method('get')->with(45)->willReturn($details);
+        $api->expects(self::once())->method('updateDraft')->willReturnCallback(function ($id, $request, $key, $etag) {
+            self::assertSame(45, $id);
+            self::assertSame('devsys', $request->sourceApp, 'Office authenticates as the editor; it does not impersonate the origin.');
+            self::assertSame('"3"', $etag);
+            self::assertArrayNotHasKey('business_reference', $request->toPayload(), 'The SPC reference is preserved by omission.');
+            self::assertMatchesRegularExpression('/^office-update-[a-f0-9]{64}$/', $key);
+            return new InvoiceDraftUpdateResult(['id' => 45, 'status' => 'draft', 'revision' => 4], 4, '"4"', false, 'hash', 'devsys');
+        });
+        $legacy = $this->legacy();
+        $legacy->expects(self::never())->method('form');
+        $legacy->expects(self::never())->method('saveDraft');
+        $service = $this->service($api, $legacy);
+        $form = $service->form(45);
+        self::assertTrue($form['api_mode']);
+        self::assertTrue($form['api_writable']);
+        self::assertSame('SPC-REC-45', $form['invoice']['business_reference']);
+        self::assertSame('SPC-[A-Za-z0-9][A-Za-z0-9._/-]{0,95}', $form['business_reference_pattern']);
+
+        $result = $service->saveDraft([
+            'id' => 45, 'api_editor_context' => $form['api_editor_context'], 'internal_note' => '',
+            'client_uuid' => 'cccccccc-cccc-4ccc-8ccc-cccccccccccc', 'issue_date' => '2026-11-21',
+            'business_reference' => 'SPC-REC-45', 'business_reference_intent' => 'preserve',
+            'lines' => [['label' => 'Consulting', 'quantity' => '1', 'unit_price_excl_tax' => '10', 'tax_rate' => '20']],
+        ], 45);
+
+        self::assertSame(['id' => 45, 'api_mode' => true, 'reload_required' => true], $result);
+    }
+
+    public function testAuthorizedOfficeAdminCanReplaceForeignReferenceUsingItsOriginPrefix(): void
+    {
+        $_ENV['OFFICE_INVOICE_DRAFT_WRITE_API_ENABLED'] = 'true';
+        $api = $this->api();
+        $details = $this->details(46, 'api', 'spotcard', 3, 'SPC-OLD', true);
+        $api->expects(self::exactly(2))->method('get')->with(46)->willReturn($details);
+        $api->expects(self::once())->method('updateDraft')->willReturnCallback(function ($id, $request) {
+            self::assertSame(46, $id);
+            self::assertSame('devsys', $request->sourceApp);
+            self::assertSame('SPC-NEW', $request->toPayload()['business_reference']);
+
+            return new InvoiceDraftUpdateResult(['id' => 46, 'status' => 'draft', 'revision' => 4], 4, '"4"', false, 'hash', 'devsys');
+        });
+        $legacy = $this->legacy();
+        $legacy->expects(self::never())->method('saveDraft');
+        $service = $this->service($api, $legacy);
+        $form = $service->form(46);
+
+        $service->saveDraft([
+            'id' => 46, 'api_editor_context' => $form['api_editor_context'], 'internal_note' => '',
+            'client_uuid' => 'cccccccc-cccc-4ccc-8ccc-cccccccccccc', 'issue_date' => '2026-11-21',
+            'business_reference' => 'SPC-NEW', 'business_reference_intent' => 'set',
+            'lines' => [['label' => 'Consulting', 'quantity' => '1', 'unit_price_excl_tax' => '10', 'tax_rate' => '20']],
+        ], 46);
+    }
+
     public function testActionAvailabilityMarksApiActionsUnavailableAndHistoricalActionsAvailable(): void
     {
         $_ENV['OFFICE_INVOICE_DRAFT_WRITE_API_ENABLED'] = 'false';
@@ -456,7 +534,7 @@ final class DevsysInvoiceDraftServiceTest extends TestCase
         return $this->getMockBuilder(InvoiceService::class)->disableOriginalConstructor()->onlyMethods(['form', 'saveDraft', 'issueDraft', 'deleteDraft'])->getMock();
     }
 
-    private function details(int $id, ?string $kind, ?string $sourceApp = null, int $revision = 3, ?string $businessReference = null): InvoiceDetails
+    private function details(int $id, ?string $kind, ?string $sourceApp = null, int $revision = 3, ?string $businessReference = null, ?bool $updateEligible = null): InvoiceDetails
     {
         $invoice = [
             'id' => $id, 'invoice_number' => null, 'status' => 'draft', 'revision' => $revision,
@@ -473,7 +551,7 @@ final class DevsysInvoiceDraftServiceTest extends TestCase
             ]],
             'payment_terms_code' => 'days_15', 'payment_terms' => 'Sous 15 jours', 'payment_method' => 'CB', 'public_note' => null,
             'created_at' => '2026-11-21T00:00:00Z', 'issued_at' => null, 'cancelled_at' => null,
-            'origin' => $kind === null ? null : ['kind' => $kind, 'source_app' => $sourceApp, 'api_update_eligible_for_source' => $kind === 'api' && $sourceApp === 'devsys'],
+            'origin' => $kind === null ? null : ['kind' => $kind, 'source_app' => $sourceApp, 'api_update_eligible_for_source' => $updateEligible ?? ($kind === 'api' && $sourceApp === 'devsys')],
         ];
         if ($kind === null) unset($invoice['origin']);
         return InvoiceDetails::fromApiResponse(new DevsysApiResponse(200, ['ETag' => ['"' . $revision . '"']], ['success' => true, 'data' => ['invoice' => $invoice]], 'request-safe'));

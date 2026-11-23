@@ -37,9 +37,9 @@ final class DevsysInvoiceDraftService
         if ($details->origin->kind === 'historical') {
             return ['api_mode' => false, 'can_edit' => true, 'can_issue' => true, 'can_delete' => true];
         }
-        $apiDevSys = $details->origin->sourceApp === 'devsys';
+        $apiOwned = $details->origin->kind === 'api';
         $updateContractReady = false;
-        if ($apiDevSys && $this->enabled()) {
+        if ($apiOwned && $this->enabled()) {
             try {
                 $this->assertUpdateContractReady();
                 $updateContractReady = true;
@@ -49,7 +49,7 @@ final class DevsysInvoiceDraftService
         }
         return [
             'api_mode' => true,
-            'can_edit' => $apiDevSys && $this->enabled() && $updateContractReady && $this->eligible($details),
+            'can_edit' => $apiOwned && $this->enabled() && $updateContractReady && $this->eligible($details),
             'can_issue' => false,
             'can_delete' => false,
         ];
@@ -63,6 +63,10 @@ final class DevsysInvoiceDraftService
             $form = $this->legacy->form();
             $form['api_mode'] = $this->enabled();
             $form['api_writable'] = $this->enabled();
+            $form['business_reference_prefix'] = 'DEV-';
+            $form['business_reference_source_label'] = 'DevSys';
+            $form['business_reference_pattern'] = 'DEV-[A-Za-z0-9][A-Za-z0-9._/-]{0,95}';
+            $form['business_reference_locked'] = false;
             $form['api_editor_context'] = '';
             $form['api_creation_context'] = $this->enabled() ? $this->contexts->newCreateContext() : '';
             return $form;
@@ -79,14 +83,21 @@ final class DevsysInvoiceDraftService
             $form['api_creation_context'] = '';
             return $form;
         }
-        if ($origin !== 'api/devsys') {
-            throw new \LogicException('Cette facture appartient à une autre source et ne peut pas être modifiée depuis Office.');
-        }
-
         $this->assertUpdateContractReady();
+        if (!$this->eligible($details)) {
+            throw new \LogicException('Cette facture API ne peut pas être modifiée par cet utilisateur Office dans le tenant courant.');
+        }
         $form = $this->formFromDetails($details);
+        $form['business_reference_prefix'] = $this->businessReferencePrefix($details->origin->sourceApp);
+        $form['business_reference_source_label'] = match ($details->origin->sourceApp) {
+            'devsys' => 'DevSys', 'spotcard' => 'SpotCard', 'stationid' => 'StationID', 'menuflow' => 'MenuFlow', default => 'source inconnue',
+        };
+        $form['business_reference_locked'] = $form['business_reference_prefix'] === null;
+        $form['business_reference_pattern'] = $form['business_reference_prefix'] === null
+            ? null
+            : $form['business_reference_prefix'].'[A-Za-z0-9][A-Za-z0-9._/-]{0,95}';
         $form['api_mode'] = true;
-        $form['api_writable'] = $this->enabled() && $this->eligible($details);
+        $form['api_writable'] = $this->enabled();
         $form['api_editor_context'] = $form['api_writable']
             ? $this->contexts->newEditorContext($id, (string) $details->etag, (int) $details->revision)
             : '';
@@ -115,15 +126,12 @@ final class DevsysInvoiceDraftService
         if ($origin === 'historical') {
             return ['id' => $this->legacy->saveDraft($input, $id), 'api_mode' => false];
         }
-        if ($origin !== 'api/devsys') {
-            throw new \LogicException('La provenance de cette facture interdit toute modification Office.');
-        }
         if (!$this->enabled()) {
             throw new \LogicException('La modification API est désactivée. Aucune écriture SQL n’a été tentée.');
         }
         $this->assertUpdateContractReady();
         if (!$this->eligible($details)) {
-            throw new \LogicException('L’API ne déclare pas ce brouillon modifiable par Office. Rechargez-le.');
+            throw new \LogicException('L’API ne déclare pas ce brouillon modifiable par cet utilisateur Office. Rechargez-le.');
         }
         if (trim((string) ($input['internal_note'] ?? '')) !== '') {
             throw new \InvalidArgumentException('La note interne n’est pas prise en charge par les brouillons API. Effacez-la explicitement ou utilisez une facture historique.');
@@ -134,7 +142,7 @@ final class DevsysInvoiceDraftService
         if (($context['stale'] ?? false) === true) {
             throw new \LogicException('La facture a changé depuis son ouverture. Fermez et rouvrez le brouillon pour recharger sa version.');
         }
-        $payload = $this->updatePayload($input, $details->businessReference);
+        $payload = $this->updatePayload($input, (string) $details->origin?->sourceApp);
         $payloadHash = hash('sha256', json_encode($payload, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
         if (is_array($context['pending_payload'] ?? null) && !hash_equals((string) $context['pending_payload']['hash'], $payloadHash)) {
             throw new \LogicException('Une sauvegarde API précédente est incertaine. Réessayez exactement les mêmes valeurs, ou rechargez le brouillon.');
@@ -260,7 +268,7 @@ final class DevsysInvoiceDraftService
     private function eligible(InvoiceDetails $details): bool
     {
         return $details->origin?->kind === 'api'
-            && $details->origin->sourceApp === 'devsys'
+            && in_array($details->origin->sourceApp, ['devsys', 'spotcard', 'stationid', 'menuflow'], true)
             && $details->origin->apiUpdateEligibleForSource
             && $details->clientUuidProvided
             && $details->clientUuid !== null
@@ -270,7 +278,7 @@ final class DevsysInvoiceDraftService
 
     private function assertEditableDetails(InvoiceDetails $details, int $id): void
     {
-        if ($details->id !== $id || $this->origin($details) !== 'api/devsys' || !$this->eligible($details)) {
+        if ($details->id !== $id || $details->origin?->kind !== 'api' || !$this->eligible($details)) {
             throw new \LogicException('Le brouillon API n’est plus modifiable. Rechargez la liste des factures.');
         }
     }
@@ -373,7 +381,7 @@ final class DevsysInvoiceDraftService
         return ['source_event_id' => $sourceEventId, 'source_app' => 'devsys', ...$base];
     }
 
-    private function updatePayload(array $input, ?string $storedBusinessReference): array
+    private function updatePayload(array $input, string $originSourceApp): array
     {
         $payload = ['source_app' => 'devsys', ...$this->payloadFields($input)];
         $intent = $input['business_reference_intent'] ?? (array_key_exists('business_reference', $input) ? 'set' : 'preserve');
@@ -383,10 +391,7 @@ final class DevsysInvoiceDraftService
         if ($intent === 'clear') {
             $payload['business_reference'] = null;
         } elseif ($intent === 'set') {
-            $payload['business_reference'] = $this->businessReference($input['business_reference'] ?? null, false);
-        } elseif (array_key_exists('business_reference', $input)
-            && $this->businessReference($input['business_reference']) !== $storedBusinessReference) {
-            throw new \InvalidArgumentException('La référence métier a changé sans intention de modification. Rechargez le formulaire et réessayez.');
+            $payload['business_reference'] = $this->businessReference($input['business_reference'] ?? null, false, $originSourceApp);
         }
 
         return $payload;
@@ -464,16 +469,30 @@ final class DevsysInvoiceDraftService
         );
     }
 
-    private function businessReference(mixed $value, bool $nullable = true): ?string
+    private function businessReference(mixed $value, bool $nullable = true, string $sourceApp = 'devsys'): ?string
     {
         if ($value === null && $nullable) return null;
-        if (!is_string($value)) throw new \InvalidArgumentException('La référence métier doit commencer par DEV-.');
+        $prefix = $this->businessReferencePrefix($sourceApp);
+        if ($prefix === null) {
+            throw new \InvalidArgumentException('Le format de référence métier de cette source n’est pas défini ; conservez la référence ou effacez-la explicitement.');
+        }
+        if (!is_string($value)) throw new \InvalidArgumentException('La référence métier ne respecte pas le préfixe de sa source d’origine.');
         $reference = strtoupper(trim($value));
-        if (strlen($reference) > 100 || preg_match('/^DEV-[A-Z0-9][A-Z0-9._\/-]{0,95}$/D', $reference) !== 1) {
-            throw new \InvalidArgumentException('La référence métier doit respecter le format DEV-… (100 caractères maximum). Pour la supprimer, cochez « Effacer la référence ».');
+        if (strlen($reference) > 100 || preg_match('/^'.preg_quote($prefix, '/').'[A-Z0-9][A-Z0-9._\/-]{0,95}$/D', $reference) !== 1) {
+            throw new \InvalidArgumentException('La référence métier doit respecter le préfixe de sa source d’origine (100 caractères maximum). Pour la supprimer, cochez « Effacer la référence ».');
         }
 
         return $reference;
+    }
+
+    private function businessReferencePrefix(string $sourceApp): ?string
+    {
+        return match ($sourceApp) {
+            'devsys' => 'DEV-',
+            'spotcard' => 'SPC-',
+            'stationid' => 'STI-',
+            default => null,
+        };
     }
 
     private function lineDtos(array $lines): array
