@@ -169,6 +169,20 @@ export default class Invoices extends Core {
                     <button type="button" class="invoice-line-delete" aria-label="Supprimer cette ligne">×</button>
                 </div>
             </div>
+            <div class="invoice-line-facturx">
+                <label>Unité normalisée
+                    <select name="unit_code">
+                        <option value="">À compléter avant émission</option>
+                        <option value="C62">Unité (C62)</option><option value="HUR">Heure (HUR)</option>
+                        <option value="DAY">Jour (DAY)</option><option value="LS">Forfait (LS)</option><option value="MON">Mois (MON)</option>
+                    </select>
+                </label>
+                <label>Catégorie TVA
+                    <select name="tax_category_code">
+                        <option value="">À compléter avant émission</option><option value="S">S — TVA taxable</option><option value="Z">Z — taux zéro</option>
+                    </select>
+                </label>
+            </div>
             <div class="invoice-discount" hidden>
                 <span class="invoice-discount__title">Remise</span>
                 <label>

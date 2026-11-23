@@ -377,11 +377,13 @@ final class DevsysInvoiceDraftService
                 'description' => $values['description'] ?? '',
                 'quantity' => $values['quantity'],
                 'unit' => $values['unit'] ?? '',
+                'unit_code' => $values['unit_code'] ?? '',
                 'unit_price_excl_tax' => $values['unit_price_excl_tax'],
                 'discount_type' => $values['discount_type'] ?? '',
                 'discount_value' => $values['discount_value'] ?? '0',
                 'discount_note' => $values['discount_note'] ?? '',
                 'tax_rate' => $values['tax_rate'],
+                'tax_category_code' => $values['tax_category_code'] ?? '',
             ];
         }, $details->lines);
 
@@ -447,11 +449,13 @@ final class DevsysInvoiceDraftService
                 'description' => $this->nullable($line['description'] ?? null),
                 'quantity' => $this->decimal($line['quantity'] ?? null, 'quantité'),
                 'unit' => $this->nullable($line['unit'] ?? null),
+                'unit_code' => $this->nullable($line['unit_code'] ?? null),
                 'unit_price_excl_tax' => $this->decimal($line['unit_price_excl_tax'] ?? null, 'prix unitaire'),
                 'discount_type' => $discountType === '' ? null : $discountType,
                 'discount_value' => $discountType === '' ? null : $this->decimal($discountValue, 'remise'),
                 'discount_note' => $discountType === '' ? null : $this->nullable($line['discount_note'] ?? null),
                 'tax_rate' => $this->decimal($line['tax_rate'] ?? null, 'taux de TVA'),
+                'tax_category_code' => $this->nullable($line['tax_category_code'] ?? null),
             ];
         }
         $dueDate = $this->nullable($input['due_date'] ?? null);
@@ -528,7 +532,7 @@ final class DevsysInvoiceDraftService
     {
         return array_map(static fn (array $line): InvoiceDraftLine => new InvoiceDraftLine(
             $line['label'], $line['quantity'], $line['unit_price_excl_tax'], $line['tax_rate'],
-            $line['description'], $line['unit'], $line['discount_type'], $line['discount_value'], $line['discount_note'],
+            $line['description'], $line['unit'], $line['discount_type'], $line['discount_value'], $line['discount_note'], $line['unit_code'], $line['tax_category_code'],
         ), $lines);
     }
 

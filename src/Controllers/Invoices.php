@@ -332,6 +332,8 @@ class Invoices extends BaseController
             $status === 404 => 'La facture est introuvable ou inaccessible.',
             $exception->getErrorCode() === 'ISSUE_DATE_MUST_BE_TODAY' => 'La date de facture doit être celle du jour (Europe/Paris). Modifiez-la explicitement dans le brouillon, vérifiez l’échéance, puis relancez l’émission.',
             $exception->getErrorCode() === 'ISSUER_CONFIGURATION_INVALID' => 'L’émetteur légal n’est pas configuré ou ses informations sont incomplètes. Contactez l’administrateur de facturation.',
+            $exception->getErrorCode() === 'INVOICE_CLIENT_BILLING_DETAILS_INCOMPLETE' => 'La fiche du client est incomplète pour une facture conforme. Dans Clients, complétez le nom, l’adresse, le code postal, la ville et le code pays ISO à deux lettres, puis réessayez.',
+            $exception->getErrorCode() === 'INVOICE_FACTURX_LINE_DATA_UNSUPPORTED' => 'Chaque ligne doit avoir une unité normalisée et une catégorie de TVA explicite compatible avec son taux. Complétez les champs de ligne puis réessayez.',
             $exception->getErrorCode() === 'LEGACY_NUMBERING_RECONCILIATION_REQUIRED' => 'La numérotation requiert une réconciliation préalable. Contactez l’administrateur de facturation.',
             $exception->getErrorCode() === 'IDEMPOTENCY_CONFLICT' => 'La tentative d’émission est en conflit. Rechargez la facture en lecture et contactez l’administrateur avant toute nouvelle tentative.',
             $status === 409 => 'Cette facture ne peut pas être émise dans son état actuel. Rechargez-la et contactez l’administrateur si le problème persiste.',

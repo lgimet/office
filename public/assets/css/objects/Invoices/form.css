@@ -92,6 +92,12 @@
     border-top: 1px solid var(--outline-variant);
 }
 
+.invoice-line-facturx { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; padding: 0 0 10px 40px; }
+.invoice-line-facturx label { display: grid; gap: 4px; font-size: var(--text-xs); }
+.invoice-line-facturx select { min-width: 190px; padding: 8px; border: 1px solid var(--outline-variant); border-radius: var(--radius-sm); background: var(--surface-base); color: var(--on-surface); font: inherit; }
+.invoice-line-facturx small { color: var(--on-surface-variant); }
+.invoice-facturx-hint { margin: 0 0 12px; color: var(--on-surface-variant); }
+
 .invoice-line {
     width: 100%;
     min-width: 0;

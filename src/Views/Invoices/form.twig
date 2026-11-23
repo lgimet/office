@@ -222,6 +222,7 @@
         <div class="invoice-layout">
             <section class="invoice-card">
                 <h3><span class="material-symbols-outlined" aria-hidden="true">format_list_bulleted</span> Lignes de facture</h3>
+                <p class="invoice-facturx-hint">Pour émettre, chaque ligne devra avoir une unité normalisée et une catégorie de TVA explicite. Le brouillon reste enregistrable avant leur sélection.</p>
 
                 <div class="invoice-lines-head">
                     <span>#</span>
@@ -258,6 +259,24 @@
                                     <button type="button" class="invoice-discount-toggle">+ Remise</button>
                                     <button type="button" class="invoice-line-delete" aria-label="Supprimer cette ligne">×</button>
                                 </div>
+                            </div>
+                            <div class="invoice-line-facturx">
+                                <label>Unité normalisée
+                                    <select name="unit_code">
+                                        <option value="">À compléter avant émission</option>
+                                        {% for code, label in {'C62':'Unité (C62)', 'HUR':'Heure (HUR)', 'DAY':'Jour (DAY)', 'LS':'Forfait (LS)', 'MON':'Mois (MON)'} %}
+                                            <option value="{{ code }}" {% if line.unit_code == code %}selected{% endif %}>{{ label }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </label>
+                                <label>Catégorie TVA
+                                    <select name="tax_category_code">
+                                        <option value="">À compléter avant émission</option>
+                                        <option value="S" {% if line.tax_category_code == 'S' %}selected{% endif %}>S — TVA taxable</option>
+                                        <option value="Z" {% if line.tax_category_code == 'Z' %}selected{% endif %}>Z — taux zéro</option>
+                                    </select>
+                                </label>
+                                <small>S accepte un taux positif ; Z accepte un taux nul. Les exonérations ne sont pas prises en charge.</small>
                             </div>
 
                             <div class="invoice-discount" {% if not line.discount_type %}hidden{% endif %}>
