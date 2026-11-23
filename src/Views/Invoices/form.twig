@@ -193,8 +193,9 @@
                                 name="business_reference"
                                 value="{{ invoice.business_reference|default('') }}"
                                 maxlength="100"
-                                pattern="DEV-[A-Za-z0-9][A-Za-z0-9._/-]{0,95}"
-                                placeholder="DEV-001"
+                                {% if business_reference_pattern %}pattern="{{ business_reference_pattern }}"{% endif %}
+                                {% if business_reference_locked %}readonly{% endif %}
+                                placeholder="{{ business_reference_prefix ? business_reference_prefix ~ '001' : 'Conserver ou effacer' }}"
                                 autocomplete="off"
                             >
                             <label for="invoice-business-reference">Référence métier (optionnelle)</label>
@@ -205,7 +206,7 @@
                                     Effacer la référence enregistrée
                                 </label>
                             {% endif %}
-                            <small>Référence DevSys distincte du numéro légal attribué à l’émission.</small>
+                            <small>Origine : {{ business_reference_source_label|default('DevSys') }}{% if business_reference_prefix %} ({{ business_reference_prefix }}){% endif %}. La référence reste distincte du numéro légal attribué à l’émission.</small>
                         </div>
                     {% endif %}
 
