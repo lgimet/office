@@ -1,20 +1,21 @@
 # OFFICE-INVOICE-DRAFT-WRITE-1
 
 **Date:** 2026-11-23 (Europe/Paris)  
-**Résultat phase A:** `BLOCKED_AUTHENTICATED_SESSION`  
+**Résultat phase A:** `BLOCKED_SERVER_IDENTITY_TENANT`
+
 **Phase mutatrice:** non exécutée ; aucun GO mutateur reçu.
 
 ## Résumé
 
 Les releases Office et API attendues sont toujours actives. Les contrôles GET anonymes répondent conformément aux protections attendues. Les tests isolés API et Office passent. Aucun formulaire n'a été soumis, aucun POST/PATCH/issue/delete n'a été envoyé, aucun accès SQL ni changement de configuration n'a été réalisé.
 
-La recette ne peut pas passer à la demande de GO mutateur : aucune session OIDC opérateur légitime n'est disponible dans cette exécution, et le client fictif préexistant / son appartenance au tenant courant ne peuvent donc pas être validés. En outre, les valeurs privées tenant/sujet du garde sont absentes et aucun mécanisme indépendant d'expiration de la fenêtre de flags n'est armé. Aucun secret, sujet ou identifiant tenant n'est consigné ici.
+L'opérateur a depuis déclaré la recette manuelle authentifiée réussie (OIDC, tableau de bord, liste, recherche de clients et client fictif autorisé). Cette déclaration est consignée ci-dessous comme telle ; elle n'est pas une capture HTTP instrumentée ni une preuve du principal/tenant effectivement présentés au middleware API. Les valeurs privées tenant/sujet du garde sont absentes et aucun mécanisme indépendant d'expiration de la fenêtre de flags n'est armé. Aucun secret, sujet ou identifiant tenant n'est consigné ici.
 
 ## Références et runtime constatés
 
 | Composant | Référence | État observé |
 |---|---|---|
-| Office, rapport de recette antérieur | `work/office-invoice-draft-recette-1` `162480c4f8ea04bf76825c8c4cfd73a047ba8978` | Rapport `READ_ONLY_PARTIAL`; aucune session authentifiée démontrée. |
+| Office, rapport de recette antérieur | `work/office-invoice-draft-recette-1` `162480c4f8ea04bf76825c8c4cfd73a047ba8978` | Rapport `READ_ONLY_PARTIAL`; depuis ce rapport, une recette manuelle authentifiée a été déclarée PASS par l'opérateur. |
 | Office, source fonctionnelle déployée | `work/office-invoice-web-deploy-1` `ccbba1150bf5769a84b522e056c417e7b7c34f70` | Lignée issue de `feature/office-inv-recette-1.2` `64b6b298c6dc049c06b671e02e813b93255da090`. |
 | Office runtime | `office-invoice-web-20261123-64b6b29-0661b92` | `/home/devsys/office-deploy/current` résout vers cette release. |
 | API garde | `work/office-api-guard-integration-1` `a07573566f2f08986afe70f722c714a0615a046c` | Garde déjà déployé, sans changement dans ce lot. |
@@ -77,16 +78,16 @@ Aucun code applicatif n'a été changé ; les chiffres ci-dessus sont les résul
 
 ## Conditions restant à remplir avant tout GO mutateur
 
-1. Un opérateur réalise le parcours OIDC existant dans son navigateur et confirme `PASS/FAIL` sans transmettre cookie, bearer ou identité privée : dashboard, contexte utilisateur et tenant, scope requis, accès aux écrans de facturation et recherche client en lecture seule.
-2. Dans cette session légitime, l'opérateur confirme qu'un client fictif déjà existant est disponible et autorisé pour le tenant courant. Aucun client ni enregistrement n'a été consulté ou créé par ce lot.
-3. Les valeurs privées du garde (sujet utilisateur API et tenant serveur autorisés) doivent être configurées hors Git et validées par l'opérateur via un canal serveur privé. Elles sont actuellement absentes. Ne pas les envoyer dans le chat ou les rapports.
-4. Avant tout changement de flags, un mécanisme d'expiration indépendant de la session Codex doit être préparé, testé et autorisé, avec une durée maximale de 15 minutes. Aucun timer/override n'a été créé dans ce lot.
-5. L'opérateur doit confirmer qu'aucun autre consommateur ne dépend d'écritures pendant cette fenêtre, puis donner un GO mutateur séparé qui nomme les releases, principal/tenant/client validés hors rapport, jeu de données fictif exact, au plus un POST create et trois PATCH sur le même brouillon, fenêtre, changements de flags autorisés et procédure de fermeture.
+1. **Identité serveur non résolue :** la déclaration PASS de l'opérateur ne donne pas de liaison vérifiable entre sa session Office et les claims effectifs que l'API verra (`principal.subject`, `effective_tenant_id`). La release Office expose l'identité uniquement dans le contexte de session PHP serveur ; aucun identifiant de session n'a été fourni au mécanisme d'exécution et aucune interface serveur existante ne permet de lire ces claims sans session. Les fichiers de session n'ont pas été parcourus. Il faut une validation serveur privée depuis la session légitime ou une procédure opérateur existante produisant ces deux valeurs pour dépôt privé, sans les publier dans le chat/rapport.
+2. **Configuration privée non préparée :** les clés du garde restent absentes du `.env` API (défaut OFF). Sans sujet et tenant validés selon le point 1, inscrire une configuration autorisée serait arbitraire. Aucun fichier de configuration n'a été modifié.
+3. **Fermeture automatique non prête :** aucun timer/service d'expiration indépendant n'est installé, armé ou testé sur l'hôte. Un test de fermeture d'un fichier `.env` temporaire ne prouverait pas que le runtime réel API et Office se referme sous systemd. Il faut valider puis tester un mécanisme système qui force les trois contrôles à OFF au plus tard après 15 minutes, sans reload du pool FPM partagé ou en documentant précisément l'action nécessaire.
+4. **Scope de mutation non attesté :** la déclaration opérateur confirme le parcours de lecture et le client fictif, mais pas l'obtention effective du scope API `write:invoices` pour cette identité, ni le résultat de l'isolation tenant/source au runtime. Ne pas modifier les scopes pour contourner cette inconnue.
+5. L'absence de consommateurs ayant besoin d'écriture pendant la fenêtre n'est pas confirmée par une déclaration dédiée. Le GO mutateur séparé devra couvrir ce risque multi-consommateur, les releases, un seul POST et au plus trois PATCH du même brouillon, les flags autorisés, la fenêtre et le maintien du brouillon.
 
 La migration 024 n'est pas exécutée à nouveau. Le brouillon éventuel devra rester non émis et être conservé pour un nettoyage distinctement autorisé. Aucune opération d'émission/suppression ne fera partie de la recette.
 
-## Procédure de vérification humaine (lecture seule)
+## Déclaration opérateur — recette manuelle lecture seule
 
-Dans le navigateur habituel de l'opérateur, ouvrir Office et effectuer le login OIDC normal. Vérifier dashboard, liste factures, recherche de client et ouverture d'un formulaire **sans l'enregistrer**. Ne pas transmettre de captures affichant des données personnelles ; répondre seulement `PASS`/`FAIL` pour l'authentification, le tenant courant et la présence d'un client fictif déjà autorisé. Ne cliquer sur aucun bouton Enregistrer, Émettre ou Supprimer. Si aucun client de test n'existe, arrêter ; ne pas substituer un vrai client.
+Déclaration reçue de l'opérateur : connexion OIDC `PASS`, tableau de bord `PASS`, liste des factures `PASS`, recherche de clients `PASS`, client fictif existant et autorisé `PASS`. L'opérateur indique qu'aucune écriture métier n'a été effectuée. Ce constat est une **recette manuelle déclarée**, pas une preuve HTTP instrumentée ; aucun identifiant de client, utilisateur ou tenant n'est reproduit.
 
-**Décision : `BLOCKED_AUTHENTICATED_SESSION`** — aucun GO mutateur ne peut être présenté tant que la session authentifiée et le client fictif ne sont pas confirmés, et que la configuration privée du garde et l'expiration indépendante ne sont pas prêtes.
+**Décision : `BLOCKED_SERVER_IDENTITY_TENANT`** — l'authentification et le client fictif sont déclarés PASS, mais le sujet/tenant serveur n'ont pas été résolus ni validés ; la configuration privée ne peut donc pas être préparée. L'expiration automatique n'est pas prête/testée et le scope d'écriture n'est pas attesté. Les flags demeurent OFF ; aucun GO mutateur n'est accordé ou inféré.
