@@ -6,9 +6,12 @@ Date: 2026-11-23 (Europe/Paris)
 
 - Repository: `lgimet/office`.
 - Feature branch: `feature/office-invoice-mvp-1`, based directly on refreshed `main` `34646a5229f350c3bcd5a9fe120eb9e48d3840ea`.
+- Implementation commit: `fe28d7bda82022f7f9f48a82077d36f9d9c4499d`.
+- Draft PR: [#9](https://github.com/lgimet/office/pull/9), base `main`, state open/draft, GitHub reported mergeable/clean at report time; no CI checks were attached.
 - Office `composer.lock` SHA-256: `a7a7a5941baca4d2b4e782894f5d8f5e2292a05b0f0374d291c1490a33991cc5`.
 - The locked SDK and the physically installed SDK source both resolve to `b845450b2d4004fa31a5e3a540184fff42c7ebba`; no floating branch or mutable `../shared` path is used.
 - Production code, flags, services, database and releases were not changed. No invoice form was submitted and no invoice mutation was sent.
+- Read-only release pointers observed: API/login `api-invoice-draft-preflight-ttl-20261123-1623128`; Office `office-invoice-draft-preflight-ttl-20261123-5b3dcd8`. Vhost config and live HTTP behavior were not re-probed in this development task.
 
 ## Changes
 
