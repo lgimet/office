@@ -1,37 +1,33 @@
-# OFFICE-INVOICE-MVP-1-ENABLE-TEST — Office
+# OFFICE-INVOICE-MVP-1-ENABLE-TEST — session Office et contexte serveur
 
 Date : 2026-11-23 (Europe/Paris)
 
 ## Résultat
 
-`NEEDS_OPERATOR_IDENTITY_VERIFICATION`. Le site est prêt pour que l'opérateur termine les validations privées, mais l'API d'écriture n'est pas ouverte. Aucun formulaire n'a été soumis et aucune facture n'a été créée ou modifiée.
+`NEEDS_OPERATOR_IDENTITY_VERIFICATION`. L'authentification Office fonctionne pour l'opérateur selon sa déclaration et les releases sont en place, mais Codex ne peut pas accéder à cette session légitime. Aucun flag de recette ou d'écriture n'a été activé ; aucun formulaire n'a été soumis.
 
-## Runtime constaté
+## Releases et état actuel
 
-- Office : `office-invoice-mvp1-20261123-8150e7f`, SHA `8150e7fa4956f8bdc85ef337950b8100c5c20b30`.
-- API/login : `api-invoice-mvp1-20261123-4f5baec`, SHA `4f5baec6698b8fdb5e4da1a3017c118f3cadf66e`.
-- SDK `devsys/shared` verrouillé et installé : `b845450b2d4004fa31a5e3a540184fff42c7ebba`.
-- `current` pointe sur les deux releases. Santé API 200, OIDC discovery 200, factures anonymes 401.
-- Office `.env` mode `0640`, `OFFICE_INVOICE_DRAFT_WRITE_API_ENABLED=false`; aucune surcharge correspondante observée dans PHP-FPM. API write gate et garde absents/OFF, sources vides, attentes privées absentes.
+- Office : `office-invoice-mvp1-20261123-8150e7f`, source `office/main` `8150e7fa4956f8bdc85ef337950b8100c5c20b30`.
+- API/login : `api-invoice-mvp1-20261123-4f5baec`, source `Office-Api/main` `4f5baec6698b8fdb5e4da1a3017c118f3cadf66e`.
+- SDK de facturation verrouillé : `devsys/shared` `b845450b2d4004fa31a5e3a540184fff42c7ebba`.
+- Office flag `OFFICE_INVOICE_DRAFT_WRITE_API_ENABLED=false`. API write gate et garde absents/OFF, allowlist vide, valeurs d'attente absentes. Diagnostics API et Office absents/OFF. Aucune surcharge de processus PHP-FPM observée.
+- Aucune identité ou valeur privée n'a été lue dans les sessions PHP, exposée ou déduite d'une simple entrée de base.
 
-## Sécurité du chemin Office
+## Chemin OIDC Office vérifié
 
-Office utilise `DevsysInvoiceDraftService` puis `shared/InvoicesApi`. Le flag Office false sélectionne toutefois, pour une création neuve, `legacy->saveDraft()` (SQL historique). Pour cette raison, le formulaire ne doit pas être soumis tant que le flag API n'est pas effectivement vrai. Une facture reconnue comme API n'utilise pas le SQL historique en fallback lorsque l'appel API échoue.
+`OidcSessionService` compare le `sub` et le `tenant_id` reçus via les claims OIDC/UserInfo vérifiés, puis place les valeurs de contexte dans la session PHP. `TenantContext` associe ensuite ce principal à une membership active. `OfficeAccessTokenProvider` fournit le bearer de la session utilisateur à `DevsysApiProvider`, puis au client SDK partagé. Les scopes affichés/stockés côté Office ne suffisent pas à prouver `write:invoices` : seule la réponse de l'API, qui valide le scope du bearer reçu, constitue la preuve pertinente.
 
-La session opérateur n'est pas disponible à Codex. Le scope réel `write:invoices`, le tenant serveur courant et le client fictif existant n'ont donc pas pu être vérifiés. Aucun cookie, bearer, UUID de tenant ou autre secret n'a été lu ou demandé.
+Le flag d'écriture Office est OFF ; une création neuve pourrait donc emprunter `legacy->saveDraft()` et le SQL historique. Le formulaire ne doit pas être soumis tant que le mode API n'est pas effectivement activé et la protection API vérifiée.
 
-## Procédure navigateur, après validation et ouverture côté serveur
+## Action minimale pour établir la preuve
 
-L'opérateur autorisé confirme en privé son principal utilisateur et le scope `write:invoices`, le tenant effectif côté serveur et l'accès au client fictif. Après mise en place et vérification des protections API (rapport API associé), il règle Office `OFFICE_INVOICE_DRAFT_WRITE_API_ENABLED=true`, puis dans sa session habituelle :
+Les releases contiennent déjà le diagnostic opérateur non mutateur : `POST /Invoices/recipePreflight` (authentifié, CSRF), qui utilise la session OIDC courante et le SDK. L'API en aval vérifie le scope réel `write:invoices`, le principal utilisateur, le tenant effectif et la source serveur `devsys`; les réponses sont redacted. Les deux flags diagnostic étant OFF, le parcours n'a pas été lancé.
 
-1. Factures → Nouveau brouillon ; sélectionner le client fictif appartenant au tenant validé ; saisir une ligne fictive et une référence unique `DEV-TEST-…` ; enregistrer une seule fois.
-2. Confirmer l'ID technique, le statut `draft`, l'absence de numéro légal et la provenance `devsys`.
-3. Rouvrir ce même brouillon, modifier le libellé de ligne, sauvegarder puis recharger. Vérifier le même ID et la modification persistée.
-4. Ne pas Émettre/Valider, supprimer, créer un client ou modifier une facture historique.
-5. À la fin du test, fermeture API d'abord (`INVOICE_WRITES_ENABLED=false`, allowlist vide), Office ensuite (`OFFICE_INVOICE_DRAFT_WRITE_API_ENABLED=false`), garde enfin et retrait des attentes privées. Vérifier le retour aux états initiaux. Ne plus créer après le flag Office OFF : la création pourrait emprunter le SQL historique. Conserver le brouillon non émis.
+Un administrateur autorisé doit, en privé, valider le sujet et le tenant de l'identité OIDC existante via les outils OIDC/TenantContext établis (pas un nom/e-mail seul ni une ligne DB isolée), ainsi que l'accès au client fictif. Il peut ensuite ouvrir brièvement les seuls paramètres diagnostiques déjà déployés, avec attentes privées identiques, lease absolu <= 300 s et `BOOT_ID` courant, sans ouvrir les write gates. L'opérateur connecté déclenche lui-même `Invoices/recipePreflight` dans Office ; il ne transmet que `PASS`, `REFUSED` ou `UNAVAILABLE`. Puis les flags diagnostics sont immédiatement remis OFF et les attentes privées retirées.
 
-Ne transmettre à Codex que `PASS/FAIL` pour création, modification persistée et fermeture des flags ; un ID technique peut être conservé par l'opérateur pour le suivi. Ne communiquer aucune identité, donnée client, cookie ou jeton.
+Si le diagnostic retourne `PASS`, l'activation recette ultérieure doit garder les valeurs privées sur le serveur : garde API `User` + sujet/tenant exacts + `devsys`, garde placé avant le gate et refusant `/issue`; ensuite gate API et allowlist `devsys`, puis flag Office. Fermeture : gate API OFF et allowlist vide d'abord, Office OFF ensuite, garde OFF et retrait des attentes enfin. Une erreur, un résultat non concluant, un scope manquant ou une identité/tenant non attestée signifie aucun formulaire et aucun write flag ON.
 
-## Non exécuté
+## Résultat opérateur
 
-Validation authentifiée/scopes/client : `NOT_VERIFIED`. Flag Office : laissé à `false`. Création/PATCH : `NOT_RUN`. Aucune modification de configuration, aucun SQL, aucune migration, émission ou suppression. Aucun code modifié ni tests relancés.
+Session Office : disponible selon la déclaration opérateur, mais pas pilotable par Codex. Diagnostic API depuis ce bearer : `NOT_RUN`. Scope, tenant et client fictif : `NOT_VERIFIED`. Création/PATCH : `NOT_RUN`. Aucun changement de configuration, aucun SQL, émission, numéro ou suppression.
