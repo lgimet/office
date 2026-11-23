@@ -124,6 +124,8 @@ final class DevsysInvoiceDraftServiceTest extends TestCase
             self::assertSame('DEV-42', $payload['business_reference']);
             self::assertArrayNotHasKey('total_incl_tax', $payload);
             self::assertSame('2.500', $payload['lines'][0]['quantity']);
+            self::assertSame('HUR', $payload['lines'][0]['unit_code']);
+            self::assertSame('S', $payload['lines'][0]['tax_category_code']);
             self::assertArrayNotHasKey('discount_type', $payload['lines'][0]);
             self::assertArrayNotHasKey('discount_value', $payload['lines'][0]);
             self::assertArrayNotHasKey('discount_note', $payload['lines'][0]);
@@ -139,8 +141,8 @@ final class DevsysInvoiceDraftServiceTest extends TestCase
             'issue_date' => '2026-11-21', 'due_date' => '', 'payment_terms_code' => '', 'payment_terms' => '',
             'payment_method' => '', 'public_note' => '', 'internal_note' => '', 'business_reference' => 'DEV-42',
             'lines' => [[
-                'label' => 'Consulting', 'description' => '', 'quantity' => '2.500', 'unit' => '',
-                'unit_price_excl_tax' => '12.50', 'tax_rate' => '20.00', 'discount_type' => '',
+                'label' => 'Consulting', 'description' => '', 'quantity' => '2.500', 'unit' => 'heure', 'unit_code' => 'HUR',
+                'unit_price_excl_tax' => '12.50', 'tax_rate' => '20.00', 'tax_category_code' => 'S', 'discount_type' => '',
                 'discount_value' => '0', 'discount_note' => '',
             ]],
         ];
