@@ -44,4 +44,13 @@ final class SharedInvoiceDraftApi implements InvoiceDraftApiInterface
             throw new \UnexpectedValueException('The shared invoice update response is invalid.', 0, $exception);
         }
     }
+
+    public function issue(int $invoiceId, string $idempotencyKey, string $sourceApp): InvoiceCommandResult
+    {
+        try {
+            return $this->invoices->issue($invoiceId, $idempotencyKey, $sourceApp);
+        } catch (\InvalidArgumentException $exception) {
+            throw new \UnexpectedValueException('The shared invoice issue response is invalid.', 0, $exception);
+        }
+    }
 }

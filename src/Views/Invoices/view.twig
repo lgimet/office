@@ -12,7 +12,7 @@
                         {{ is_cancelled ? 'Annulée' : 'Émise' }}
                     </span>
                 </div>
-                <a class="m-btn m-btn--outline" href="/Invoices/{{ invoice.id }}/pdf" target="_blank" rel="noopener">PDF</a>
+                {% if not api_mode or pdf_enabled %}<a class="m-btn m-btn--outline" href="/Invoices/{{ invoice.id }}/pdf" target="_blank" rel="noopener">PDF</a>{% endif %}
                 <p>{{ invoice.client_name }}</p>
             </div>
         </div>
@@ -45,8 +45,27 @@
             <div><dt>Mode de paiement</dt><dd>{{ invoice.payment_method ?: '—' }}</dd></div>
             <div><dt>Devise</dt><dd>{{ invoice.currency }}</dd></div>
             <div><dt>Statut</dt><dd>{{ is_cancelled ? 'Annulée' : 'Émise' }}</dd></div>
+            {% if invoice.business_reference %}<div><dt>Référence métier</dt><dd>{{ invoice.business_reference }}</dd></div>{% endif %}
         </dl>
     </section>
+
+    {% if api_mode %}
+        <section class="invoice-card invoice-view__issuer">
+            <h3>Émetteur (instantané enregistré à l’émission)</h3>
+            <strong>{{ invoice.issuer_legal_name }}</strong>
+            {% if invoice.issuer_trading_name %}<span>{{ invoice.issuer_trading_name }}</span>{% endif %}
+            {% if invoice.issuer_legal_form %}<span>{{ invoice.issuer_legal_form }}{% if invoice.issuer_share_capital %} — capital {{ invoice.issuer_share_capital }}{% endif %}</span>{% endif %}
+            {% if invoice.issuer_address_line1 %}<span>{{ invoice.issuer_address_line1 }}</span>{% endif %}
+            {% if invoice.issuer_address_line2 %}<span>{{ invoice.issuer_address_line2 }}</span>{% endif %}
+            {% if invoice.issuer_postal_code or invoice.issuer_city %}<span>{{ invoice.issuer_postal_code }} {{ invoice.issuer_city }}</span>{% endif %}
+            {% if invoice.issuer_country %}<span>{{ invoice.issuer_country }}</span>{% endif %}
+            {% if invoice.issuer_siret %}<small>SIRET {{ invoice.issuer_siret }}</small>{% endif %}
+            {% if invoice.issuer_siren %}<small>SIREN {{ invoice.issuer_siren }}</small>{% endif %}
+            {% if invoice.issuer_vat_number %}<small>TVA {{ invoice.issuer_vat_number }}</small>{% endif %}
+            {% if invoice.issuer_rcs_city %}<small>RCS {{ invoice.issuer_rcs_city }}</small>{% endif %}
+            {% if invoice.issuer_invoice_footer %}<p>{{ invoice.issuer_invoice_footer }}</p>{% endif %}
+        </section>
+    {% endif %}
 
     <section class="invoice-card invoice-view__lines">
         <h3><span class="material-symbols-outlined" aria-hidden="true">format_list_bulleted</span> Lignes de facture</h3>

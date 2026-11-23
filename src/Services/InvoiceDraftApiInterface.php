@@ -13,4 +13,5 @@ interface InvoiceDraftApiInterface
     public function recipePreflight(): void;
     public function createDraft(CreateInvoiceDraftRequest $request, string $idempotencyKey): InvoiceCommandResult;
     public function updateDraft(int $invoiceId, UpdateInvoiceDraftRequest $request, string $idempotencyKey, string $etag): InvoiceDraftUpdateResult;
+    public function issue(int $invoiceId, string $idempotencyKey, string $sourceApp): InvoiceCommandResult;
 }

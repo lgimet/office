@@ -140,6 +140,7 @@ class Invoices extends BaseController
             return $response->setPayload([
                 'api_mode' => $form['api_mode'] ?? false,
                 'api_writable' => $form['api_writable'] ?? false,
+                'api_can_issue' => is_string($form['api_issue_context'] ?? null) && $form['api_issue_context'] !== '',
             ]);
         } catch (DevsysApiException $exception) {
             return $this->invoiceDraftApiError($exception);
@@ -159,7 +160,12 @@ class Invoices extends BaseController
         try {
             $data = $this->payload($input);
             $id = (int) ($data['id'] ?? 0);
-            $view = $this->service->view($id);
+            $view = null;
+            if (($_ENV['OFFICE_INVOICE_READ_API_ENABLED'] ?? 'false') === 'true') {
+                $apiView = $this->invoiceRead->view($id);
+                if (($apiView['source'] ?? null) === 'api') $view = $apiView;
+            }
+            $view ??= $this->service->view($id);
             $number = $view['invoice']['invoice_number'] ?? ('#' . $id);
 
             return (new Response())
@@ -168,6 +174,10 @@ class Invoices extends BaseController
                 ->setHtml($this->render('view.twig', $view));
         } catch (\InvalidArgumentException | \LogicException $exception) {
             return (new Response())->setError(422, $exception->getMessage());
+        } catch (DevsysApiException $exception) {
+            return $this->invoiceDraftApiError($exception);
+        } catch (\UnexpectedValueException) {
+            return (new Response())->setError(503, 'Le service de factures a retourné une réponse invalide.');
         }
     }
 
@@ -177,12 +187,22 @@ class Invoices extends BaseController
     {
         try {
             $id = (int) ($input['id'] ?? 0);
+            if (($_ENV['OFFICE_INVOICE_READ_API_ENABLED'] ?? 'false') === 'true') {
+                $apiView = $this->invoiceRead->view($id);
+                if (($apiView['source'] ?? null) === 'api') {
+                    return (new Response())->setError(409, 'Le PDF des factures API n’est pas disponible dans Office. Les données de la facture restent consultables en lecture seule.');
+                }
+            }
             $view = $this->service->view($id);
             $invoice = $view['invoice'];
             $content = $this->pdf->render($invoice, $view['lines']);
             $number = preg_replace('/[^A-Za-z0-9._-]+/', '_', (string) $invoice['invoice_number']) ?: 'facture';
 
             return (new Response())->setBinary($content, 'application/pdf', 'Facture-' . $number . '.pdf');
+        } catch (DevsysApiException $exception) {
+            return $this->invoiceDraftApiError($exception);
+        } catch (\UnexpectedValueException) {
+            return (new Response())->setError(503, 'Le service de factures a retourné une réponse invalide.');
         } catch (\InvalidArgumentException | \LogicException | \RuntimeException $exception) {
             return (new Response())->setError(422, $exception->getMessage());
         }
@@ -228,9 +248,10 @@ class Invoices extends BaseController
 
             return (new Response())
                 ->setId($id)
+                ->setPayload(['invoice_number' => $number, 'status' => 'issued'])
                 ->setToast("La facture {$number} a été émise.");
         } catch (DevsysApiException $exception) {
-            return $this->invoiceDraftApiError($exception);
+            return $this->invoiceIssueApiError($exception);
         } catch (\UnexpectedValueException) {
             return (new Response())->setError(503, 'Le service de factures a retourné une réponse invalide. Aucune émission SQL de secours n’a été tentée.');
         } catch (\InvalidArgumentException $exception) {
@@ -291,6 +312,34 @@ class Invoices extends BaseController
             $status === 422 => [422, 'L’API a refusé les valeurs saisies. Vérifiez les champs et réessayez.'],
             default => [503, 'Le service de factures est indisponible. Vos valeurs restent dans le formulaire; aucun parcours SQL de secours n’a été utilisé.'],
         };
+        if ($errorCode === 'ISSUE_DATE_MUST_BE_TODAY') {
+            [$httpStatus, $message] = [409, 'La date de facture doit être celle du jour (Europe/Paris). Modifiez-la explicitement dans le brouillon, vérifiez l’échéance, puis relancez l’émission.'];
+        } elseif ($errorCode === 'ISSUER_CONFIGURATION_INVALID') {
+            [$httpStatus, $message] = [409, 'L’émetteur légal n’est pas configuré ou ses informations sont incomplètes. Contactez l’administrateur de facturation.'];
+        } elseif ($errorCode === 'LEGACY_NUMBERING_RECONCILIATION_REQUIRED') {
+            [$httpStatus, $message] = [409, 'La numérotation requiert une réconciliation préalable. Contactez l’administrateur de facturation.'];
+        }
         return (new Response())->setError($httpStatus, $message);
+    }
+
+    private function invoiceIssueApiError(DevsysApiException $exception): Response
+    {
+        error_log(sprintf('[Devsys API] invoice issue status=%s code=%s request_id=%s', $exception->getStatusCode() ?? 'network', $exception->getErrorCode() ?? 'none', $exception->getRequestId() ?? 'none'));
+        $status = $exception->getStatusCode();
+        $message = match (true) {
+            $status === 401 => 'Votre session ne permet pas d’émettre cette facture. Reconnectez-vous avant toute nouvelle tentative.',
+            $status === 403 => 'L’autorisation d’émission a été refusée.',
+            $status === 404 => 'La facture est introuvable ou inaccessible.',
+            $exception->getErrorCode() === 'ISSUE_DATE_MUST_BE_TODAY' => 'La date de facture doit être celle du jour (Europe/Paris). Modifiez-la explicitement dans le brouillon, vérifiez l’échéance, puis relancez l’émission.',
+            $exception->getErrorCode() === 'ISSUER_CONFIGURATION_INVALID' => 'L’émetteur légal n’est pas configuré ou ses informations sont incomplètes. Contactez l’administrateur de facturation.',
+            $exception->getErrorCode() === 'LEGACY_NUMBERING_RECONCILIATION_REQUIRED' => 'La numérotation requiert une réconciliation préalable. Contactez l’administrateur de facturation.',
+            $exception->getErrorCode() === 'IDEMPOTENCY_CONFLICT' => 'La tentative d’émission est en conflit. Rechargez la facture en lecture et contactez l’administrateur avant toute nouvelle tentative.',
+            $status === 409 => 'Cette facture ne peut pas être émise dans son état actuel. Rechargez-la et contactez l’administrateur si le problème persiste.',
+            $status === 422 => 'L’API a refusé les données de cette facture. Vérifiez la date et les informations du brouillon.',
+            $status === null => 'Le résultat de l’émission est incertain. Rechargez la facture en lecture; si elle est toujours en brouillon, relancez depuis le même formulaire pour réutiliser la même tentative.',
+            default => 'Le service de factures est temporairement indisponible. Rechargez la facture avant toute nouvelle tentative.',
+        };
+
+        return (new Response())->setError($status === null ? 503 : $status, $message);
     }
 }

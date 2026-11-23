@@ -50,7 +50,7 @@ final class DevsysInvoiceDraftService
         return [
             'api_mode' => true,
             'can_edit' => $apiOwned && $this->enabled() && $updateContractReady && $this->eligible($details),
-            'can_issue' => false,
+            'can_issue' => $apiOwned && $this->enabled() && $details->origin->sourceApp === 'devsys',
             'can_delete' => false,
         ];
     }
@@ -100,6 +100,9 @@ final class DevsysInvoiceDraftService
         $form['api_writable'] = $this->enabled();
         $form['api_editor_context'] = $form['api_writable']
             ? $this->contexts->newEditorContext($id, (string) $details->etag, (int) $details->revision)
+            : '';
+        $form['api_issue_context'] = $form['api_writable'] && $details->origin->kind === 'api' && $details->origin->sourceApp === 'devsys'
+            ? $this->contexts->newIssueContext($id)
             : '';
         $form['api_creation_context'] = '';
         return $form;
@@ -196,10 +199,36 @@ final class DevsysInvoiceDraftService
         }
         $details = $this->invoices->get($id);
         $this->assertRequestedId($details, $id);
-        if ($this->origin($details) !== 'historical') {
-            throw new \LogicException('L’émission des brouillons API n’est pas raccordée. Aucune émission ni écriture SQL n’a été tentée.');
+        if ($details->origin === null) {
+            throw new \LogicException('La provenance de la facture est inconnue. Aucune émission ni écriture SQL n’a été tentée.');
         }
-        return $this->legacy->issueDraft($input, $id);
+        if ($details->origin->kind === 'historical') {
+            return $this->legacy->issueDraft($input, $id);
+        }
+        if ($details->origin->sourceApp !== 'devsys') {
+            throw new \LogicException('Office ne peut émettre que les brouillons API créés par DevSys. Aucune émission SQL n’a été tentée.');
+        }
+        if ($details->status === 'issued' && is_string($details->invoiceNumber) && preg_match('/^[0-9]{4}-[0-9]{4,}$/D', $details->invoiceNumber) === 1) {
+            return $details->invoiceNumber;
+        }
+        if ($details->status !== 'draft' || $details->invoiceNumber !== null) {
+            throw new \LogicException('Cette facture API n’est plus émissible. Aucune émission SQL n’a été tentée.');
+        }
+        if (!$this->enabled()) {
+            throw new \LogicException('L’émission API est désactivée. Aucune écriture SQL n’a été tentée.');
+        }
+        $contextToken = $this->token($input['api_issue_context'] ?? null);
+        $key = $this->contexts->issueKey($contextToken, $id);
+        $result = $this->invoices->issue($id, $key, 'devsys');
+        if (($result->invoice['id'] ?? null) !== $id
+            || ($result->invoice['status'] ?? null) !== 'issued'
+            || !is_string($result->invoice['invoice_number'] ?? null)
+            || preg_match('/^[0-9]{4}-[0-9]{4,}$/D', $result->invoice['invoice_number']) !== 1
+            || $result->sourceApp !== 'devsys') {
+            throw new \UnexpectedValueException('The invoice API issue response is invalid.');
+        }
+
+        return $result->invoice['invoice_number'];
     }
 
     public function deleteDraft(int $id, array $input = []): void
