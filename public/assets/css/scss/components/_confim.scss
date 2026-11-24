@@ -110,11 +110,15 @@
     }
 
     &.info {
-      background: var(--color-primary);
+      // Confirm overlays are attached to document.body. Some standalone Office
+      // pages do not put the light/dark theme class on body, so theme tokens may
+      // be unavailable and leave this box transparent.
+      background: var(--primary, #17332e);
+      color: var(--on-primary, #fff);
 
       .btn-container .btn-yes { 
-        color: var(--color-primary); 
-        background: var(--on-primary); 
+        color: var(--primary, #17332e);
+        background: var(--on-primary, #fff);
       }
     }
   }
