@@ -11,8 +11,10 @@ use App\Services\InvoiceService;
 use App\Services\DevsysClientService;
 use App\Services\DevsysInvoiceReadService;
 use App\Services\DevsysInvoiceDraftService;
+use App\Services\InvoiceFacturXErrorFormatter;
 use App\Services\InvoicePdfService;
 use Devsys\Shared\Api\Devsys\Exception\DevsysApiException;
+use Devsys\Shared\Api\Devsys\Exception\DevsysApiValidationException;
 
 class Invoices extends BaseController
 {
@@ -209,6 +211,12 @@ class Invoices extends BaseController
             if (($view['source'] ?? null) !== 'api' || ($view['invoice']['status'] ?? null) !== 'issued') return (new Response())->setError(409, 'Seule une facture API émise peut produire un Factur-X.');
             $result = $this->invoiceRead->generateFacturX((int) $id);
             return (new Response())->setId((int) $id)->setPayload(['invoice_number' => $result['invoice_number'] ?? null, 'available' => true])->setToast('Le Factur-X validé est archivé.');
+        } catch (DevsysApiValidationException $exception) {
+            if ($exception->getErrorCode() === 'FACTURX_SNAPSHOT_INCOMPLETE') {
+                error_log(sprintf('[Devsys API] Factur-X generation rejected code=%s request_id=%s', $exception->getErrorCode(), $exception->getRequestId() ?? 'none'));
+                return (new Response())->setError(422, (new InvoiceFacturXErrorFormatter())->snapshotIncomplete($exception));
+            }
+            return $this->invoiceDraftApiError($exception);
         } catch (DevsysApiException $exception) {
             return $this->invoiceDraftApiError($exception);
         } catch (\Throwable) {
