@@ -656,7 +656,34 @@ export default class Invoices extends Core {
 
     view(id) {
         this.actions = [];
-        this.callAction("view", { id });
+        this.callAction("view", { id }, {
+            callback: (json) => {
+                if (!json.success) return;
+                const button = document.querySelector(`[data-facturx-generate="${Number(id)}"]`);
+                if (!button) return;
+                button.addEventListener("click", async () => {
+                    if (button.disabled) return;
+                    const confirmed = await UI.confirm({
+                        type: "info",
+                        message: "Générer et archiver le Factur-X de cette facture émise ? Le document sera ensuite conservé à l’identique.",
+                        yesText: "Générer",
+                        noText: "Annuler",
+                    });
+                    if (!confirmed) return;
+                    button.disabled = true;
+                    this.callAction("facturxGenerate", { id: Number(id) }, {
+                        callback: (result) => {
+                            if (result.success) this.view(Number(id));
+                            else button.disabled = false;
+                        },
+                        onError: () => {
+                            button.disabled = false;
+                            UI.toast("Le service Factur-X est temporairement indisponible.", "error");
+                        },
+                    });
+                }, { once: true });
+            },
+        });
     }
 
     async confirmDelete(id, windowRecord = null) {
