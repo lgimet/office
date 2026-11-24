@@ -215,6 +215,16 @@
                         <input id="invoice-currency" name="currency" value="{{ invoice.currency ?? defaults.currency ?? 'EUR' }}" readonly>
                         <label for="invoice-currency">Devise</label>
                     </div>
+                    {% if api_mode and api_writable %}
+                        <div class="form-field invoice-details-field">
+                            <select id="invoice-document-profile" name="document_profile">
+                                <option value="" {% if not invoice.document_profile|default('') %}selected{% endif %}>Aucune exigence Factur-X</option>
+                                <option value="facturx_en16931" {% if invoice.document_profile|default('') == 'facturx_en16931' %}selected{% endif %}>Factur-X · EN 16931</option>
+                            </select>
+                            <label for="invoice-document-profile">Profil documentaire</label>
+                            <small>Le profil choisi est vérifié par l’API avant l’attribution du numéro légal. Les autres brouillons gardent leur parcours habituel.</small>
+                        </div>
+                    {% endif %}
                 </div>
             </div>
         </section>

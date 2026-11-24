@@ -46,4 +46,24 @@ final class InvoiceFacturXErrorFormatterTest extends TestCase
         $wrongCode = new DevsysApiValidationException('ignored', 422, null, null, ['missing_fields' => ['client_email']], 'OTHER_ERROR');
         self::assertSame($generic, $formatter->snapshotIncomplete($wrongCode));
     }
+
+    public function testPreIssueDetailsAreActionableWithoutExposingFieldValues(): void
+    {
+        $exception = new DevsysApiValidationException(
+            'ignored', 422, null, null,
+            ['missing_fields' => ['issuer_email', 'issuer_invoice_footer_PMT', 'line_1.tax_category_rate']],
+            'INVOICE_FACTURX_PREISSUE_INCOMPLETE',
+        );
+        $message = (new InvoiceFacturXErrorFormatter())->preIssueIncomplete($exception);
+        self::assertStringContainsString('identification ou coordonnées de l’émetteur', $message);
+        self::assertStringContainsString('mentions légales de l’émetteur', $message);
+        self::assertStringContainsString('données des lignes', $message);
+        self::assertStringContainsString('aucun numéro n’a été attribué', mb_strtolower($message));
+        self::assertStringNotContainsString('issuer_email', $message);
+        self::assertStringNotContainsString('billing@example.test', $message);
+
+        $malformed = new DevsysApiValidationException('ignored', 422, null, null, ['missing_fields' => ['unknown_secret']], 'INVOICE_FACTURX_PREISSUE_INCOMPLETE');
+        self::assertStringContainsString('aucun numéro n’a été attribué', mb_strtolower((new InvoiceFacturXErrorFormatter())->preIssueIncomplete($malformed)));
+        self::assertStringNotContainsString('unknown_secret', (new InvoiceFacturXErrorFormatter())->preIssueIncomplete($malformed));
+    }
 }

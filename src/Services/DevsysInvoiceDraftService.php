@@ -145,7 +145,7 @@ final class DevsysInvoiceDraftService
         if (($context['stale'] ?? false) === true) {
             throw new \LogicException('La facture a changé depuis son ouverture. Fermez et rouvrez le brouillon pour recharger sa version.');
         }
-        $payload = $this->updatePayload($input, (string) $details->origin?->sourceApp);
+        $payload = $this->updatePayload($input, (string) $details->origin?->sourceApp, $details->metadata['document_profile'] ?? null);
         $payloadHash = hash('sha256', json_encode($payload, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
         if (is_array($context['pending_payload'] ?? null) && !hash_equals((string) $context['pending_payload']['hash'], $payloadHash)) {
             throw new \LogicException('Une sauvegarde API précédente est incertaine. Réessayez exactement les mêmes valeurs, ou rechargez le brouillon.');
@@ -327,6 +327,9 @@ final class DevsysInvoiceDraftService
         if (!property_exists(CreateInvoiceDraftRequest::class, 'businessReference')) {
             throw new \LogicException('Le SDK shared installé ne peut pas transmettre la référence métier à la création. Mettez-le à jour avant d’activer les brouillons API.');
         }
+        if (!property_exists(CreateInvoiceDraftRequest::class, 'documentProfile')) {
+            throw new \LogicException('Le SDK shared installé ne prend pas en charge le profil documentaire Factur-X.');
+        }
     }
 
     private function assertUpdateContractReady(): void
@@ -334,7 +337,8 @@ final class DevsysInvoiceDraftService
         $this->assertSharedContractReady();
         if (!property_exists(InvoiceDetails::class, 'businessReference')
             || !property_exists(UpdateInvoiceDraftRequest::class, 'businessReference')
-            || !method_exists(UpdateInvoiceDraftRequest::class, 'clearingBusinessReference')) {
+            || !method_exists(UpdateInvoiceDraftRequest::class, 'clearingBusinessReference')
+            || !property_exists(UpdateInvoiceDraftRequest::class, 'documentProfile')) {
             throw new \LogicException('Le SDK shared installé ne prend pas en charge la référence métier sans risque d’effacement implicite. Mettez-le à jour avant d’activer la modification des brouillons API.');
         }
     }
@@ -368,6 +372,7 @@ final class DevsysInvoiceDraftService
             'payment_method' => $details->metadata['payment_method'] ?? null,
             'public_note' => $details->metadata['public_note'] ?? null,
             'business_reference' => $details->businessReference,
+            'document_profile' => $details->metadata['document_profile'] ?? null,
             'internal_note' => '',
         ];
         $lines = array_map(static function (object $line): array {
@@ -412,7 +417,7 @@ final class DevsysInvoiceDraftService
         return ['source_event_id' => $sourceEventId, 'source_app' => 'devsys', ...$base];
     }
 
-    private function updatePayload(array $input, string $originSourceApp): array
+    private function updatePayload(array $input, string $originSourceApp, ?string $existingDocumentProfile = null): array
     {
         $payload = ['source_app' => 'devsys', ...$this->payloadFields($input)];
         $intent = $input['business_reference_intent'] ?? (array_key_exists('business_reference', $input) ? 'set' : 'preserve');
@@ -424,6 +429,9 @@ final class DevsysInvoiceDraftService
         } elseif ($intent === 'set') {
             $payload['business_reference'] = $this->businessReference($input['business_reference'] ?? null, false, $originSourceApp);
         }
+        $payload['document_profile'] = array_key_exists('document_profile', $input)
+            ? $this->documentProfile($input['document_profile'])
+            : $this->documentProfile($existingDocumentProfile);
 
         return $payload;
     }
@@ -472,6 +480,7 @@ final class DevsysInvoiceDraftService
             'payment_terms' => $this->nullable($input['payment_terms'] ?? null),
             'payment_method' => $this->nullable($input['payment_method'] ?? null),
             'public_note' => $this->nullable($input['public_note'] ?? null),
+            'document_profile' => $this->documentProfile($input['document_profile'] ?? null),
         ];
     }
 
@@ -479,27 +488,27 @@ final class DevsysInvoiceDraftService
     {
         return new CreateInvoiceDraftRequest(
             $payload['source_event_id'], $payload['client_uuid'], $payload['issue_date'], $this->lineDtos($payload['lines']),
-            $payload['due_date'], $payload['payment_terms_code'], $payload['payment_terms'], $payload['payment_method'], $payload['public_note'], 'devsys', $payload['business_reference'],
+            $payload['due_date'], $payload['payment_terms_code'], $payload['payment_terms'], $payload['payment_method'], $payload['public_note'], 'devsys', $payload['business_reference'], $payload['document_profile'],
         );
     }
 
     private function updateDto(array $payload): UpdateInvoiceDraftRequest
     {
-        $request = new UpdateInvoiceDraftRequest(
-            $payload['client_uuid'], $payload['issue_date'], $this->lineDtos($payload['lines']),
-            $payload['due_date'], $payload['payment_terms_code'], $payload['payment_terms'], $payload['payment_method'], $payload['public_note'], 'devsys',
-        );
-        if (!array_key_exists('business_reference', $payload)) {
-            return $request;
-        }
-        if ($payload['business_reference'] === null) {
-            return UpdateInvoiceDraftRequest::clearingBusinessReference($request);
-        }
-
         return new UpdateInvoiceDraftRequest(
             $payload['client_uuid'], $payload['issue_date'], $this->lineDtos($payload['lines']),
-            $payload['due_date'], $payload['payment_terms_code'], $payload['payment_terms'], $payload['payment_method'], $payload['public_note'], 'devsys', $payload['business_reference'],
+            $payload['due_date'], $payload['payment_terms_code'], $payload['payment_terms'], $payload['payment_method'], $payload['public_note'], 'devsys',
+            $payload['business_reference'] ?? null, array_key_exists('business_reference', $payload),
+            $payload['document_profile'], true,
         );
+    }
+
+    private function documentProfile(mixed $value): ?string
+    {
+        $profile = $this->nullable($value);
+        if ($profile !== null && $profile !== 'facturx_en16931') {
+            throw new \InvalidArgumentException('Le profil documentaire sélectionné n’est pas pris en charge.');
+        }
+        return $profile;
     }
 
     private function businessReference(mixed $value, bool $nullable = true, string $sourceApp = 'devsys'): ?string

@@ -395,6 +395,9 @@ class Invoices extends BaseController
     {
         error_log(sprintf('[Devsys API] invoice issue status=%s code=%s request_id=%s', $exception->getStatusCode() ?? 'network', $exception->getErrorCode() ?? 'none', $exception->getRequestId() ?? 'none'));
         $status = $exception->getStatusCode();
+        if ($exception instanceof DevsysApiValidationException && $exception->getErrorCode() === 'INVOICE_FACTURX_PREISSUE_INCOMPLETE') {
+            return (new Response())->setError(422, (new InvoiceFacturXErrorFormatter())->preIssueIncomplete($exception));
+        }
         $message = match (true) {
             $status === 401 => 'Votre session ne permet pas d’émettre cette facture. Reconnectez-vous avant toute nouvelle tentative.',
             $status === 403 => 'L’autorisation d’émission a été refusée.',
