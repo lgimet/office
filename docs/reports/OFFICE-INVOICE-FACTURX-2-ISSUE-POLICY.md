@@ -2,7 +2,7 @@
 
 Statut : `IMPLEMENTED` sur branche de travail, non fusionné et non déployé.
 
-Références rafraîchies : Office `origin/main` `1e78c6086eba45eddff270f87eb24e0addc799bf`; shared `origin/main` `7a1644c75c918140a28651d527ee3ab99b96a943`; Office-Api `origin/main` `7f88c7ca5de84313aae262c7483ed7f49d9be4f4`. Branche Office `feature/office-invoice-facturx-2-issue-policy`. SDK embarqué dans le worktree : commit `shared` `f1215a8f0a32c660115e64de75504018c930053e` (verrou exact dans `composer.lock`).
+Références rafraîchies : Office `origin/main` `1e78c6086eba45eddff270f87eb24e0addc799bf`; shared `origin/main` `7a1644c75c918140a28651d527ee3ab99b96a943`; Office-Api `origin/main` `7f88c7ca5de84313aae262c7483ed7f49d9be4f4`. Branche Office `feature/office-invoice-facturx-2-issue-policy`, commit `acc0214768886fbb7f217e58d83543e3035b57f4`. PR : [office #19](https://github.com/lgimet/office/pull/19). Dépendances de revue : [shared #12](https://github.com/lgimet/shared/pull/12), [Office-Api #26](https://github.com/lgimet/Office-Api/pull/26). SDK embarqué dans le worktree : commit `shared` `f1215a8f0a32c660115e64de75504018c930053e` (verrou exact dans `composer.lock`).
 
 ## Comportement livré
 
