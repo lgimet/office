@@ -10,31 +10,47 @@ final class InvoiceFacturXErrorFormatter
 
     public function snapshotIncomplete(DevsysApiValidationException $exception): string
     {
-        if ($exception->getErrorCode() !== 'FACTURX_SNAPSHOT_INCOMPLETE') {
-            return self::GENERIC_MESSAGE;
+        return $this->format($exception, 'FACTURX_SNAPSHOT_INCOMPLETE', self::GENERIC_MESSAGE, 'Cette facture émise ne peut pas être exportée en Factur-X : ');
+    }
+
+    public function preIssueIncomplete(DevsysApiValidationException $exception): string
+    {
+        return $this->format(
+            $exception,
+            'INVOICE_FACTURX_PREISSUE_INCOMPLETE',
+            'Le brouillon ne peut pas être émis avec le profil Factur-X sélectionné. Contactez l’administrateur de facturation; aucun numéro n’a été attribué.',
+            'Le brouillon Factur-X doit être complété : ',
+            '. Corrigez le brouillon ou la configuration de l’émetteur avant de réessayer; aucun numéro n’a été attribué.',
+        );
+    }
+
+    private function format(DevsysApiValidationException $exception, string $expectedCode, string $generic, string $prefix, string $suffix = ' Elle reste inchangée.'): string
+    {
+        if ($exception->getErrorCode() !== $expectedCode) {
+            return $generic;
         }
 
         $fields = $exception->getErrors()['missing_fields'] ?? null;
         if (!is_array($fields) || !array_is_list($fields) || $fields === [] || count($fields) > 20) {
-            return self::GENERIC_MESSAGE;
+            return $generic;
         }
 
         $groups = [];
         foreach ($fields as $field) {
             if (!is_string($field) || !$this->isAllowedFieldCode($field)) {
-                return self::GENERIC_MESSAGE;
+                return $generic;
             }
             $groups[$this->groupFor($field)] = true;
         }
 
-        return 'Cette facture émise ne peut pas être exportée en Factur-X : '.implode(', ', array_keys($groups)).'. Elle reste inchangée.';
+        return $prefix.implode(', ', array_keys($groups)).$suffix;
     }
 
     private function isAllowedFieldCode(string $field): bool
     {
         if (in_array($field, [
             'invoice_number', 'invoice_number_year', 'issue_date', 'due_date', 'currency',
-            'payment_terms', 'payment_method', 'issuer_iban', 'issuer_vat_number',
+            'payment_terms', 'payment_method', 'payment_method_code', 'issuer_iban', 'issuer_vat_number',
             'lines', 'lines.count', 'amounts.subtotal_excl_tax', 'amounts.discount_total_excl_tax',
             'amounts.tax_total', 'amounts.total_incl_tax', 'amounts.arithmetic',
         ], true)) {

@@ -122,6 +122,7 @@ final class DevsysInvoiceDraftServiceTest extends TestCase
             self::assertArrayNotHasKey('public_note', $payload);
             self::assertSame('devsys', $payload['source_app']);
             self::assertSame('DEV-42', $payload['business_reference']);
+            self::assertSame('facturx_en16931', $payload['document_profile']);
             self::assertArrayNotHasKey('total_incl_tax', $payload);
             self::assertSame('2.500', $payload['lines'][0]['quantity']);
             self::assertSame('HUR', $payload['lines'][0]['unit_code']);
@@ -140,6 +141,7 @@ final class DevsysInvoiceDraftServiceTest extends TestCase
             'client_uuid' => 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
             'issue_date' => '2026-11-21', 'due_date' => '', 'payment_terms_code' => '', 'payment_terms' => '',
             'payment_method' => '', 'public_note' => '', 'internal_note' => '', 'business_reference' => 'DEV-42',
+            'document_profile' => 'facturx_en16931',
             'lines' => [[
                 'label' => 'Consulting', 'description' => '', 'quantity' => '2.500', 'unit' => 'heure', 'unit_code' => 'HUR',
                 'unit_price_excl_tax' => '12.50', 'tax_rate' => '20.00', 'tax_category_code' => 'S', 'discount_type' => '',
@@ -294,12 +296,13 @@ final class DevsysInvoiceDraftServiceTest extends TestCase
             'id' => 50, 'internal_note' => '', 'client_uuid' => 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
             'issue_date' => '2026-11-21', 'due_date' => '', 'payment_terms_code' => 'days_15',
             'payment_terms' => 'Sous 15 jours', 'payment_method' => 'CB', 'public_note' => '',
+            'document_profile' => 'facturx_en16931',
             'lines' => [['label' => 'Consulting', 'quantity' => '1', 'unit_price_excl_tax' => '10.00', 'tax_rate' => '20.00']],
         ];
         foreach ([
             ['business_reference' => 'DEV-OLD', 'business_reference_intent' => 'preserve'],
             ['business_reference' => 'dev-new', 'business_reference_intent' => 'set'],
-            ['business_reference' => 'DEV-NEW', 'business_reference_intent' => 'clear'],
+            ['business_reference' => 'DEV-NEW', 'business_reference_intent' => 'clear', 'document_profile' => ''],
         ] as $index => $referenceInput) {
             $form = $service->form(50);
             $service->saveDraft([...$base, ...$referenceInput, 'api_editor_context' => $form['api_editor_context']], 50);
@@ -308,6 +311,10 @@ final class DevsysInvoiceDraftServiceTest extends TestCase
         self::assertArrayNotHasKey('business_reference', $payloads[0]);
         self::assertSame('DEV-NEW', $payloads[1]['business_reference']);
         self::assertArrayHasKey('business_reference', $payloads[2]);
+        self::assertSame('facturx_en16931', $payloads[0]['document_profile']);
+        self::assertSame('facturx_en16931', $payloads[1]['document_profile']);
+        self::assertArrayHasKey('document_profile', $payloads[2]);
+        self::assertNull($payloads[2]['document_profile']);
         self::assertNull($payloads[2]['business_reference']);
         self::assertSame('Sous 15 jours', $payloads[1]['payment_terms']);
     }
