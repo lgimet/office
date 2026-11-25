@@ -178,6 +178,31 @@ final class InvoicesDataSwitchTest extends TestCase
         self::assertStringNotContainsString('denied', $response->toJson());
     }
 
+    public function testIssuedApiPdfReturnsArchivedBinaryThroughSharedSdk(): void
+    {
+        $_ENV['OFFICE_INVOICE_READ_API_ENABLED'] = 'true';
+        $invoice = [
+            'id'=>84,'invoice_number'=>'2026-0084','business_reference'=>'TEST-84','status'=>'issued','revision'=>1,
+            'issue_date'=>'2026-11-25','due_date'=>'2026-12-25','currency'=>'EUR',
+            'client'=>['name'=>'Fixture Client','contact_name'=>null,'email'=>null,'phone'=>null,'address_line1'=>'1 Test St','address_line2'=>null,'postal_code'=>'75000','city'=>'Paris','country'=>'FR','siret'=>null,'vat_number'=>null,'uuid'=>null],
+            'issuer'=>['legal_name'=>'Fixture Issuer','trading_name'=>null,'legal_form'=>null,'share_capital'=>null,'address_line1'=>'2 Test St','address_line2'=>null,'postal_code'=>'75001','city'=>'Paris','country'=>'FR','email'=>null,'phone'=>null,'website'=>null,'siret'=>null,'siren'=>null,'vat_number'=>null,'ape_code'=>null,'rcs_city'=>null,'bank_name'=>null,'iban'=>null,'bic'=>null,'invoice_footer'=>null],
+            'amounts'=>['subtotal_excl_tax'=>'10.00','discount_total_excl_tax'=>'0.00','tax_total'=>'2.00','total_incl_tax'=>'12.00'],
+            'lines'=>[['id'=>1,'position'=>1,'label'=>'Fixture line','description'=>null,'quantity'=>'1.000','unit'=>'unit','unit_code'=>'C62','unit_price_excl_tax'=>'10.00','discount_type'=>null,'discount_value'=>null,'discount_note'=>null,'tax_rate'=>'20.00','tax_category_code'=>'S','line_subtotal_excl_tax'=>'10.00','line_discount_excl_tax'=>'0.00','line_tax_total'=>'2.00','line_total_incl_tax'=>'12.00']],
+            'payment_terms_code'=>null,'payment_terms'=>null,'payment_method'=>null,'public_note'=>null,'created_at'=>'2026-11-25T00:00:00Z','issued_at'=>'2026-11-25T00:00:00Z','cancelled_at'=>null,
+            'origin'=>['kind'=>'api','source_app'=>'devsys','api_update_eligible_for_source'=>false],
+        ];
+        $pdf = "%PDF-1.7\nfixture-pdf";
+        $controller = $this->controller($this->createMock(InvoiceService::class), [
+            new HttpResponse(200, ['ETag'=>'"1"'], json_encode(['success'=>true,'data'=>['invoice'=>$invoice]], JSON_THROW_ON_ERROR)),
+            new HttpResponse(200, [], '{"success":true,"data":{"available":true,"invoice_number":"2026-0084","sha256":"'.hash('sha256',$pdf).'","size":'.strlen($pdf).'}}'),
+            new HttpResponse(200, ['Content-Type'=>'application/pdf','Content-Length'=>(string)strlen($pdf)], $pdf),
+        ]);
+        $response = $controller->pdf(['id'=>84]);
+        self::assertSame(200, $response->getStatusCode());
+        ob_start(); $response->send(); $body = ob_get_clean();
+        self::assertSame($pdf, $body);
+    }
+
     private function controller(InvoiceService $sql, HttpResponse|\Throwable|array $apiResponse): Invoices
     {
         $client = new DevsysApiClient(

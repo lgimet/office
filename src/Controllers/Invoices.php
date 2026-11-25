@@ -177,6 +177,16 @@ class Invoices extends BaseController
                         }
                         $view['facturx_enabled'] = true;
                     }
+                    if (($apiView['invoice']['status'] ?? null) === 'issued') {
+                        try {
+                            $pdfArchive = $this->invoiceRead->invoicePdfStatus($id);
+                            $view['pdf_enabled'] = true;
+                            $view['pdf_available'] = ($pdfArchive['available'] ?? false) === true;
+                        } catch (\Throwable) {
+                            $view['pdf_enabled'] = false;
+                            $view['pdf_available'] = false;
+                        }
+                    }
                 }
             }
             $view ??= $this->service->view($id);
@@ -224,6 +234,27 @@ class Invoices extends BaseController
         }
     }
 
+    #[Route(method: 'POST')]
+    #[AuthRequired]
+    public function pdfGenerate(array $input): Response
+    {
+        if (($_ENV['OFFICE_INVOICE_READ_API_ENABLED'] ?? 'false') !== 'true') return (new Response())->setError(404, 'Le PDF des factures API est indisponible.');
+        try {
+            $data = $this->payload($input);
+            $this->draftWrites->assertNoTenantSelectors($data);
+            $id = filter_var($data['id'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+            if ($id === false) return (new Response())->setError(422, 'La facture demandée est invalide.');
+            $view = $this->invoiceRead->view((int) $id);
+            if (($view['source'] ?? null) !== 'api' || ($view['invoice']['status'] ?? null) !== 'issued') return (new Response())->setError(409, 'Seule une facture API émise peut produire ce PDF.');
+            $result = $this->invoiceRead->generateInvoicePdf((int) $id);
+            return (new Response())->setId((int) $id)->setPayload(['invoice_number' => $result['invoice_number'] ?? null, 'available' => true])->setToast('Le PDF de la facture est archivé.');
+        } catch (DevsysApiException $exception) {
+            return $this->invoiceDraftApiError($exception);
+        } catch (\Throwable) {
+            return (new Response())->setError(422, 'Les données figées ne permettent pas de produire le PDF de cette facture.');
+        }
+    }
+
     #[Route(method: 'GET', path: 'Invoices/{id:\\d+}/facturx')]
     #[AuthRequired]
     public function facturxDownload(array $input): Response
@@ -259,7 +290,15 @@ class Invoices extends BaseController
             if (($_ENV['OFFICE_INVOICE_READ_API_ENABLED'] ?? 'false') === 'true') {
                 $apiView = $this->invoiceRead->view($id);
                 if (($apiView['source'] ?? null) === 'api') {
-                    return (new Response())->setError(409, 'Le PDF des factures API n’est pas disponible dans Office. Les données de la facture restent consultables en lecture seule.');
+                    if (($apiView['invoice']['status'] ?? null) !== 'issued') return (new Response())->setError(409, 'Seule une facture API émise dispose d’un PDF.');
+                    $archive = $this->invoiceRead->invoicePdfStatus($id);
+                    if (($archive['available'] ?? false) !== true) return (new Response())->setError(404, 'Le PDF n’a pas encore été généré. Utilisez « Générer le PDF » depuis la facture.');
+                    $document = $this->invoiceRead->downloadInvoicePdf($id);
+                    $number = (string) ($apiView['invoice']['invoice_number'] ?? '');
+                    if (preg_match('/^[A-Za-z0-9][A-Za-z0-9._-]{0,31}$/D', $number) !== 1) return (new Response())->setError(404, 'Facture introuvable.');
+                    return (new Response())->setBinary($document->body, 'application/pdf', 'Facture-'.$number.'.pdf', 'attachment')
+                        ->setHeader('Cache-Control', 'private, no-store')->setHeader('X-Content-Type-Options', 'nosniff')
+                        ->setHeader('Content-Length', (string) strlen($document->body));
                 }
             }
             $view = $this->service->view($id);

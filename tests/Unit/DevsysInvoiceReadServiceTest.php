@@ -109,6 +109,26 @@ final class DevsysInvoiceReadServiceTest extends TestCase
         self::assertSame('12.00', $result['invoice']['total_incl_tax']);
     }
 
+    public function testOrdinaryPdfMethodsUseSharedSdkForStatusGenerationAndBinaryDownload(): void
+    {
+        $history = [];
+        $stack = HandlerStack::create(new MockHandler([
+            new Response(200, [], '{"success":true,"data":{"available":false}}'),
+            new Response(200, [], '{"success":true,"data":{"available":true,"invoice_number":"2026-0042","sha256":"'.str_repeat('b', 64).'","size":17}}'),
+            new Response(200, ['Content-Type'=>'application/pdf','Content-Length'=>'17'], "%PDF-1.7\\nfixture"),
+        ]));
+        $stack->push(Middleware::history($history));
+        $client = new DevsysApiClient(new DevsysApiConfig('https://api.example.test/api/v1', 'office-token'), new Client(['handler'=>$stack,'base_uri'=>'https://api.example.test/api/v1/','http_errors'=>false]));
+        $service = new DevsysInvoiceReadService(new InvoicesApi($client));
+        self::assertFalse($service->invoicePdfStatus(42)['available']);
+        self::assertTrue($service->generateInvoicePdf(42)['available']);
+        self::assertSame("%PDF-1.7\\nfixture", $service->downloadInvoicePdf(42)->body);
+        self::assertSame('/api/v1/invoices/42/pdf/status', $history[0]['request']->getUri()->getPath());
+        self::assertSame('/api/v1/invoices/42/pdf', $history[1]['request']->getUri()->getPath());
+        self::assertSame('POST', $history[1]['request']->getMethod());
+        self::assertSame('Bearer office-token', $history[2]['request']->getHeaderLine('Authorization'));
+    }
+
     public function testUnknownApiProvenanceDoesNotFallBackToLocalInvoiceData(): void
     {
         $invoice = [

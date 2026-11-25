@@ -660,8 +660,7 @@ export default class Invoices extends Core {
             callback: (json) => {
                 if (!json.success) return;
                 const button = document.querySelector(`[data-facturx-generate="${Number(id)}"]`);
-                if (!button) return;
-                button.addEventListener("click", async () => {
+                if (button) button.addEventListener("click", async () => {
                     if (button.disabled) return;
                     const confirmed = await UI.confirm({
                         type: "info",
@@ -680,6 +679,17 @@ export default class Invoices extends Core {
                             button.disabled = false;
                             UI.toast("Le service Factur-X est temporairement indisponible.", "error");
                         },
+                    });
+                }, { once: true });
+                const pdfButton = document.querySelector(`[data-invoice-pdf-generate="${Number(id)}"]`);
+                if (pdfButton) pdfButton.addEventListener("click", async () => {
+                    if (pdfButton.disabled) return;
+                    const confirmed = await UI.confirm({ type: "info", message: "Générer et archiver le PDF de cette facture émise ? Le document sera conservé à l’identique.", yesText: "Générer", noText: "Annuler" });
+                    if (!confirmed) return;
+                    pdfButton.disabled = true;
+                    this.callAction("pdfGenerate", { id: Number(id) }, {
+                        callback: (result) => { if (result.success) this.view(Number(id)); else pdfButton.disabled = false; },
+                        onError: () => { pdfButton.disabled = false; UI.toast("Le PDF n’a pas pu être généré. La facture reste inchangée.", "error"); },
                     });
                 }, { once: true });
             },
