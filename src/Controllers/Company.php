@@ -6,11 +6,11 @@ use App\Core\Attributes\AuthRequired;
 use App\Core\Attributes\Route;
 use App\Core\BaseController;
 use App\Helpers\Response;
-use App\Services\CompanySettingsService;
+use App\Services\{CompanyInvoiceNotesService, CompanySettingsService};
 
 class Company extends BaseController
 {
-    public function __construct(private CompanySettingsService $service)
+    public function __construct(private CompanySettingsService $service, private CompanyInvoiceNotesService $invoiceNotes)
     {
         parent::__construct();
     }
@@ -19,9 +19,11 @@ class Company extends BaseController
     #[AuthRequired]
     public function form(): Response
     {
+        $data = $this->service->form();
+        $data['company'] = array_merge($data['company'], $this->invoiceNotes->read());
         return (new Response())
             ->setTitle('Société')
-            ->setHtml($this->render('form.twig', $this->service->form()));
+            ->setHtml($this->render('form.twig', $data));
     }
 
     #[Route(method: 'POST')]
@@ -29,11 +31,16 @@ class Company extends BaseController
     public function save(array $input): Response
     {
         try {
-            $this->service->save($this->payload($input));
+            $payload = $this->payload($input);
+            $this->service->validate($payload);
+            $this->invoiceNotes->replace($payload);
+            $this->service->save($payload);
 
             return (new Response())->setToast('Les informations de la société ont été enregistrées.');
         } catch (\InvalidArgumentException $exception) {
             return (new Response())->setError(422, $exception->getMessage());
+        } catch (\Throwable) {
+            return (new Response())->setError(503, 'La configuration n’a pas pu être enregistrée complètement. Vérifiez les valeurs et réessayez.');
         }
     }
 

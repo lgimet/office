@@ -149,4 +149,21 @@
             <label for="company-invoice-footer">Mention de bas de facture</label>
         </div>
     </fieldset>
+
+    <fieldset class="form-group">
+        <legend>Mentions codifiées de facture</legend>
+        <p>Ces textes sont enregistrés par l’API pour le tenant courant et figés sur les prochaines factures émises. Ils sont distincts du pied de facture. Vérifiez leur rédaction avant utilisation ; aucune clause n’est préremplie.</p>
+        <div class="form-field company-form__wide">
+            <textarea id="company-invoice-note-pmd" name="invoice_note_pmd" maxlength="2000">{{ company.invoice_note_pmd ?? '' }}</textarea>
+            <label for="company-invoice-note-pmd">PMD — Pénalités en cas de retard de paiement</label>
+        </div>
+        <div class="form-field company-form__wide">
+            <textarea id="company-invoice-note-pmt" name="invoice_note_pmt" maxlength="2000">{{ company.invoice_note_pmt ?? '' }}</textarea>
+            <label for="company-invoice-note-pmt">PMT — Indemnité forfaitaire de recouvrement</label>
+        </div>
+        <div class="form-field company-form__wide">
+            <textarea id="company-invoice-note-aab" name="invoice_note_aab" maxlength="2000">{{ company.invoice_note_aab ?? '' }}</textarea>
+            <label for="company-invoice-note-aab">AAB — Conditions d’escompte, y compris l’absence d’escompte</label>
+        </div>
+    </fieldset>
 </form>
