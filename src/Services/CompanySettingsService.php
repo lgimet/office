@@ -25,6 +25,12 @@ class CompanySettingsService
         $this->settings->save($settings);
     }
 
+    /** Validates the local company form before the separate API note write begins. */
+    public function validate(array $input): void
+    {
+        $this->normalize($input);
+    }
+
     public function validateIssuerForInvoice(?array $company): void
     {
         $company ??= [];

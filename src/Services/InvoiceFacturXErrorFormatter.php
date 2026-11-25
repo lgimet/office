@@ -60,7 +60,8 @@ final class InvoiceFacturXErrorFormatter
         $partyFields = '(?:name|contact_name|legal_name|trading_name|legal_form|share_capital|address_line1|address_line2|postal_code|city|country|email|phone|website|siret|siren|vat_number|ape_code|rcs_city|bank_name|iban|bic|invoice_footer)';
         if (preg_match('/^client_'.$partyFields.'$/D', $field) === 1
             || preg_match('/^issuer_'.$partyFields.'$/D', $field) === 1
-            || preg_match('/^issuer_invoice_footer_(?:PMT|PMD|AAB)$/D', $field) === 1) {
+            || preg_match('/^issuer_invoice_footer_(?:PMT|PMD|AAB)$/D', $field) === 1
+            || preg_match('/^issuer_invoice_note_(?:PMT|PMD|AAB)$/D', $field) === 1) {
             return true;
         }
 
@@ -75,6 +76,7 @@ final class InvoiceFacturXErrorFormatter
     {
         if (str_starts_with($field, 'client_')) return 'coordonnées du client';
         if (str_starts_with($field, 'issuer_invoice_footer_')) return 'mentions légales de l’émetteur';
+        if (str_starts_with($field, 'issuer_invoice_note_')) return 'mentions légales de l’émetteur';
         if ($field === 'issuer_iban') return 'coordonnées de règlement de l’émetteur';
         if (str_starts_with($field, 'issuer_') || $field === 'issuer_vat_number') return 'identification ou coordonnées de l’émetteur';
         if (str_starts_with($field, 'line_') || $field === 'lines' || $field === 'lines.count') return 'données des lignes';

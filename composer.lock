@@ -4,20 +4,20 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "aa76e9e3cba753efabd3d17322eca101",
+    "content-hash": "1d694bed0696db4ffacad9dd838dd146",
     "packages": [
         {
             "name": "devsys/shared",
-            "version": "dev-feature/office-invoice-pdf-api-1",
+            "version": "dev-feature/office-invoice-notes-1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/lgimet/shared.git",
-                "reference": "d5606571c3a4d8a9fd67216ed87b3870e9f1a61d"
+                "reference": "3da1cabb276e6b0e39a2de2710777cba370b3a49"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/lgimet/shared/zipball/d5606571c3a4d8a9fd67216ed87b3870e9f1a61d",
-                "reference": "d5606571c3a4d8a9fd67216ed87b3870e9f1a61d",
+                "url": "https://api.github.com/repos/lgimet/shared/zipball/3da1cabb276e6b0e39a2de2710777cba370b3a49",
+                "reference": "3da1cabb276e6b0e39a2de2710777cba370b3a49",
                 "shasum": ""
             },
             "require": {
@@ -47,7 +47,7 @@
                 "proprietary"
             ],
             "description": "Shared PHP client library for the Devsys API.",
-            "time": "2026-11-25T07:41:39+00:00"
+            "time": "2026-11-25T10:44:23+00:00"
         },
         {
             "name": "firebase/php-jwt",

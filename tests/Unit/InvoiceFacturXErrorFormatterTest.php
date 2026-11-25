@@ -15,7 +15,7 @@ final class InvoiceFacturXErrorFormatterTest extends TestCase
             422,
             'invoices/12/facturx',
             null,
-            ['missing_fields' => ['client_email', 'issuer_invoice_footer_PMT', 'line_2.tax_category_code']],
+            ['missing_fields' => ['client_email', 'issuer_invoice_note_PMT', 'line_2.tax_category_code']],
             'FACTURX_SNAPSHOT_INCOMPLETE',
         );
 
@@ -51,7 +51,7 @@ final class InvoiceFacturXErrorFormatterTest extends TestCase
     {
         $exception = new DevsysApiValidationException(
             'ignored', 422, null, null,
-            ['missing_fields' => ['issuer_email', 'issuer_invoice_footer_PMT', 'line_1.tax_category_rate']],
+            ['missing_fields' => ['issuer_email', 'issuer_invoice_note_PMT', 'line_1.tax_category_rate']],
             'INVOICE_FACTURX_PREISSUE_INCOMPLETE',
         );
         $message = (new InvoiceFacturXErrorFormatter())->preIssueIncomplete($exception);
