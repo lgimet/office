@@ -3,7 +3,7 @@
 Date : 25 novembre 2026 (CET)  
 Verdict : **`ACTIVATED_PENDING_BUSINESS_RECETTE`**. Migration 029 appliquée et vérifiée ; candidates API puis Office basculées avec succès. La recette métier authentifiée des mentions n'a pas été exécutée.
 
-## Sources et état de production observé
+## Sources et état initial avant intervention
 
 | Dépôt | `origin/main` vérifié | Code notes inclus |
 |---|---|---|
@@ -13,7 +13,7 @@ Verdict : **`ACTIVATED_PENDING_BUSINESS_RECETTE`**. Migration 029 appliquée et 
 
 PR shared #14, API #29 et Office #23 sont déjà fusionnées. Le lock Office et `vendor/devsys/shared` de la candidate pointent tous deux sur le code immuable `3da1cabb276e6b0e39a2de2710777cba370b3a49` ; SHA-256 de `composer.lock` : `219a21b813ba5da1e505b181107d019f4e287ea580cd850e505ad5be727e6d1a`.
 
-Les liens de production sont restés inchangés : API `api-office-mvp-pdf-20261125-a115d5f`, Office `office-mvp-pdf-20261125-dfaa435`. Les vhosts actifs servent ces releases. Le fichier Office `sites-enabled` est une configuration réelle distincte de `sites-available` : le premier pointe aujourd'hui directement vers l'ancienne release, le second vers `current/public`. Toute future bascule devra donc sauvegarder et modifier uniquement le vhost actif Office, vérifier les chemins, puis utiliser le `current` atomique. Aucun vhost ni pointeur n'a été modifié ici.
+Au préflight initial, les pointeurs et vhosts servaient API `api-office-mvp-pdf-20261125-a115d5f` et Office `office-mvp-pdf-20261125-dfaa435`. Le fichier Office `sites-enabled` est une configuration distincte de `sites-available` : initialement, le vhost actif pointait directement vers l'ancienne release tandis que `sites-available` utilisait `current/public`. Le vhost actif Office a été sauvegardé puis corrigé lors de la bascule décrite plus bas.
 
 Contrôles préalables observés : API health loopback 200, route issuer-notes sans session 401, Office `/` 302, découverte OIDC login 200 ; `apachectl configtest` et `php-fpm8.4 -t` réussis, sans reload. Les flags Factur-X, d'écriture API `devsys`, de lecture API Office et de brouillons API étaient actifs et n'ont pas changé. Les chemins d'archives PDF/Factur-X et runtime privés préexistants sont restés intacts.
 
@@ -27,7 +27,7 @@ La migration ne contient que des `ALTER TABLE`, sans `UPDATE` historique ; aucun
 
 Sauvegarde habituelle : dernier succès du service observé le 25 novembre à 03:26 CET ; le journal de restauration isolée associé indiquait une vérification réussie. Aucune sauvegarde ou restauration n'a été lancée pour ce lot. Cela ne constitue pas une nouvelle preuve de restauration de la base active au moment de la bascule.
 
-## Candidates construites, inactives
+## Candidates construites avant les points GO
 
 | Application | Release candidate | Source | SHA-256 `SHA256SUMS` | Taille constatée |
 |---|---|---|---|---:|
