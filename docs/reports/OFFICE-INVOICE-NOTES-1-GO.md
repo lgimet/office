@@ -1,7 +1,7 @@
 # OFFICE-INVOICE-NOTES-1-GO
 
 Date : 25 novembre 2026 (CET)  
-Verdict : **`WAITING_MIGRATION_GO`**. Les candidates sont construites et inactives. La migration 029 et les bascules n'ont pas été exécutées ; le point A attend le GO explicite de l'opérateur.
+Verdict : **`WAITING_SWITCH_GO`**. Après le GO explicite, la migration 029 a été appliquée et vérifiée sur `office`. Les candidates API/Office restent inactives ; aucune bascule ni reload n'a eu lieu.
 
 ## Sources et état de production observé
 
@@ -17,15 +17,15 @@ Les liens de production sont restés inchangés : API `api-office-mvp-pdf-202611
 
 Contrôles préalables observés : API health loopback 200, route issuer-notes sans session 401, Office `/` 302, découverte OIDC login 200 ; `apachectl configtest` et `php-fpm8.4 -t` réussis, sans reload. Les flags Factur-X, d'écriture API `devsys`, de lecture API Office et de brouillons API étaient actifs et n'ont pas changé. Les chemins d'archives PDF/Factur-X et runtime privés préexistants sont restés intacts.
 
-## Migration 029 — état lecture seule
+## Migration 029 — appliquée après GO
 
-Base cible confirmée par `SELECT DATABASE()` : `office` (MariaDB 10.9.4). Les migrations 027 et 028 sont enregistrées et leur schéma présent. La migration 029 est absente du registre et les six colonnes sont absentes ; aucune application partielle n'a été observée. La comparaison à la liste source ne montre pas d'autre migration en attente.
+Le point A a été autorisé par le message opérateur **`GO MIGRATION 029`**. Juste avant l'application, la connexion de production a confirmé `DATABASE()=office` (MariaDB 10.9.4), 027/028 enregistrées, les six colonnes absentes et, en comparant le registre à la liste de la candidate, une seule migration en attente : `029_add_invoice_coded_notes.sql`. SHA-256 vérifié dans la source et la candidate : `41eed5b3226a75a218caaeb0dea7c742fcc6fcd0e7c7887ef1ed5002959e8d9f`.
 
-SHA-256 du fichier vérifié dans la source et la candidate : `41eed5b3226a75a218caaeb0dea7c742fcc6fcd0e7c7887ef1ed5002959e8d9f`. Il contient deux `ALTER TABLE`, ajoutant trois colonnes `VARCHAR(2000) NULL` à `company_settings` et trois colonnes nullable à `invoices`, sans `UPDATE` historique. Les DDL MariaDB ne sont pas transactionnels en bloc.
+Le runner `php bin/console migrate` parcourt toutes les migrations non enregistrées ; `migrate:status` crée lui-même `migrations`. Aucun de ces runners n'a été lancé. L'application a exécuté les deux statements `ALTER TABLE` du fichier 029 exact via la connexion PDO de l'API, avec `lock_wait_timeout=5`, puis a inscrit uniquement `029_add_invoice_coded_notes.sql` dans le registre. Les deux statements ont réussi. Après application, les six colonnes ont été relues dans `information_schema` et confirmées `VARCHAR(2000) NULL`; le registre contient 029 une seule fois et la comparaison à la candidate ne trouve aucune migration en attente.
 
-Le runner `php bin/console migrate` parcourt toutes les migrations non enregistrées ; `migrate:status` crée lui-même `migrations`. Aucun argument de migration unique n'existe. Aucun de ces runners n'a été lancé. Après le GO migration, l'exécution devra rester strictement limitée au fichier 029, puis inscrire uniquement 029 dans le registre après contrôle des six colonnes. Si une seule opération DDL échoue ou si registre et schéma divergent : STOP, conserver les colonnes déjà créées, ne pas faire de `DROP` ni de relance aveugle, et faire examiner l'état par le DBA. Un rollback applicatif ne retire pas la migration.
+La migration ne contient que des `ALTER TABLE`, sans `UPDATE` historique ; aucune ligne de facture n'a été lue ni modifiée par cette opération. Les DDL MariaDB ne sont pas transactionnels en bloc. En cas de divergence ultérieure : STOP, conserver les colonnes, ne pas faire de `DROP` ni de relance aveugle, et faire examiner l'état par le DBA. Un rollback applicatif ne retire pas la migration. Le compte SQL ne disposait pas du privilège `PROCESS` ; l'attente de verrou DDL a été bornée à cinq secondes et les deux statements ont terminé avec succès.
 
-Sauvegarde habituelle : dernier succès du service observé le 25 novembre à 03:26 CET ; le journal de restauration isolée associé indiquait une vérification réussie. Aucune sauvegarde ou restauration n'a été lancée pour ce lot. Cela ne constitue pas une garantie de restauration de la base active au moment du GO.
+Sauvegarde habituelle : dernier succès du service observé le 25 novembre à 03:26 CET ; le journal de restauration isolée associé indiquait une vérification réussie. Aucune sauvegarde ou restauration n'a été lancée pour ce lot. Cela ne constitue pas une nouvelle preuve de restauration de la base active au moment de la bascule.
 
 ## Candidates construites, inactives
 
@@ -57,10 +57,14 @@ Espace vérifié après préparation : `/home/devsys` sur `/dev/sdb`, environ 15
 
 Le premier lancement de la suite API n'a pas utilisé les racines de test Office/shared intégrées et a échoué sur la méthode SDK absente. Relancé avec les worktrees notes corrects, le test HTTP intégré est passé dans les 346 tests/1 501 assertions indiqués. Le daemon MariaDB de test a été arrêté après la suite. Aucun test n'a utilisé la base de production.
 
-## Point A et suite autorisée
+## Point B — bascules encore en attente
 
-Aucune écriture SQL, édition de configuration, bascule `current`, modification de vhost, reload, génération documentaire ou mutation de facture n'a eu lieu. Les factures émises, snapshots, archives, séquences, flags, OIDC/login et paramètres persistants n'ont pas été touchés.
+Après l'application, la vérification en lecture seule confirme `DATABASE()=office`, 027/028/029 enregistrées, zéro migration candidate en attente et les six colonnes nullable de longueur 2 000. API health loopback 200, route `GET /api/v1/invoices/issuer-notes` sans session 401, Office `/` 302 et découverte OIDC login 200. Le dry-run API-only `--profile active` repasse ; il propose les deux vhosts API et le pointeur API uniquement. Aucun vhost, pointeur, flag, service ou release active n'a été modifié/rechargé.
 
-Pour continuer, l'opérateur doit répondre exactement : **`GO MIGRATION 029`**. Ce GO autorisera uniquement la vérification finale de l'état cible puis l'application ciblée de 029 sur la base `office`, et le contrôle post-DDL. Il n'autorisera ni bascule API/Office ni reload Apache. Après migration cohérente, un second bilan présentera les releases et le diff exact du vhost actif avant de demander séparément **`GO BASCULE API OFFICE + RELOAD APACHE GLOBAL`**.
+État avant bascule : API `api-office-mvp-pdf-20261125-a115d5f` et Office `office-mvp-pdf-20261125-dfaa435`. Releases candidates : API `api-invoice-notes1-20261125-3482534-r1` (source `34825341bab7ed1a8cc16bc6bf7f04bef2427f73`, manifeste SHA-256 `39eb43fec88088342d35dc6a5385f875f3db12edd0c207c8efcfe51f21bebda4`) ; Office `office-invoice-notes1-20261125-7df0921-r1` (source `7df0921245494c97297c198695fc373af2e762ae`, manifeste SHA-256 `91b82a64869842a3ecfa447ef2e0aeeebebc8e13403fdbb5b9cf73b08d90f337`). Les candidates restent disponibles et leurs `current` ne pointent pas dessus.
 
-Les contrôles métier authentifiés des paramètres et toute émission restent hors de ce lot. Aucune note juridique n'a été préremplie ; aucune conformité réglementaire exhaustive n'est revendiquée.
+Pour l'API, le helper doit créer sa sauvegarde des deux vhosts et son état rollback au moment d'une bascule approuvée ; aucun backup de bascule n'a encore été créé. Pour Office, le vhost actif est `/etc/apache2/sites-enabled/office.devsys.fr.conf` (fichier distinct de `sites-available`) ; il faudra le sauvegarder, ne changer que ses quatre références `DocumentRoot`/`<Directory>`, basculer `office-deploy/current` atomiquement et restaurer la sauvegarde du vhost et l'ancienne cible `office-mvp-pdf-20261125-dfaa435` en cas d'échec. La candidate API précédente est `api-office-mvp-pdf-20261125-a115d5f`.
+
+**Un reload gracieux Apache est global** et relit aussi le vhost login même si ses fichiers ne sont pas modifiés. `apachectl configtest` et `php-fpm8.4 -t` avaient réussi au préflight ; ils devront être refaits juste avant toute bascule. Le GO migration ne couvre pas cette opération.
+
+Pour poursuivre, l'opérateur doit répondre exactement : **`GO BASCULE API OFFICE + RELOAD APACHE GLOBAL`**. Ce GO autorisera les deux bascules dans l'ordre API puis Office, les changements strictement limités aux vhosts API/Office concernés et les reloads globaux nécessaires. Il n'autorisera aucune génération/émission de facture, aucune modification de notes légales réelles, ni aucun changement OIDC/login. La recette authentifiée des paramètres et la conformité réglementaire exhaustive restent hors de ce lot.
