@@ -1,6 +1,6 @@
 # OFFICE-INVOICE-PDF-API-1 — PDF ordinaire des factures API
 
-Branche `feature/office-invoice-pdf-api-1`, base `main` `8919628bb963acac5f02fde6d013c8e6908bc477`. PR Office à ouvrir après le push ; dépend des PR API #28 et shared #13. SDK verrouillé et installé : `devsys/shared` commit immuable `d5606571c3a4d8a9fd67216ed87b3870e9f1a61d`.
+Branche `feature/office-invoice-pdf-api-1`, base `main` `8919628bb963acac5f02fde6d013c8e6908bc477`, commit `a02ff6e`. PR Office [#21](https://github.com/lgimet/office/pull/21) ; dépend des PR API [#28](https://github.com/lgimet/Office-Api/pull/28) et shared [#13](https://github.com/lgimet/shared/pull/13). SDK verrouillé et installé : `devsys/shared` commit immuable `d5606571c3a4d8a9fd67216ed87b3870e9f1a61d`.
 
 ## Fonctionnement
 
