@@ -18,19 +18,57 @@ export default class Company extends Core {
             },
         ];
 
-        this.callAction("form", {}, {
-            callback: (json) => {
-                if (!json.success) {
-                    UI.toast(json.error.message, "error");
+        const windowId = this.buildWindowId(this.objectName, null, "form");
+        const existingWindow = this.resolveWindowRecord(windowId);
+
+        if (existingWindow) {
+            this.activateWindow(windowId);
+
+            const hasCodedNotes = [
+                "company-invoice-note-pmd",
+                "company-invoice-note-pmt",
+                "company-invoice-note-aab",
+            ].every((id) => existingWindow.body.querySelector(`#${id}`));
+
+            if (!hasCodedNotes) {
+                if (existingWindow.dirtyTracker?.dirty) {
+                    UI.toast(
+                        "Ce formulaire ancien contient des modifications non enregistrées. Enregistrez-les ou fermez-le avant de le recharger.",
+                        "warning"
+                    );
                     return;
                 }
 
-                const form = this.bodyRef.company_form;
-                form.addEventListener("submit", (event) => {
-                    event.preventDefault();
-                    this.save();
+                this.callAction("form", {}, {
+                    refresh: true,
+                    windowId,
+                    callback: (json) => this.handleFormResponse(json, windowId),
                 });
-            },
+            }
+
+            return;
+        }
+
+        this.callAction("form", {}, {
+            callback: (json) => this.handleFormResponse(json, windowId),
+        });
+    }
+
+    handleFormResponse(json, windowId) {
+        if (!json.success) {
+            UI.toast(json.error.message, "error");
+            return;
+        }
+
+        const form = this.resolveWindowRecord(windowId)?.bodyRef?.company_form;
+        if (!form) {
+            UI.toast("Le formulaire Société n’a pas pu être chargé. Réessayez.", "error");
+            return;
+        }
+
+        form.addEventListener("submit", (event) => {
+            event.preventDefault();
+            this.save();
         });
     }
 
