@@ -3,6 +3,8 @@
 Date: 2026-11-25  
 Status: `FIX_READY_FOR_REVIEW`
 
+Branch: `feature/office-invoice-notes-1-ui-fix`; initial implementation commit: `54597ba`. Review PR: [lgimet/office#26](https://github.com/lgimet/office/pull/26).
+
 ## Diagnostic
 
 Audited `office/main` at `7df0921245494c97297c198695fc373af2e762ae`. The active Office pointer resolves to `office-invoice-notes1-20261125-7df0921-r1`; its vhost DocumentRoot uses `/home/devsys/office-deploy/current/public`.
