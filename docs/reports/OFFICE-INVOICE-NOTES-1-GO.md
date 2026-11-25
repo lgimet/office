@@ -1,7 +1,7 @@
 # OFFICE-INVOICE-NOTES-1-GO
 
 Date : 25 novembre 2026 (CET)  
-Verdict : **`WAITING_SWITCH_GO`**. Après le GO explicite, la migration 029 a été appliquée et vérifiée sur `office`. Les candidates API/Office restent inactives ; aucune bascule ni reload n'a eu lieu.
+Verdict : **`ACTIVATED_PENDING_BUSINESS_RECETTE`**. Migration 029 appliquée et vérifiée ; candidates API puis Office basculées avec succès. La recette métier authentifiée des mentions n'a pas été exécutée.
 
 ## Sources et état de production observé
 
@@ -57,14 +57,40 @@ Espace vérifié après préparation : `/home/devsys` sur `/dev/sdb`, environ 15
 
 Le premier lancement de la suite API n'a pas utilisé les racines de test Office/shared intégrées et a échoué sur la méthode SDK absente. Relancé avec les worktrees notes corrects, le test HTTP intégré est passé dans les 346 tests/1 501 assertions indiqués. Le daemon MariaDB de test a été arrêté après la suite. Aucun test n'a utilisé la base de production.
 
-## Point B — bascules encore en attente
+## Bascule après GO opérateur
 
-Après l'application, la vérification en lecture seule confirme `DATABASE()=office`, 027/028/029 enregistrées, zéro migration candidate en attente et les six colonnes nullable de longueur 2 000. API health loopback 200, route `GET /api/v1/invoices/issuer-notes` sans session 401, Office `/` 302 et découverte OIDC login 200. Le dry-run API-only `--profile active` repasse ; il propose les deux vhosts API et le pointeur API uniquement. Aucun vhost, pointeur, flag, service ou release active n'a été modifié/rechargé.
+Le point B a été autorisé par le message opérateur **`GO BASCULE API OFFICE + RELOAD APACHE GLOBAL`**. L'ordre a été respecté : API, contrôles, puis Office.
 
-État avant bascule : API `api-office-mvp-pdf-20261125-a115d5f` et Office `office-mvp-pdf-20261125-dfaa435`. Releases candidates : API `api-invoice-notes1-20261125-3482534-r1` (source `34825341bab7ed1a8cc16bc6bf7f04bef2427f73`, manifeste SHA-256 `39eb43fec88088342d35dc6a5385f875f3db12edd0c207c8efcfe51f21bebda4`) ; Office `office-invoice-notes1-20261125-7df0921-r1` (source `7df0921245494c97297c198695fc373af2e762ae`, manifeste SHA-256 `91b82a64869842a3ecfa447ef2e0aeeebebc8e13403fdbb5b9cf73b08d90f337`). Les candidates restent disponibles et leurs `current` ne pointent pas dessus.
+| Application | Release active finale | Source | SHA-256 `SHA256SUMS` | Ancienne release conservée |
+|---|---|---|---|---|
+| API | `api-invoice-notes1-20261125-3482534-r1` | `34825341bab7ed1a8cc16bc6bf7f04bef2427f73` | `39eb43fec88088342d35dc6a5385f875f3db12edd0c207c8efcfe51f21bebda4` | `api-office-mvp-pdf-20261125-a115d5f` |
+| Office | `office-invoice-notes1-20261125-7df0921-r1` | `7df0921245494c97297c198695fc373af2e762ae` | `91b82a64869842a3ecfa447ef2e0aeeebebc8e13403fdbb5b9cf73b08d90f337` | `office-mvp-pdf-20261125-dfaa435` |
 
-Pour l'API, le helper doit créer sa sauvegarde des deux vhosts et son état rollback au moment d'une bascule approuvée ; aucun backup de bascule n'a encore été créé. Pour Office, le vhost actif est `/etc/apache2/sites-enabled/office.devsys.fr.conf` (fichier distinct de `sites-available`) ; il faudra le sauvegarder, ne changer que ses quatre références `DocumentRoot`/`<Directory>`, basculer `office-deploy/current` atomiquement et restaurer la sauvegarde du vhost et l'ancienne cible `office-mvp-pdf-20261125-dfaa435` en cas d'échec. La candidate API précédente est `api-office-mvp-pdf-20261125-a115d5f`.
+L'API a été activée par `deploy-api-only-release.py --profile active --apply --reload-apache`. La sauvegarde helper est `/home/devsys/api-deploy/backups/api-vhost-20261125T131317-1465634-api-invoice-notes1-20261125-3482534-r1/` ; elle contient les deux vhosts API, `STATE.json` et ses checksums. Le pointeur API et les vhosts API ciblés pointent maintenant vers la candidate. Le helper a réussi les tests Apache et PHP-FPM avant la bascule, le configtest après écriture et le reload gracieux global.
 
-**Un reload gracieux Apache est global** et relit aussi le vhost login même si ses fichiers ne sont pas modifiés. `apachectl configtest` et `php-fpm8.4 -t` avaient réussi au préflight ; ils devront être refaits juste avant toute bascule. Le GO migration ne couvre pas cette opération.
+Pour Office, seul le fichier actif `/etc/apache2/sites-enabled/office.devsys.fr.conf` a été sauvegardé puis ses quatre chemins `DocumentRoot`/`<Directory>` ont été remplacés atomiquement vers `/home/devsys/office-deploy/current/public`. Sauvegarde : `/home/devsys/office-deploy/backups/office-vhost-notes1-20261125T131442/office.devsys.fr.conf`, SHA-256 `e962f7e313ba63d5576287480c9edcd21e35e2b96df4c36e7ec979bc17384c87`. `office-deploy/current` a été basculé atomiquement vers la candidate. Le configtest Apache puis le reload gracieux global ont réussi. Les versions précédentes et les sauvegardes de vhost sont conservées.
 
-Pour poursuivre, l'opérateur doit répondre exactement : **`GO BASCULE API OFFICE + RELOAD APACHE GLOBAL`**. Ce GO autorisera les deux bascules dans l'ordre API puis Office, les changements strictement limités aux vhosts API/Office concernés et les reloads globaux nécessaires. Il n'autorisera aucune génération/émission de facture, aucune modification de notes légales réelles, ni aucun changement OIDC/login. La recette authentifiée des paramètres et la conformité réglementaire exhaustive restent hors de ce lot.
+**Deux reloads gracieux globaux Apache** ont été réalisés, un après API et un après Office. Chaque reload relit aussi le vhost login ; aucun fichier login/OIDC n'a été modifié. Apache et PHP-FPM sont actifs, `apachectl configtest` et `php-fpm8.4 -t` réussissent après bascule.
+
+## Vérifications post-bascule et limites
+
+| Contrôle non mutateur | Résultat |
+|---|---|
+| API `GET /api/v1/health` sur loopback | HTTP 200 |
+| `GET /api/v1/invoices/issuer-notes` sans authentification | HTTP 401 |
+| Office `/` sans session | HTTP 302, redirection habituelle |
+| Office `/Invoices/data` sans session | HTTP 401 |
+| Asset `/assets/css/dashboard.css` | HTTP 200 |
+| Découverte OIDC `login.devsys.fr/.well-known/openid-configuration` sur loopback | HTTP 200 |
+| `current`, DocumentRoots, manifests et checksums | pointent vers les candidates ; sommes vérifiées |
+| SDK installé dans la candidate Office | `3da1cabb276e6b0e39a2de2710777cba370b3a49`, conforme au lock |
+| Gates persistants relus après bascule | API Factur-X et écritures ON, source `devsys`; Office Factur-X, lecture API et brouillons API ON |
+| Migration 029 / six colonnes | enregistrée une fois, colonnes `VARCHAR(2000) NULL`, aucune migration candidate en attente |
+
+Aucun compte utilisateur authentifié n'a été utilisé : le formulaire réel PMD/PMT/AAB n'a pas été soumis ou vérifié en session (`NOT_RUN`). Aucune note commerciale/légale n'a été renseignée, aucune facture créée/émise, aucun numéro consommé, aucun PDF/XML généré ou téléchargé. La conformité réglementaire française exhaustive n'est pas revendiquée.
+
+Le dernier état observé de `devsys-backup.service` reste succès, exit 0, le 25 novembre 2026 à 03:26:23 CET ; aucune sauvegarde/restauration n'a été déclenchée pendant cette intervention. Le contrôle Office Composer signale toujours 9 avis de sécurité préexistants sur Twig verrouillé ; aucune dépendance n'a été modifiée dans ce lot.
+
+## État final
+
+Les sources servies sont les deux candidates ci-dessus ; 029 est cohérente sur la base `office`, les gates sont conservés, l'authentification non sessionnée est refusée et les hôtes témoins répondent. Les anciennes releases sont préservées pour rollback applicatif. Le code peut gérer les notes PMD/PMT/AAB, mais leur configuration et leur recette métier restent à faire par un utilisateur légitime, avec les textes approuvés par l'émetteur. La migration additive et ses colonnes ne doivent pas être supprimées lors d'un rollback de code.
