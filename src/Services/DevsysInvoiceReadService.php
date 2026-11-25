@@ -134,6 +134,10 @@ final class DevsysInvoiceReadService
         return ['source' => 'api', 'api_mode' => true, 'pdf_enabled' => false, 'invoice' => $invoice, 'lines' => $lines];
     }
 
+    public function invoicePdfStatus(int $invoiceId): array { return $this->invoices->invoicePdfStatus($invoiceId); }
+    public function generateInvoicePdf(int $invoiceId): array { return $this->invoices->generateInvoicePdf($invoiceId); }
+    public function downloadInvoicePdf(int $invoiceId): DevsysApiBinaryResponse { return $this->invoices->downloadInvoicePdf($invoiceId); }
+
     public function facturXStatus(int $invoiceId): array
     {
         return $this->invoices->facturXStatus($invoiceId);
